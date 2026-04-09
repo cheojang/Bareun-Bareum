@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String            @id @default(cuid())
+  name            String?
+  email           String            @unique
+  emailVerified   DateTime?
+  image           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  children        Child[]
+  subscription    Subscription?
+  practiceHistory PracticeSession[]
+}
+
+model Child {
+  id           String            @id @default(cuid())
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  birthDate    DateTime?
+  mascotLevel  Int               @default(1)
+  totalWords   Int               @default(0)
+  totalMinutes Int               @default(0)
+  streakDays   Int               @default(0)
+  lastPractice DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  sessions     PracticeSession[]
+}
+
+model PracticeSession {
+  id          String       @id @default(cuid())
+  userId      String
+  childId     String
+  user        User         @relation(fields: [userId], references: [id])
+  child       Child        @relation(fields: [childId], references: [id])
+  startedAt   DateTime     @default(now())
+  endedAt     DateTime?
+  durationMin Int?
+  wordRecords WordRecord[]
+}
+
+model WordRecord {
+  id            String          @id @default(cuid())
+  sessionId     String
+  session       PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  targetWord    String
+  heardWord     String
+  errorPhonemes Json            @default("[]")
+  guidanceText  String?
+  isCorrect     Boolean         @default(false)
+  isBookmarked  Boolean         @default(false)
+  practicedAt   DateTime        @default(now())
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id])
+  plan             String    @default("free")
+  tossCustomerKey  String?   @unique
+  tossBillingKey   String?
+  status           String    @default("inactive")
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
