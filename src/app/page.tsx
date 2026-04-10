@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
+import { SoriMascot, SoriLogo } from "@/components/ui/SoriMascot";
 
 export default function LandingPage() {
   return (
@@ -8,25 +9,30 @@ export default function LandingPage() {
       className="min-h-dvh flex flex-col"
       style={{ background: "linear-gradient(160deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2">
-          <span className="text-3xl">🗣️</span>
-          <span className="text-xl font-black text-[#3D3530]">바름또박</span>
+        <div className="flex items-center gap-2.5">
+          <SoriLogo size={38} />
+          <div>
+            <span className="text-xl font-black text-[#3D3530] leading-none block">소리</span>
+            <span className="text-[10px] text-[#C4B5A8] font-semibold tracking-wide">발음 홈케어</span>
+          </div>
         </div>
         <Link href="/login">
           <BubbleButton variant="white" size="sm">로그인</BubbleButton>
         </Link>
       </header>
 
-      {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="animate-float mb-6">
-          <div className="text-8xl">🐣</div>
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
+        {/* Animated mascot */}
+        <div className="animate-float mb-6 drop-shadow-lg">
+          <SoriMascot size={150} variant="full" animated />
         </div>
+
         <h1 className="text-4xl font-black text-[#3D3530] leading-tight mb-4">
           발음 연습,<br />
-          <span className="text-[#FFB38A]">놀이처럼</span> 즐겁게!
+          <span style={{ color: "#FFB38A" }}>놀이처럼</span> 즐겁게!
         </h1>
         <p className="text-lg text-[#8B7E74] mb-8 max-w-xs leading-relaxed">
           집에서 부모님과 함께하는<br />
@@ -40,7 +46,7 @@ export default function LandingPage() {
         <p className="text-sm text-[#C4B5A8] mt-4">카카오 · 구글로 3초 가입</p>
       </section>
 
-      {/* Features */}
+      {/* ── Features ───────────────────────────────────────────────── */}
       <section className="px-6 pb-12 grid gap-4 max-w-lg mx-auto w-full">
         <FeatureCard
           emoji="👂"
@@ -59,7 +65,7 @@ export default function LandingPage() {
         />
       </section>
 
-      {/* Pricing teaser */}
+      {/* ── Pricing ────────────────────────────────────────────────── */}
       <section className="px-6 pb-16 max-w-lg mx-auto w-full">
         <BubbleCard color="peach" className="text-center">
           <p className="text-2xl font-black text-[#3D3530] mb-2">월 9,900원</p>

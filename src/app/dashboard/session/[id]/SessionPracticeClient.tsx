@@ -8,6 +8,7 @@ import { PastelBadge } from "@/components/ui/PastelBadge";
 import { AnalysisResult } from "@/types/analysis";
 import { PhonemeError } from "@/types/phonetics";
 import { getWordByText } from "@/lib/word-database";
+import { SoriMascot } from "@/components/ui/SoriMascot";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WordRecord {
@@ -22,7 +23,6 @@ interface Props {
   sessionId: string;
   childId: string;
   childName: string;
-  mascotLevel: number;
   initialWords: string[];
   wordRecords: WordRecord[];
 }
@@ -30,7 +30,6 @@ interface Props {
 type DotState = "empty" | "incorrect" | "correct";
 
 const MAX_ATTEMPTS = 5;
-const MASCOT_EMOJIS = ["🥚", "🐣", "🐥", "🐤", "🐦"];
 
 // ─── Syllable Split Helper ────────────────────────────────────────────────────
 function splitSyllables(word: string): string {
@@ -188,7 +187,6 @@ export function SessionPracticeClient({
   sessionId,
   childId,
   childName,
-  mascotLevel,
   initialWords,
 }: Props) {
   const [wordQueue] = useState<string[]>(initialWords);
@@ -210,7 +208,6 @@ export function SessionPracticeClient({
 
   const currentWord = wordQueue[currentIndex];
   const wordInfo = currentWord ? getWordByText(currentWord) : null;
-  const mascotEmoji = MASCOT_EMOJIS[Math.min(mascotLevel - 1, 4)];
 
   const filledCount = dots.filter((d) => d !== "empty").length;
   const allFilled = filledCount >= MAX_ATTEMPTS;
@@ -293,7 +290,9 @@ export function SessionPracticeClient({
   if (done) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
-        <div className="text-8xl mb-4 animate-bounce-in">{mascotEmoji}</div>
+        <div className="mb-4 animate-bounce-in">
+          <SoriMascot size={130} variant="full" animated />
+        </div>
         <h2 className="text-3xl font-black text-[#3D3530] mb-2">연습 완료! 🎉</h2>
         <p className="text-[#8B7E74] mb-2">
           {wordQueue.length}개 중 {correctCount}개 정확하게 발음했어요!

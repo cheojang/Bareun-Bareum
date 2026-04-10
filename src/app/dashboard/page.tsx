@@ -5,6 +5,7 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { MissionCard } from "@/components/dashboard/MissionCard";
+import { SoriMascot } from "@/components/ui/SoriMascot";
 
 // ─── Daily mission generator ───────────────────────────────────────────────
 const MISSION_PHONEMES = ["ㄹ", "ㅅ", "ㅈ", "ㄱ", "ㄴ", "ㅂ", "ㅁ"];
@@ -264,10 +265,12 @@ function StatMini({ value, label, emoji }: { value: number; label: string; emoji
 }
 
 function MascotAvatar({ level }: { level: number }) {
-  const emojis = ["🥚", "🐣", "🐥", "🐤", "🐦"];
   return (
-    <div className="w-14 h-14 rounded-full bg-[#FFF5EE] flex items-center justify-center text-3xl border-2 border-[#FFD4B8]">
-      {emojis[Math.min(level - 1, 4)]}
+    <div className="relative flex-shrink-0">
+      <SoriMascot size={56} variant="logo" animated={false} />
+      <span className="absolute -bottom-1 -right-1 bg-[#FFB38A] text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+        {level}
+      </span>
     </div>
   );
 }

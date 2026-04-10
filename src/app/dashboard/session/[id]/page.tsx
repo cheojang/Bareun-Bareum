@@ -31,7 +31,6 @@ export default async function SessionPage({ params, searchParams }: Props) {
       sessionId={id}
       childId={session.childId}
       childName={session.child.name}
-      mascotLevel={session.child.mascotLevel}
       initialWords={words}
       wordRecords={session.wordRecords}
     />
