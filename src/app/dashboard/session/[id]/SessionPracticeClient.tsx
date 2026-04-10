@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -9,6 +9,7 @@ import { AnalysisResult } from "@/types/analysis";
 import { PhonemeError } from "@/types/phonetics";
 import { getWordByText } from "@/lib/word-database";
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface WordRecord {
   id: string;
   targetWord: string;
@@ -26,8 +27,136 @@ interface Props {
   wordRecords: WordRecord[];
 }
 
+type DotState = "empty" | "incorrect" | "correct";
+
+const MAX_ATTEMPTS = 5;
 const MASCOT_EMOJIS = ["🥚", "🐣", "🐥", "🐤", "🐦"];
 
+// ─── Attempt Dots ─────────────────────────────────────────────────────────────
+function AttemptDots({
+  dots,
+  allCorrect,
+}: {
+  dots: DotState[];
+  allCorrect: boolean;
+}) {
+  // Track which dot just got animated so we can re-trigger each time
+  const [animKeys, setAnimKeys] = useState<number[]>([0, 0, 0, 0, 0]);
+  const prevLen = useRef(0);
+
+  useEffect(() => {
+    const filled = dots.filter((d) => d !== "empty").length;
+    if (filled > prevLen.current) {
+      const idx = filled - 1;
+      setAnimKeys((k) => {
+        const next = [...k];
+        next[idx] = next[idx] + 1;
+        return next;
+      });
+      prevLen.current = filled;
+    }
+  }, [dots]);
+
+  return (
+    <div className="flex items-center justify-center gap-3 py-2">
+      {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => {
+        const state = dots[i] ?? "empty";
+        const isLatest =
+          state !== "empty" &&
+          i === dots.filter((d) => d !== "empty").length - 1;
+
+        let bgColor = "#F0E8E0"; // empty
+        let innerContent = null;
+        let animClass = "";
+
+        if (state === "correct") {
+          bgColor = "#7EDFD0"; // mint
+          innerContent = <span className="text-white text-lg leading-none">⭐</span>;
+          animClass = isLatest ? "dot-correct" : "";
+        } else if (state === "incorrect") {
+          bgColor = "#FFB38A"; // peach
+          innerContent = <span className="text-white text-base leading-none">💪</span>;
+          animClass = isLatest ? "dot-burst" : "";
+        }
+
+        return (
+          <div
+            key={`${i}-${animKeys[i]}`}
+            className={`
+              relative flex items-center justify-center
+              rounded-full transition-colors duration-300
+              ${allCorrect ? "dot-all-clear" : animClass}
+              ${state !== "empty" ? "dot-pop" : ""}
+            `}
+            style={{
+              width: 52,
+              height: 52,
+              backgroundColor: bgColor,
+              boxShadow:
+                state !== "empty"
+                  ? "0 4px 14px rgba(0,0,0,0.12)"
+                  : "inset 0 2px 6px rgba(0,0,0,0.06)",
+              animationDelay: allCorrect ? `${i * 60}ms` : "0ms",
+            }}
+          >
+            {innerContent}
+
+            {/* Number label when empty */}
+            {state === "empty" && (
+              <span className="text-[#C4B5A8] text-sm font-bold">{i + 1}</span>
+            )}
+
+            {/* Connector line between dots */}
+            {i < MAX_ATTEMPTS - 1 && (
+              <div
+                className="absolute left-full top-1/2 -translate-y-1/2 h-0.5 transition-all duration-500"
+                style={{
+                  width: 12,
+                  backgroundColor:
+                    (dots[i] !== "empty") && (dots[i + 1] !== "empty")
+                      ? "#FFB38A"
+                      : "#F0E8E0",
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Word Completion Banner ───────────────────────────────────────────────────
+function WordCompleteBanner({
+  word,
+  hasCorrect,
+  onNext,
+}: {
+  word: string;
+  hasCorrect: boolean;
+  onNext: () => void;
+}) {
+  return (
+    <div className="animate-bounce-in text-center py-4 space-y-4">
+      <div className="text-6xl">{hasCorrect ? "🌟" : "💪"}</div>
+      <div>
+        <p className="text-2xl font-black text-[#3D3530]">
+          {hasCorrect ? `"${word}" 완성!` : "잘 도전했어요!"}
+        </p>
+        <p className="text-sm text-[#8B7E74] mt-1">
+          {hasCorrect
+            ? "5번 연습을 모두 채웠어요!"
+            : "다음 단어로 넘어가볼까요?"}
+        </p>
+      </div>
+      <BubbleButton variant="peach" size="lg" onClick={onNext} className="w-full">
+        다음 단어 →
+      </BubbleButton>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export function SessionPracticeClient({
   sessionId,
   childId,
@@ -44,12 +173,31 @@ export function SessionPracticeClient({
   const [correctCount, setCorrectCount] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
+  // ── Per-word attempt dots ────────────────────────────────────────────────
+  const [dots, setDots] = useState<DotState[]>([]);
+  const attemptCountRef = useRef(0);
+  const hasCorrectRef = useRef(false);
+
   const currentWord = wordQueue[currentIndex];
   const wordInfo = currentWord ? getWordByText(currentWord) : null;
   const mascotEmoji = MASCOT_EMOJIS[Math.min(mascotLevel - 1, 4)];
 
+  const filledCount = dots.filter((d) => d !== "empty").length;
+  const allFilled = filledCount >= MAX_ATTEMPTS;
+  const hasCorrectDot = dots.includes("correct");
+
+  // Reset dots whenever we move to a new word
+  useEffect(() => {
+    setDots([]);
+    attemptCountRef.current = 0;
+    hasCorrectRef.current = false;
+    setHeardWord("");
+    setResult(null);
+    setIsBookmarked(false);
+  }, [currentIndex]);
+
   async function analyze() {
-    if (!heardWord.trim()) return;
+    if (!heardWord.trim() || allFilled) return;
     setLoading(true);
 
     try {
@@ -65,12 +213,39 @@ export function SessionPracticeClient({
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: AnalysisResult = await res.json();
         setResult(data);
-        if (data.isCorrect) setCorrectCount((c) => c + 1);
+
+        // Fill the next dot
+        const newState: DotState = data.isCorrect ? "correct" : "incorrect";
+        setDots((prev) => [...prev, newState]);
+        attemptCountRef.current += 1;
+
+        if (data.isCorrect) {
+          setCorrectCount((c) => c + 1);
+          hasCorrectRef.current = true;
+        }
+
+        // If correct: auto-fill remaining empty slots after a short delay
+        if (data.isCorrect) {
+          const remaining = MAX_ATTEMPTS - attemptCountRef.current;
+          if (remaining > 0) {
+            let delay = 350;
+            for (let i = 0; i < remaining; i++) {
+              setTimeout(() => {
+                setDots((prev) => {
+                  if (prev.length >= MAX_ATTEMPTS) return prev;
+                  return [...prev, "correct"];
+                });
+              }, delay);
+              delay += 200;
+            }
+          }
+        }
       }
     } finally {
       setLoading(false);
+      setHeardWord("");
     }
   }
 
@@ -90,12 +265,10 @@ export function SessionPracticeClient({
       setDone(true);
     } else {
       setCurrentIndex((i) => i + 1);
-      setHeardWord("");
-      setResult(null);
-      setIsBookmarked(false);
     }
   }
 
+  // ── Done screen ───────────────────────────────────────────────────────────
   if (done) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
@@ -108,10 +281,17 @@ export function SessionPracticeClient({
           {Math.round((correctCount / wordQueue.length) * 100)}점
         </div>
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <BubbleButton variant="peach" size="lg" onClick={() => window.location.href = "/dashboard/child"}>
+          <BubbleButton
+            variant="peach"
+            size="lg"
+            onClick={() => (window.location.href = "/dashboard/child")}
+          >
             🎮 아이 모드로!
           </BubbleButton>
-          <BubbleButton variant="white" onClick={() => window.location.href = "/dashboard"}>
+          <BubbleButton
+            variant="white"
+            onClick={() => (window.location.href = "/dashboard")}
+          >
             홈으로 돌아가기
           </BubbleButton>
         </div>
@@ -119,9 +299,11 @@ export function SessionPracticeClient({
     );
   }
 
+  // ── Practice screen ───────────────────────────────────────────────────────
   return (
-    <div className="px-5 pt-6 max-w-lg mx-auto space-y-4">
-      {/* Progress bar */}
+    <div className="px-5 pt-6 max-w-lg mx-auto space-y-4 pb-8">
+
+      {/* ── Session progress bar ─────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-[#8B7E74]">{childName} 연습 중</span>
@@ -137,26 +319,52 @@ export function SessionPracticeClient({
         </div>
       </div>
 
-      {/* Target word display */}
+      {/* ── Target word card + attempt dots ─────────────────────────── */}
       <BubbleCard color="peach" className="text-center">
         <p className="text-sm text-[#8B7E74] mb-2">아이에게 이 단어를 말하게 해보세요</p>
         {wordInfo && <div className="text-6xl mb-3">{wordInfo.emoji}</div>}
-        <div className="text-5xl font-black text-[#3D3530] mb-2">{currentWord}</div>
+        <div className="text-5xl font-black text-[#3D3530] mb-3">{currentWord}</div>
         {wordInfo && (
-          <p className="text-sm text-[#8B7E74] bg-white/60 rounded-2xl px-4 py-2 inline-block">
+          <p className="text-sm text-[#8B7E74] bg-white/60 rounded-2xl px-4 py-2 inline-block mb-4">
             {wordInfo.sampleSentence}
           </p>
         )}
+
+        {/* ── 5 attempt dots ─────────────────────────────────────────── */}
+        <div className="bg-white/50 rounded-[20px] py-3 px-2">
+          <p className="text-xs text-[#8B7E74] mb-2 font-semibold">
+            {filledCount === 0
+              ? "5번 연습해봐요!"
+              : allFilled
+              ? hasCorrectDot ? "완벽해요! 🌟" : "잘 했어요! 💪"
+              : `${filledCount}번째 도전 중...`}
+          </p>
+          <AttemptDots dots={dots} allCorrect={allFilled && hasCorrectDot} />
+
+          {/* Mini progress text */}
+          <p className="text-xs text-[#C4B5A8] mt-2">
+            {filledCount}/{MAX_ATTEMPTS} 완료
+          </p>
+        </div>
       </BubbleCard>
 
-      {/* Parent input */}
-      {!result ? (
+      {/* ── Word completed (all 5 filled) → show banner ─────────────── */}
+      {allFilled ? (
+        <BubbleCard color={hasCorrectDot ? "mint" : "white"}>
+          <WordCompleteBanner
+            word={currentWord}
+            hasCorrect={hasCorrectDot}
+            onNext={nextWord}
+          />
+        </BubbleCard>
+      ) : (
+        /* ── Parent input ───────────────────────────────────────────── */
         <BubbleCard>
-          <p className="text-sm font-semibold text-[#3D3530] mb-3">
+          <p className="text-sm font-semibold text-[#3D3530] mb-1">
             👂 아이가 어떻게 발음했나요?
           </p>
           <p className="text-xs text-[#8B7E74] mb-3">
-            귀로 들은 대로 한글로 입력해주세요
+            귀로 들은 대로 한글로 입력해주세요 ({filledCount}/{MAX_ATTEMPTS}번 시도)
           </p>
           <input
             type="text"
@@ -173,17 +381,19 @@ export function SessionPracticeClient({
             size="md"
             className="w-full"
           >
-            {loading ? <LoadingSpinner size="sm" /> : "분석하기 🔍"}
-          </BubbleButton>
+            {loading ? <LoadingSpinner size="sm" /> : `분석하기 🔍 (${MAX_ATTEMPTS - filledCount}회 남음)`}
+        </BubbleButton>
         </BubbleCard>
-      ) : (
-        /* Analysis result */
-        <div className="space-y-4 animate-bounce-in">
+      )}
+
+      {/* ── Latest analysis result (below input) ────────────────────── */}
+      {result && !allFilled && (
+        <div className="space-y-3 animate-bounce-in">
           {/* Correct / Wrong */}
           <BubbleCard color={result.isCorrect ? "mint" : "peach"} className="text-center">
-            <div className="text-4xl mb-2">{result.isCorrect ? "🌟" : "💪"}</div>
-            <h3 className="text-xl font-black text-[#3D3530] mb-1">
-              {result.isCorrect ? "정확해요!" : "다시 연습해봐요"}
+            <div className="text-3xl mb-1">{result.isCorrect ? "🌟" : "💪"}</div>
+            <h3 className="text-lg font-black text-[#3D3530] mb-1">
+              {result.isCorrect ? "정확해요!" : "한 번 더!"}
             </h3>
             <div className="flex items-center justify-center gap-2 text-sm text-[#8B7E74]">
               <span>목표: <strong className="text-[#3D3530]">{result.targetWord}</strong></span>
@@ -239,21 +449,52 @@ export function SessionPracticeClient({
             </BubbleCard>
           )}
 
-          {/* Actions */}
+          {/* Bookmark + skip */}
           <div className="flex gap-3">
-            <BubbleButton
-              variant="white"
-              onClick={toggleBookmark}
-              className="flex-1"
-            >
+            <BubbleButton variant="white" onClick={toggleBookmark} className="flex-1">
               {isBookmarked ? "⭐ 저장됨" : "☆ 보관함"}
             </BubbleButton>
-            <BubbleButton
-              variant="peach"
-              onClick={nextWord}
-              className="flex-1"
-            >
-              다음 단어 →
+            <BubbleButton variant="ghost" onClick={nextWord} className="flex-1 text-[#8B7E74]">
+              이 단어 건너뛰기 →
+            </BubbleButton>
+          </div>
+        </div>
+      )}
+
+      {/* ── Also show analysis when all filled ──────────────────────── */}
+      {result && allFilled && (
+        <div className="space-y-3">
+          {result.errors.length > 0 && (
+            <BubbleCard>
+              <p className="font-semibold text-[#3D3530] mb-3">마지막 발음 분석</p>
+              <div className="space-y-2">
+                {result.errors.map((err: PhonemeError, i: number) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-[#FFF5EE] rounded-2xl">
+                    <div className="flex gap-1">
+                      <PastelBadge color="pink">{err.targetPhoneme}</PastelBadge>
+                      <span className="text-[#8B7E74]">→</span>
+                      <PastelBadge color="lavender">{err.heardPhoneme}</PastelBadge>
+                    </div>
+                    <div className="flex-1 text-xs text-[#8B7E74]">
+                      {err.articulationPlace} · {err.articulationManner}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </BubbleCard>
+          )}
+          <BubbleCard color="lavender">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🧠</span>
+              <div>
+                <p className="font-semibold text-[#3D3530] mb-1 text-sm">AI 선생님 가이드</p>
+                <p className="text-sm text-[#3D3530] leading-relaxed">{result.guidanceText}</p>
+              </div>
+            </div>
+          </BubbleCard>
+          <div className="flex gap-3">
+            <BubbleButton variant="white" onClick={toggleBookmark} className="flex-1">
+              {isBookmarked ? "⭐ 저장됨" : "☆ 보관함"}
             </BubbleButton>
           </div>
         </div>

@@ -153,6 +153,39 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
+/* ===== Attempt dots ===== */
+@keyframes dot-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  55%  { transform: scale(1.25); }
+  75%  { transform: scale(0.92); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes dot-burst {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,179,138,0.7); }
+  60%  { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(255,179,138,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,179,138,0); }
+}
+
+@keyframes dot-correct-burst {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(126,223,208,0.7); }
+  60%  { transform: scale(1.2); box-shadow: 0 0 0 14px rgba(126,223,208,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(126,223,208,0); }
+}
+
+@keyframes all-clear {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  20%     { transform: translateY(-6px) rotate(-3deg); }
+  40%     { transform: translateY(-10px) rotate(3deg); }
+  60%     { transform: translateY(-6px) rotate(-2deg); }
+  80%     { transform: translateY(-2px) rotate(1deg); }
+}
+
+.dot-pop      { animation: dot-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.dot-burst    { animation: dot-burst 0.5s ease-out forwards; }
+.dot-correct  { animation: dot-correct-burst 0.55s ease-out forwards; }
+.dot-all-clear{ animation: all-clear 0.7s ease-in-out; }
+
 /* ===== Grass calendar ===== */
 .grass-cell {
   border-radius: 4px;
