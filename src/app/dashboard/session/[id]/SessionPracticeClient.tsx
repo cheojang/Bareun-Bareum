@@ -141,12 +141,12 @@ function WordCompleteBanner({
       <div className="text-6xl">{hasCorrect ? "🌟" : "💪"}</div>
       <div>
         <p className="text-2xl font-black text-[#3D3530]">
-          {hasCorrect ? `"${word}" 완성!` : "잘 도전했어요!"}
+          {hasCorrect ? `"${word}" 5번 완료!` : `"${word}" 5번 도전!`}
         </p>
         <p className="text-sm text-[#8B7E74] mt-1">
           {hasCorrect
-            ? "5번 연습을 모두 채웠어요!"
-            : "다음 단어로 넘어가볼까요?"}
+            ? "5번 모두 연습했어요! 정말 잘했어요 🎉"
+            : "5번 열심히 도전했어요! 다음에 또 연습해봐요"}
         </p>
       </div>
       <BubbleButton variant="peach" size="lg" onClick={onNext} className="w-full">
@@ -224,23 +224,6 @@ export function SessionPracticeClient({
         if (data.isCorrect) {
           setCorrectCount((c) => c + 1);
           hasCorrectRef.current = true;
-        }
-
-        // If correct: auto-fill remaining empty slots after a short delay
-        if (data.isCorrect) {
-          const remaining = MAX_ATTEMPTS - attemptCountRef.current;
-          if (remaining > 0) {
-            let delay = 350;
-            for (let i = 0; i < remaining; i++) {
-              setTimeout(() => {
-                setDots((prev) => {
-                  if (prev.length >= MAX_ATTEMPTS) return prev;
-                  return [...prev, "correct"];
-                });
-              }, delay);
-              delay += 200;
-            }
-          }
         }
       }
     } finally {
