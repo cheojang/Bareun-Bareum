@@ -67,7 +67,58 @@ export async function generateWordRecommendationContext(
   }
 }
 
-// Rule-based fallback when no API key
+// ─── Session Briefing ─────────────────────────────────────────────────────────
+
+const BRIEFING_SYSTEM_INSTRUCTION = `당신은 아동 언어치료 전문가입니다.
+연습 세션을 시작하기 전에 부모에게 30초 안에 읽을 수 있는 짧고 격려하는 팁을 제공합니다.
+- 2문장 이내로 간결하게
+- 따뜻하고 자신감을 주는 말투
+- 오늘 집중할 발음과 연습 팁 포함`;
+
+export async function generateSessionBriefing(topErrorPhonemes: string[]): Promise<string> {
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your-gemini-api-key") {
+    return buildFallbackBriefing(topErrorPhonemes);
+  }
+
+  const prompt =
+    topErrorPhonemes.length > 0
+      ? `아이가 최근 자주 어려워하는 발음: ${topErrorPhonemes.slice(0, 3).join(", ")}
+이번 연습 전에 부모에게 오늘 집중할 포인트와 격려 메시지를 2문장으로 주세요.`
+      : `아이의 발음 연습 세션을 시작하기 전에 부모에게 격려와 연습 팁을 2문장으로 주세요.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      config: { systemInstruction: BRIEFING_SYSTEM_INSTRUCTION },
+      contents: prompt,
+    });
+    return response.text ?? buildFallbackBriefing(topErrorPhonemes);
+  } catch {
+    return buildFallbackBriefing(topErrorPhonemes);
+  }
+}
+
+function buildFallbackBriefing(topErrorPhonemes: string[]): string {
+  if (topErrorPhonemes.length === 0) {
+    return "오늘도 즐거운 연습 시간이 되길 바라요! 천천히, 정확하게 발음하는 게 가장 중요해요. 아이가 잘 할 수 있을 거예요 💪";
+  }
+
+  const phoneme = topErrorPhonemes[0];
+  const tipMap: Record<string, string> = {
+    "ㄹ": `오늘은 '${phoneme}' 소리에 집중해봐요! 혀 끝을 윗니 뒤쪽에 살짝 대고 '라라라' 노래를 불러보면 좋아요.`,
+    "ㅅ": `'${phoneme}' 소리가 오늘의 목표예요! 이를 살짝 붙이고 바람을 조금씩 내보내는 연습을 해봐요.`,
+    "ㅈ": `오늘은 '${phoneme}' 소리를 집중 연습해요! 혀를 윗잇몸에 댔다가 떼면서 '자' 소리를 내봐요.`,
+    "ㅊ": `'${phoneme}' 소리가 오늘의 포인트예요! 강하게 바람을 내뱉으며 '차!' 라고 해봐요.`,
+    "ㄱ": `'${phoneme}' 소리를 연습할게요! 목 뒤쪽에서 소리가 나도록 '꿀꺽' 삼키는 느낌으로 해봐요.`,
+    "ㄴ": `'${phoneme}' 소리에 집중해요! 혀 끝을 윗잇몸에 붙이고 콧소리로 '은~' 해봐요.`,
+    "ㅂ": `오늘은 '${phoneme}' 소리를 연습해요! 입술을 붙였다가 '팝!' 하고 터트려봐요.`,
+  };
+
+  const tip = tipMap[phoneme] ?? `'${phoneme}' 소리를 집중적으로 연습해볼게요! 천천히, 여러 번 반복하면 꼭 늘어나요.`;
+  return tip + " 아이가 정말 잘 할 수 있을 거예요, 응원해주세요! 🌟";
+}
+
+// ─── Rule-based fallback when no API key ──────────────────────────────────────
 function buildFallbackGuidance(errors: PhonemeError[]): string {
   if (errors.length === 0) {
     return "완벽해요! 아이가 정확하게 발음했어요. 계속 연습하면 더 잘할 거예요! 🌟";

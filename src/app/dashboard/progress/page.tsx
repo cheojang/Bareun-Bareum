@@ -31,12 +31,12 @@ export default async function ProgressPage() {
     calendarMap[dateKey] = (calendarMap[dateKey] ?? 0) + s._count.wordRecords;
   }
 
-  // Phoneme errors
+  // Phoneme errors (last 50 records)
   const recentRecords = await prisma.wordRecord.findMany({
     where: { session: { childId: child.id } },
     orderBy: { practicedAt: "desc" },
     take: 50,
-    select: { errorPhonemes: true, isCorrect: true },
+    select: { errorPhonemes: true, isCorrect: true, practicedAt: true },
   });
 
   const phonemeCounts: Record<string, number> = {};
@@ -57,6 +57,66 @@ export default async function ProgressPage() {
     recentRecords.length > 0
       ? Math.round((correctCount / recentRecords.length) * 100)
       : 0;
+
+  // ── Weekly report ──────────────────────────────────────────────────────────
+  const now = new Date();
+  // Start of this week (Monday)
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  thisMonday.setHours(0, 0, 0, 0);
+  // Start of last week
+  const lastMonday = new Date(thisMonday);
+  lastMonday.setDate(thisMonday.getDate() - 7);
+
+  const thisWeekRecords = await prisma.wordRecord.findMany({
+    where: { session: { childId: child.id }, practicedAt: { gte: thisMonday } },
+    select: { isCorrect: true, errorPhonemes: true },
+  });
+
+  const lastWeekRecords = await prisma.wordRecord.findMany({
+    where: {
+      session: { childId: child.id },
+      practicedAt: { gte: lastMonday, lt: thisMonday },
+    },
+    select: { isCorrect: true, errorPhonemes: true },
+  });
+
+  const thisWeekTotal = thisWeekRecords.length;
+  const lastWeekTotal = lastWeekRecords.length;
+  const thisWeekCorrect = thisWeekRecords.filter((r) => r.isCorrect).length;
+  const lastWeekCorrect = lastWeekRecords.filter((r) => r.isCorrect).length;
+
+  const thisWeekAccuracy =
+    thisWeekTotal > 0 ? Math.round((thisWeekCorrect / thisWeekTotal) * 100) : 0;
+  const lastWeekAccuracy =
+    lastWeekTotal > 0 ? Math.round((lastWeekCorrect / lastWeekTotal) * 100) : 0;
+  const accuracyDelta = thisWeekAccuracy - lastWeekAccuracy;
+
+  // Which phonemes improved this week (fewer errors)
+  const lastWeekErrors: Record<string, number> = {};
+  for (const r of lastWeekRecords) {
+    const errors = (r.errorPhonemes as { targetPhoneme: string }[]) ?? [];
+    for (const e of errors) {
+      lastWeekErrors[e.targetPhoneme] = (lastWeekErrors[e.targetPhoneme] ?? 0) + 1;
+    }
+  }
+  const thisWeekErrors: Record<string, number> = {};
+  for (const r of thisWeekRecords) {
+    const errors = (r.errorPhonemes as { targetPhoneme: string }[]) ?? [];
+    for (const e of errors) {
+      thisWeekErrors[e.targetPhoneme] = (thisWeekErrors[e.targetPhoneme] ?? 0) + 1;
+    }
+  }
+
+  // Phonemes that had fewer errors this week (improved)
+  const improvedPhonemes = Object.entries(lastWeekErrors)
+    .filter(([phoneme, lastCount]) => {
+      const thisCount = thisWeekErrors[phoneme] ?? 0;
+      return thisCount < lastCount;
+    })
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([phoneme]) => phoneme);
 
   const mascotEmojis = ["🥚", "🐣", "🐥", "🐤", "🦅"];
 
@@ -85,6 +145,87 @@ export default async function ProgressPage() {
         <StatCard value={child.totalMinutes} label="학습 분" emoji="⏱️" color="#7EDFD0" />
         <StatCard value={child.streakDays} label="연속일" emoji="🔥" color="#FCA5A5" />
       </div>
+
+      {/* ── Weekly report ───────────────────────────────────────────── */}
+      <BubbleCard>
+        <p className="font-bold text-[#3D3530] mb-4">📋 주간 리포트</p>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-[#FFF5EE] rounded-2xl p-3 text-center">
+            <p className="text-xs text-[#8B7E74] mb-1">이번 주 단어</p>
+            <p className="text-2xl font-black text-[#FFB38A]">{thisWeekTotal}</p>
+            {thisWeekTotal > lastWeekTotal && (
+              <p className="text-xs text-[#7EDFD0] font-semibold mt-0.5">
+                ↑ {thisWeekTotal - lastWeekTotal}개 증가
+              </p>
+            )}
+            {thisWeekTotal < lastWeekTotal && (
+              <p className="text-xs text-[#FCA5A5] font-semibold mt-0.5">
+                ↓ {lastWeekTotal - thisWeekTotal}개 감소
+              </p>
+            )}
+          </div>
+          <div className="bg-[#F0FAF8] rounded-2xl p-3 text-center">
+            <p className="text-xs text-[#8B7E74] mb-1">이번 주 정확도</p>
+            <p className="text-2xl font-black text-[#7EDFD0]">
+              {thisWeekTotal > 0 ? `${thisWeekAccuracy}%` : "-"}
+            </p>
+            {lastWeekTotal > 0 && thisWeekTotal > 0 && (
+              <p
+                className={`text-xs font-semibold mt-0.5 ${
+                  accuracyDelta >= 0 ? "text-[#7EDFD0]" : "text-[#FCA5A5]"
+                }`}
+              >
+                {accuracyDelta >= 0 ? `↑ ${accuracyDelta}%p 향상` : `↓ ${Math.abs(accuracyDelta)}%p`}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Improved phonemes */}
+        {improvedPhonemes.length > 0 && (
+          <div className="bg-[#F0FAF8] rounded-2xl p-3 mb-3">
+            <p className="text-xs font-semibold text-[#3D3530] mb-2">🌱 이번 주 늘어난 발음</p>
+            <div className="flex gap-2 flex-wrap">
+              {improvedPhonemes.map((p) => (
+                <PastelBadge key={p} color="mint">{p} ↑</PastelBadge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Comparison bar */}
+        {(thisWeekTotal > 0 || lastWeekTotal > 0) && (
+          <div>
+            <p className="text-xs text-[#8B7E74] mb-2">지난주 vs 이번 주</p>
+            <div className="space-y-2">
+              {[
+                { label: "지난주", value: lastWeekTotal, color: "#F0E8E0" },
+                { label: "이번 주", value: thisWeekTotal, color: "#FFB38A" },
+              ].map(({ label, value, color }) => {
+                const maxVal = Math.max(lastWeekTotal, thisWeekTotal, 1);
+                return (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="text-xs text-[#8B7E74] w-12">{label}</span>
+                    <div className="flex-1 h-3 bg-[#F0E8E0] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${(value / maxVal) * 100}%`, backgroundColor: color }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#3D3530] w-8 text-right">{value}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {thisWeekTotal === 0 && lastWeekTotal === 0 && (
+          <p className="text-sm text-[#8B7E74] text-center py-2">
+            아직 연습 기록이 없어요. 오늘 첫 연습을 시작해봐요! 🎯
+          </p>
+        )}
+      </BubbleCard>
 
       {/* Calendar */}
       <BubbleCard>

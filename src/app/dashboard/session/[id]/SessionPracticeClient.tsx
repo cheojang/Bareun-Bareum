@@ -32,6 +32,11 @@ type DotState = "empty" | "incorrect" | "correct";
 const MAX_ATTEMPTS = 5;
 const MASCOT_EMOJIS = ["🥚", "🐣", "🐥", "🐤", "🐦"];
 
+// ─── Syllable Split Helper ────────────────────────────────────────────────────
+function splitSyllables(word: string): string {
+  return [...word].join(" · ");
+}
+
 // ─── Attempt Dots ─────────────────────────────────────────────────────────────
 function AttemptDots({
   dots,
@@ -40,7 +45,6 @@ function AttemptDots({
   dots: DotState[];
   allCorrect: boolean;
 }) {
-  // Track which dot just got animated so we can re-trigger each time
   const [animKeys, setAnimKeys] = useState<number[]>([0, 0, 0, 0, 0]);
   const prevLen = useRef(0);
 
@@ -65,16 +69,16 @@ function AttemptDots({
           state !== "empty" &&
           i === dots.filter((d) => d !== "empty").length - 1;
 
-        let bgColor = "#F0E8E0"; // empty
+        let bgColor = "#F0E8E0";
         let innerContent = null;
         let animClass = "";
 
         if (state === "correct") {
-          bgColor = "#7EDFD0"; // mint
+          bgColor = "#7EDFD0";
           innerContent = <span className="text-white text-lg leading-none">⭐</span>;
           animClass = isLatest ? "dot-correct" : "";
         } else if (state === "incorrect") {
-          bgColor = "#FFB38A"; // peach
+          bgColor = "#FFB38A";
           innerContent = <span className="text-white text-base leading-none">💪</span>;
           animClass = isLatest ? "dot-burst" : "";
         }
@@ -101,19 +105,17 @@ function AttemptDots({
           >
             {innerContent}
 
-            {/* Number label when empty */}
             {state === "empty" && (
               <span className="text-[#C4B5A8] text-sm font-bold">{i + 1}</span>
             )}
 
-            {/* Connector line between dots */}
             {i < MAX_ATTEMPTS - 1 && (
               <div
                 className="absolute left-full top-1/2 -translate-y-1/2 h-0.5 transition-all duration-500"
                 style={{
                   width: 12,
                   backgroundColor:
-                    (dots[i] !== "empty") && (dots[i + 1] !== "empty")
+                    dots[i] !== "empty" && dots[i + 1] !== "empty"
                       ? "#FFB38A"
                       : "#F0E8E0",
                 }}
@@ -126,16 +128,41 @@ function AttemptDots({
   );
 }
 
+// ─── Difficulty Recommendation ─────────────────────────────────────────────────
+function DifficultyTip({ dots }: { dots: DotState[] }) {
+  const correctCount = dots.filter((d) => d === "correct").length;
+  const ratio = correctCount / MAX_ATTEMPTS;
+
+  if (ratio <= 0.2) {
+    return (
+      <div className="mt-3 px-4 py-2 bg-[#FFF5EE] rounded-2xl text-sm text-[#8B7E74] text-center">
+        💡 조금 더 쉬운 단어로 연습해볼까요? 다음 세션에서 쉬운 단어를 선택해보세요
+      </div>
+    );
+  }
+  if (ratio >= 0.8) {
+    return (
+      <div className="mt-3 px-4 py-2 bg-[#F0FAF8] rounded-2xl text-sm text-[#3D3530] text-center">
+        🚀 아주 잘했어요! 다음에는 더 어려운 단어에 도전해봐요
+      </div>
+    );
+  }
+  return null;
+}
+
 // ─── Word Completion Banner ───────────────────────────────────────────────────
 function WordCompleteBanner({
   word,
   hasCorrect,
+  dots,
   onNext,
 }: {
   word: string;
   hasCorrect: boolean;
+  dots: DotState[];
   onNext: () => void;
 }) {
+  const correctCount = dots.filter((d) => d === "correct").length;
   return (
     <div className="animate-bounce-in text-center py-4 space-y-4">
       <div className="text-6xl">{hasCorrect ? "🌟" : "💪"}</div>
@@ -144,11 +171,11 @@ function WordCompleteBanner({
           {hasCorrect ? `"${word}" 5번 완료!` : `"${word}" 5번 도전!`}
         </p>
         <p className="text-sm text-[#8B7E74] mt-1">
-          {hasCorrect
-            ? "5번 모두 연습했어요! 정말 잘했어요 🎉"
-            : "5번 열심히 도전했어요! 다음에 또 연습해봐요"}
+          5번 중 {correctCount}번 성공 ·{" "}
+          {hasCorrect ? "정말 잘했어요 🎉" : "다음에 또 연습해봐요"}
         </p>
       </div>
+      <DifficultyTip dots={dots} />
       <BubbleButton variant="peach" size="lg" onClick={onNext} className="w-full">
         다음 단어 →
       </BubbleButton>
@@ -173,6 +200,9 @@ export function SessionPracticeClient({
   const [correctCount, setCorrectCount] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
+  // ── Sound effect animation ──────────────────────────────────────────────
+  const [showSoundEffect, setShowSoundEffect] = useState(true);
+
   // ── Per-word attempt dots ────────────────────────────────────────────────
   const [dots, setDots] = useState<DotState[]>([]);
   const attemptCountRef = useRef(0);
@@ -194,7 +224,16 @@ export function SessionPracticeClient({
     setHeardWord("");
     setResult(null);
     setIsBookmarked(false);
+    setShowSoundEffect(true);
   }, [currentIndex]);
+
+  // Hide sound effect after 3 seconds
+  useEffect(() => {
+    if (!wordInfo?.soundEffect) return;
+    setShowSoundEffect(true);
+    const t = setTimeout(() => setShowSoundEffect(false), 3000);
+    return () => clearTimeout(t);
+  }, [currentIndex, wordInfo?.soundEffect]);
 
   async function analyze() {
     if (!heardWord.trim() || allFilled) return;
@@ -216,7 +255,6 @@ export function SessionPracticeClient({
         const data: AnalysisResult = await res.json();
         setResult(data);
 
-        // Fill the next dot
         const newState: DotState = data.isCorrect ? "correct" : "incorrect";
         setDots((prev) => [...prev, newState]);
         attemptCountRef.current += 1;
@@ -305,15 +343,41 @@ export function SessionPracticeClient({
       {/* ── Target word card + attempt dots ─────────────────────────── */}
       <BubbleCard color="peach" className="text-center">
         <p className="text-sm text-[#8B7E74] mb-2">아이에게 이 단어를 말하게 해보세요</p>
-        {wordInfo && <div className="text-6xl mb-3">{wordInfo.emoji}</div>}
-        <div className="text-5xl font-black text-[#3D3530] mb-3">{currentWord}</div>
+
+        {/* Emoji */}
+        {wordInfo && <div className="text-6xl mb-2">{wordInfo.emoji}</div>}
+
+        {/* Main word */}
+        <div className="text-5xl font-black text-[#3D3530] mb-1">{currentWord}</div>
+
+        {/* ── Syllable split hint ─────────────────────────────────── */}
+        <div className="text-lg text-[#8B7E74] font-semibold tracking-widest mb-2">
+          {splitSyllables(currentWord)}
+        </div>
+
+        {/* ── Sound effect (의성어/의태어) ──────────────────────── */}
+        {wordInfo?.soundEffect && showSoundEffect && (
+          <div className="text-xl font-black text-[#FFB38A] animate-bounce-in mb-3 animate-float">
+            {wordInfo.soundEffect}
+          </div>
+        )}
+        {wordInfo?.soundEffect && !showSoundEffect && (
+          <button
+            onClick={() => setShowSoundEffect(true)}
+            className="text-xs text-[#C4B5A8] mb-3 underline"
+          >
+            소리 힌트 보기 🔊
+          </button>
+        )}
+
+        {/* Sample sentence */}
         {wordInfo && (
           <p className="text-sm text-[#8B7E74] bg-white/60 rounded-2xl px-4 py-2 inline-block mb-4">
             {wordInfo.sampleSentence}
           </p>
         )}
 
-        {/* ── 5 attempt dots ─────────────────────────────────────────── */}
+        {/* ── 5 attempt dots ─────────────────────────────────────── */}
         <div className="bg-white/50 rounded-[20px] py-3 px-2">
           <p className="text-xs text-[#8B7E74] mb-2 font-semibold">
             {filledCount === 0
@@ -323,13 +387,37 @@ export function SessionPracticeClient({
               : `${filledCount}번째 도전 중...`}
           </p>
           <AttemptDots dots={dots} allCorrect={allFilled && hasCorrectDot} />
-
-          {/* Mini progress text */}
           <p className="text-xs text-[#C4B5A8] mt-2">
             {filledCount}/{MAX_ATTEMPTS} 완료
           </p>
         </div>
       </BubbleCard>
+
+      {/* ── Syllable practice guide ──────────────────────────────────── */}
+      {filledCount === 0 && currentWord.length > 1 && (
+        <BubbleCard color="mint" padding="sm">
+          <p className="text-xs font-semibold text-[#3D3530] mb-2">🎯 단계별 연습 팁</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {[...currentWord].map((syllable, i) => (
+              <span key={i} className="flex items-center gap-1">
+                <span className="bg-white rounded-full px-3 py-1 font-black text-[#3D3530] text-lg shadow-sm">
+                  {syllable}
+                </span>
+                {i < currentWord.length - 1 && (
+                  <span className="text-[#7EDFD0] font-bold">→</span>
+                )}
+              </span>
+            ))}
+            <span className="text-[#7EDFD0] font-bold">→</span>
+            <span className="bg-[#7EDFD0] text-white rounded-full px-3 py-1 font-black text-lg shadow-sm">
+              {currentWord}
+            </span>
+          </div>
+          <p className="text-xs text-[#8B7E74] mt-2">
+            음절 하나씩 → 이어서 전체 단어!
+          </p>
+        </BubbleCard>
+      )}
 
       {/* ── Word completed (all 5 filled) → show banner ─────────────── */}
       {allFilled ? (
@@ -337,6 +425,7 @@ export function SessionPracticeClient({
           <WordCompleteBanner
             word={currentWord}
             hasCorrect={hasCorrectDot}
+            dots={dots}
             onNext={nextWord}
           />
         </BubbleCard>
@@ -365,7 +454,7 @@ export function SessionPracticeClient({
             className="w-full"
           >
             {loading ? <LoadingSpinner size="sm" /> : `분석하기 🔍 (${MAX_ATTEMPTS - filledCount}회 남음)`}
-        </BubbleButton>
+          </BubbleButton>
         </BubbleCard>
       )}
 
