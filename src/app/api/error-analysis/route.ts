@@ -1,0 +1,137 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+import { analyzeError } from '@/lib/jamo-analysis';
+import { getGeminiFeedback } from '@/lib/gemini-client';
+
+/**
+ * POST /api/error-analysis
+ * 오답 입력 → 로컬 분석 → Gemini 호출 (필요시) → 결과 저장
+ */
+export async function POST(request: NextRequest) {
+  const prisma = new PrismaClient();
+
+  try {
+    const body = await request.json();
+    const { childId, targetWord, childPronunciation } = body;
+
+    // 1. 요청 검증
+    if (!childId || !targetWord || !childPronunciation) {
+      return NextResponse.json(
+        { error: 'childId, targetWord, childPronunciation 필수' },
+        { status: 400 }
+      );
+    }
+
+    // 2. Child 존재 여부 확인
+    const child = await prisma.child.findUnique({
+      where: { id: childId }
+    });
+
+    if (!child) {
+      return NextResponse.json(
+        { error: '해당 아이를 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    // 3. 로컬 자모 분해 분석
+    const localAnalysis = analyzeError(targetWord, childPronunciation);
+
+    // 4. ErrorRecord 저장
+    const errorRecord = await prisma.errorRecord.create({
+      data: {
+        childId,
+        targetWord,
+        childPronunciation,
+        errorType: localAnalysis.errorType,
+        errorCategory: localAnalysis.errorCategory || '미판정',
+        errorPattern: localAnalysis.errorPattern || '미판정',
+        // LocalAnalysis는 별도로 저장 (관계 설정)
+        localAnalysis: {
+          create: {
+            detectedPattern: localAnalysis.errorType,
+            jamoBreakdown: JSON.stringify({
+              target: targetWord,
+              child: childPronunciation,
+              analysis: localAnalysis
+            }),
+            confidence: localAnalysis.confidence || 0,
+            requiresGemini: localAnalysis.requiresGemini || false
+          }
+        }
+      },
+      include: {
+        localAnalysis: true
+      }
+    });
+
+    // 5. Gemini 호출 (동화 오류 및 훈련법 생성)
+    let geminiFeedback = null;
+
+    if (localAnalysis.requiresGemini || localAnalysis.errorType === '복합오류') {
+      try {
+        const geminiResult = await getGeminiFeedback(
+          targetWord,
+          childPronunciation,
+          localAnalysis.errorType,
+          localAnalysis.errorCategory || '미판정',
+          child
+        );
+
+        if (geminiResult && geminiResult.success) {
+          geminiFeedback = await prisma.geminiFeedback.create({
+            data: {
+              errorRecordId: errorRecord.id,
+              rootCause: geminiResult.rootCause || '분석할 수 없습니다',
+              trainingStep1: geminiResult.trainingStep1 || '단계 정보 없음',
+              trainingStep2: geminiResult.trainingStep2 || '단계 정보 없음',
+              trainingStep3: geminiResult.trainingStep3 || '단계 정보 없음',
+              trainingStep4: geminiResult.trainingStep4 || '단계 정보 없음',
+              recommendedWords: JSON.stringify(geminiResult.recommendedWords || [])
+            }
+          });
+        }
+      } catch (geminError) {
+        console.error('Gemini API error:', geminError);
+        // Gemini 에러 발생 시에도 로컬 분석 결과는 반환 (나중에 재시도 가능)
+      }
+    }
+
+    // 6. 응답 반환
+    return NextResponse.json(
+      {
+        success: true,
+        errorRecordId: errorRecord.id,
+        errorCategory: errorRecord.errorCategory,
+        errorPattern: errorRecord.errorPattern,
+        localAnalysis: {
+          detectedPattern: errorRecord.localAnalysis?.detectedPattern,
+          confidence: errorRecord.localAnalysis?.confidence,
+          requiresGemini: errorRecord.localAnalysis?.requiresGemini,
+          note: localAnalysis.note || ''
+        },
+        geminiFeedback: geminiFeedback
+          ? {
+              rootCause: geminiFeedback.rootCause,
+              trainingSteps: [
+                geminiFeedback.trainingStep1,
+                geminiFeedback.trainingStep2,
+                geminiFeedback.trainingStep3,
+                geminiFeedback.trainingStep4
+              ],
+              recommendedWords: JSON.parse(geminiFeedback.recommendedWords)
+            }
+          : null
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error in /api/error-analysis:', error);
+    return NextResponse.json(
+      { error: '오답 분석 중 오류가 발생했습니다' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}

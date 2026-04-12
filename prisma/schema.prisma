@@ -22,19 +22,21 @@ model User {
 }
 
 model Child {
-  id           String            @id @default(cuid())
-  userId       String
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  birthDate    DateTime?
-  mascotLevel  Int               @default(1)
-  totalWords   Int               @default(0)
-  totalMinutes Int               @default(0)
-  streakDays   Int               @default(0)
-  lastPractice DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  sessions     PracticeSession[]
+  id                    String            @id @default(cuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  birthDate             DateTime?
+  mascotLevel           Int               @default(1)
+  totalWords            Int               @default(0)
+  totalMinutes          Int               @default(0)
+  streakDays            Int               @default(0)
+  lastPractice          DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  sessions              PracticeSession[]
+  errorRecords          ErrorRecord[]     @relation("ChildErrors")
+  weakPhonemes          WeakPhoneme[]     @relation("ChildWeakPhonemes")
 }
 
 model PracticeSession {
@@ -109,4 +111,79 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// ================== 오답 분석 모델 (ARCHITECT-BRIEF.md) ==================
+
+// ErrorRecord: 부모가 입력한 오답 기록 (Answer Note)
+model ErrorRecord {
+  id                    String            @id @default(cuid())
+  childId               String
+  child                 Child             @relation("ChildErrors", fields: [childId], references: [id], onDelete: Cascade)
+  targetWord            String            // 목표 단어 (예: "사과")
+  childPronunciation    String            // 아이 발음 (예: "따과")
+  audioUrl              String?           // 향후 음성 저장용
+  errorType             String            // "경음화" | "기음화" | ... (20개 패턴)
+  errorCategory         String            // "대치" | "동화" | "탈락" | "첨가"
+  errorPattern          String            // 구체적 패턴명
+  localAnalysis         LocalAnalysis?
+  geminiFeedback        GeminiFeedback?
+  createdAt             DateTime          @default(now())
+
+  @@index([childId, createdAt])
+}
+
+// LocalAnalysis: 로컬 자모 분해 분석 결과
+model LocalAnalysis {
+  id                    String            @id @default(cuid())
+  errorRecordId         String            @unique
+  errorRecord           ErrorRecord       @relation(fields: [errorRecordId], references: [id], onDelete: Cascade)
+  detectedPattern       String            // 탐지된 패턴명 (예: "경음화")
+  jamoBreakdown         String            @db.Text // JSON: {"target": [...], "child": [...]}
+  confidence            Int               // 신뢰도 (0-100)
+  requiresGemini        Boolean           @default(false) // Gemini 필요 여부 (동화 오류 등)
+  createdAt             DateTime          @default(now())
+}
+
+// GeminiFeedback: Gemini API 응답 결과
+model GeminiFeedback {
+  id                    String            @id @default(cuid())
+  errorRecordId         String            @unique
+  errorRecord           ErrorRecord       @relation(fields: [errorRecordId], references: [id], onDelete: Cascade)
+  rootCause             String            @db.Text // 원인 설명 (부모 이해 수준)
+  trainingStep1         String            @db.Text // 1단계: 제목 + 방법
+  trainingStep2         String            @db.Text // 2단계
+  trainingStep3         String            @db.Text // 3단계
+  trainingStep4         String            @db.Text // 4단계
+  recommendedWords      String            @db.Text // JSON array: ["수박", "소보", ...]
+  createdAt             DateTime          @default(now())
+}
+
+// WeakPhoneme: 누적 약점 분석 (최근 300개 오답 기준)
+model WeakPhoneme {
+  id                    String            @id @default(cuid())
+  childId               String
+  child                 Child             @relation("ChildWeakPhonemes", fields: [childId], references: [id], onDelete: Cascade)
+  phoneme               String            // "ㅅ" | "ㄹ" | "ㅂ" etc
+  totalAttempts         Int               @default(0) // 최근 300개 중 해당 음소 시도 횟수
+  errorCount            Int               @default(0) // 오류 횟수
+  errorRate             Float             @default(0) // errorCount / totalAttempts * 100
+  weaknessLevel         String            @default("정상범위") // "집중교정필요" | "꾸준한연습필요" | "관찰중" | "정상범위"
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@unique([childId, phoneme])
+  @@index([childId])
+}
+
+// SavedWord: 저장된 단어 (즐겨찾기)
+model SavedWord {
+  id                    String            @id @default(cuid())
+  childId               String
+  word                  String
+  targetPhoneme         String            // 이 단어로 교정하려는 음소
+  difficulty            String            @default("medium") // "easy" | "medium" | "hard"
+  savedAt               DateTime          @default(now())
+
+  @@index([childId])
 }

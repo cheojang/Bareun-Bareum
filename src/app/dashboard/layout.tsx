@@ -56,10 +56,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         >
           <div className="flex items-center justify-around px-2 py-3">
             <NavItem href="/dashboard" icon="🏠" label="홈" />
-            <NavItem href="/dashboard/session/new" icon="🎯" label="연습" />
-            <NavItem href="/dashboard/progress" icon="📈" label="성장" />
-            <NavItem href="/dashboard/bookmarks" icon="⭐" label="보관함" />
-            <NavItem href="/dashboard/child" icon="🎮" label="아이" />
+            <NavItem href="/dashboard/answer-note" icon="📝" label="오답노트" />
+            <NavItem href="/dashboard/child" icon="🎮" label="아이연습" />
+            <NavItem href="/dashboard/bookmarks" icon="⭐" label="저장" />
+            <NavItem href="/dashboard/settings" icon="⚙️" label="설정" />
           </div>
         </div>
       </nav>
