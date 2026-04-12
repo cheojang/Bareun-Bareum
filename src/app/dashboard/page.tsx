@@ -275,31 +275,51 @@ export default async function DashboardHome() {
             <p className="text-xs text-[#8B7E74] mt-1">오답 노트에서 발음을 입력하면 약점을 분석해드려요</p>
           </div>
         ) : totalErrorRecords < 10 ? (
-          /* 데이터 부족 */
-          <div className="text-center py-3">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="flex gap-1">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: i < totalErrorRecords ? "#FFB38A" : "#F0E8E0" }}
-                  />
-                ))}
+          /* [1단계] 첫 분석 준비 중 (0~9개) */
+          <div className="py-4 px-1">
+            <div className="flex justify-between items-end mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🌱</span>
+                <p className="text-sm font-bold text-[#3D3530]">첫 분석 준비 중</p>
               </div>
+              <p className="text-xs font-black text-[#FFB38A] bg-[#FFF5EE] px-2 py-0.5 rounded-full border border-[#FFE4D8]">
+                {totalErrorRecords} / 10
+              </p>
             </div>
-            <p className="text-sm text-[#8B7E74]">
-              현재 <span className="font-bold text-[#FFB38A]">{totalErrorRecords}</span>개 기록 중 —
-              10개 이상이면 약점 분석이 시작돼요
+            <div className="h-3.5 bg-[#F0E8E0] rounded-full overflow-hidden mb-3 shadow-inner">
+              <div 
+                className="h-full bg-[#FFB38A] rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${(totalErrorRecords / 10) * 100}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-[#8B7E74] leading-relaxed text-center">
+              오답을 <span className="font-bold text-[#FFB38A]">10개</span>만 기록해도 <br />
+              우리 아이의 첫 발음 분석 리포트가 열려요!
             </p>
           </div>
-        ) : weakPhonemes.length === 0 ? (
-          /* 집계 대기 */
-          <p className="text-sm text-[#8B7E74] text-center py-3">분석 준비 중이에요...</p>
         ) : (
-          /* 약점 음소 바 차트 */
-          <div className="space-y-3">
-            {weakPhonemes.map((w) => {
+          /* [2-3단계] 분석 결과 표시 + 정교화 진행률 */
+          <div className="space-y-4">
+            {totalErrorRecords < 100 && (
+              <div className="bg-[#FFF5EE] rounded-xl p-3 border border-[#FFE4D8] mb-1">
+                <div className="flex justify-between items-center mb-1.5">
+                  <p className="text-[11px] font-bold text-[#FFB38A]">✨ 정교한 분석으로 가는 중</p>
+                  <p className="text-[10px] font-black text-[#FFB38A]">{totalErrorRecords}%</p>
+                </div>
+                <div className="h-1.5 bg-white/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#FFB38A] rounded-full transition-all duration-1000"
+                    style={{ width: `${totalErrorRecords}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {weakPhonemes.length === 0 ? (
+              <p className="text-sm text-[#8B7E74] text-center py-3">분석 준비 중이에요...</p>
+            ) : (
+              <div className="space-y-3">
+                {weakPhonemes.map((w) => {
               const style = WEAKNESS_COLOR[w.weaknessLevel] ?? WEAKNESS_COLOR["정상범위"];
               const barW = Math.max(Math.round(w.errorRate), 4);
               return (
