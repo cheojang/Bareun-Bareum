@@ -154,7 +154,8 @@ export async function POST(request: NextRequest) {
               trainingStep2: geminiResult.trainingStep2 || '단계 정보 없음',
               trainingStep3: geminiResult.trainingStep3 || '단계 정보 없음',
               trainingStep4: geminiResult.trainingStep4 || '단계 정보 없음',
-              recommendedWords: JSON.stringify(geminiResult.recommendedWords || [])
+              recommendedWords: JSON.stringify(geminiResult.recommendedWords || []),
+              parentMessage: geminiResult.parentMessage || '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다.'
             }
           });
         }
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
       console.error('WeakPhoneme 집계 오류:', e)
     );
 
-    // 7. 응답 반환
+    // 7. 응답 반환 (부모 응원 메시지 포함)
     return NextResponse.json(
       {
         success: true,
@@ -181,7 +182,9 @@ export async function POST(request: NextRequest) {
           detectedPattern: errorRecord.localAnalysis?.detectedPattern,
           confidence: errorRecord.localAnalysis?.confidence,
           requiresGemini: errorRecord.localAnalysis?.requiresGemini,
-          note: localAnalysis.note || ''
+          note: localAnalysis.note || '',
+          parentHint: (localAnalysis as Record<string, unknown>).parentHint || '',
+          description: (localAnalysis as Record<string, unknown>).description || ''
         },
         geminiFeedback: geminiFeedback
           ? {
@@ -192,7 +195,8 @@ export async function POST(request: NextRequest) {
                 geminiFeedback.trainingStep3,
                 geminiFeedback.trainingStep4
               ],
-              recommendedWords: JSON.parse(geminiFeedback.recommendedWords)
+              recommendedWords: JSON.parse(geminiFeedback.recommendedWords),
+              parentMessage: geminiFeedback.parentMessage || '' // 부모 응원 메시지
             }
           : null
       },

@@ -16,13 +16,13 @@ function getGenAI() {
 }
 
 /**
- * Gemini Flash를 통한 오류 분석 및 훈련법 생성
+ * Gemini Flash를 통한 오류 분석 및 훈련법 생성 (언어치료학적 지식 기반)
  * @param targetWord 목표 단어 (예: "사과")
  * @param childPronunciation 아이 발음 (예: "따과")
- * @param errorType 로컬에서 판정한 오류 유형 (예: "경음화")
+ * @param errorType 로컬에서 판정한 오류 유형 (예: "마찰음의 파열음화")
  * @param errorCategory 오류 카테고리 (예: "대치")
  * @param child Child 객체 (나이 등 메타데이터)
- * @returns 원인, 훈련법, 추천 단어
+ * @returns 원인, 훈련법(조음/언어/놀이), 추천 단어, 응원 메시지
  */
 export async function getGeminiFeedback(
   targetWord: string,
@@ -48,42 +48,72 @@ export async function getGeminiFeedback(
       );
     }
 
-    // 모델 선택 (gemini-1.5-flash 또는 gemini-2.0-flash)
+    // 모델 선택 (gemini-2.0-flash 권장)
     const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // 시스템 프롬프트 (언어치료학적 전문성)
+    const systemPrompt = `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)이자 풀스택 개발자입니다.
+부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
+
+[핵심 원칙]
+1. 모든 설명은 어려운 언어학 용어 대신 쉬운 비유와 신체감각을 사용합니다. (예: "마찰음의 파열음화" → "바람이 숨어버렸어요! 혀가 꽉 닫혀서 강한 소리가 나고 있어요.")
+2. 훈련법은 조음(발음 기관 움직임), 언어(말소리 구분), 놀이(정서 및 상황) 3영역을 통합합니다.
+3. 각 훈련 단계마다 "포인트"를 명시하여 부모가 실수하기 쉬운 부분을 미리 알립니다.
+4. 마지막에는 부모에게 공감과 격려의 메시지를 꼭 포함합니다.
+
+[훈련 4단계 구조]
+- 1단계: 조음 감각 깨우기 (혀/입술의 기관 감각)
+- 2단계: 소리 느끼기 (음소의 특징을 직접 체험)
+- 3단계: 연결하고 반복하기 (음절/단어 결합)
+- 4단계: 일상 대화에서 적용 (문장 및 자연스러운 상황)`;
 
     // 사용자 프롬프트
     const userPrompt = `다음 조음 오류를 분석해주세요:
 
-목표 단어: ${targetWord}
-아이 발음: ${childPronunciation}
-오류 카테고리: ${errorCategory}
-판정된 패턴: ${errorType}
-아이 나이: ${childAge}세
+【오류 정보】
+- 목표 단어: ${targetWord}
+- 아이 발음: ${childPronunciation}
+- 오류 카테고리: ${errorCategory}
+- 판정된 패턴: ${errorType}
+- 아이 나이: ${childAge}세
 
-다음 형식으로 한국어 답변을 주세요:
+【요청 형식】
+다음 형식으로 정확히 한국어 답변해주세요. 마크다운 형식이 아닌 순수 텍스트로:
 
-1. 원인: (2~3문장, 부모가 이해할 수 있는 쉬운 말)
+1. 원인: (2~3문장, 부모가 이해할 수 있는 쉬운 말과 신체감각. 혀/입술의 위치 설명 포함)
 
-2. 1단계: (제목)
-   방법: (구체적인 방법)
+2. 1단계: (제목: 조음 감각 깨우기)
+   방법: (구체적이고 따라하기 쉬운 방법. 도구나 인형 활용 가능)
+   포인트: (주의할 점 - 부모가 놓치기 쉬운 것)
+
+3. 2단계: (제목: 소리 느끼기)
+   방법: (아이가 정상/오답을 구분하도록 하는 방법)
    포인트: (주의할 점)
 
-3. 2단계: (제목)
-   방법: (구체적인 방법)
+4. 3단계: (제목: 음절/단어로 연결하기)
+   방법: (목표 단어에 가까운 단어들로 연습)
    포인트: (주의할 점)
 
-4. 3단계: (제목)
-   방법: (구체적인 방법)
+5. 4단계: (제목: 문장과 일상 상황에서)
+   방법: (자연스러운 대화 속에서 반복 연습)
    포인트: (주의할 점)
 
-5. 4단계: (제목)
-   방법: (구체적인 방법)
-   포인트: (주의할 점)
+6. 추천 단어 (쉼표로 구분): 이 발음 오류 패턴이 적용될 가능성이 높은 단어 5개 이상
+   (예: 사자, 수박, 우산, 소리, 사진 - 같은 음소가 포함된 쉬운 단어들)
 
-6. 추천 단어 (쉼표로 구분): 단어1, 단어2, 단어3, 단어4, 단어5`;
+7. 부모님께: (공감과 격려의 메시지. 아이의 발달 속도는 개인차가 크며, 꾸준한 연습이 중요하다는 따뜻한 말씀)`;
 
     // Gemini 호출
-    const result = await model.generateContent(userPrompt);
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userPrompt }]
+        }
+      ],
+      systemInstruction: systemPrompt
+    });
+
     const responseText = result.response.text();
 
     // 응답 파싱
@@ -96,8 +126,8 @@ export async function getGeminiFeedback(
 }
 
 /**
- * Gemini 응답 파싱
- * 구조화된 형식으로 추출
+ * Gemini 응답 파싱 (언어치료학적 형식)
+ * 구조화된 형식으로 추출 + 부모님께 응원 메시지 포함
  */
 function parseGeminiFeedback(responseText: string) {
   try {
@@ -107,7 +137,7 @@ function parseGeminiFeedback(responseText: string) {
       ? causeMatch[1].trim()
       : '원인을 분석할 수 없습니다';
 
-    // 2. 훈련 단계별 추출
+    // 2. 훈련 단계별 추출 (정규식 패턴 개선)
     const step1Match = responseText.match(/2\.\s*1단계:([\s\S]*?)(?=3\.)/);
     const step2Match = responseText.match(/3\.\s*2단계:([\s\S]*?)(?=4\.)/);
     const step3Match = responseText.match(/4\.\s*3단계:([\s\S]*?)(?=5\.)/);
@@ -119,13 +149,19 @@ function parseGeminiFeedback(responseText: string) {
     const trainingStep4 = step4Match ? step4Match[1].trim() : '단계 정보 없음';
 
     // 3. 추천 단어 추출
-    const wordsMatch = responseText.match(/6\.\s*추천 단어[:\s]*([\s\S]*?)$/);
+    const wordsMatch = responseText.match(/6\.\s*추천 단어[:\s]*([\s\S]*?)(?=7\.|부모님께|$)/);
     const wordsText = wordsMatch ? wordsMatch[1].trim() : '';
     const recommendedWords = wordsText
       .split(/[,،、]/) // 쉼표와 다양한 구분 기호 지원
       .map((w) => w.trim())
-      .filter((w) => w.length > 0)
-      .slice(0, 5); // 최대 5개
+      .filter((w) => w.length > 0 && w !== '예:' && !w.includes('('))
+      .slice(0, 10); // 최대 10개
+
+    // 4. 부모님께 응원 메시지 추출
+    const parentMessageMatch = responseText.match(/7\.\s*부모님께:([\s\S]*?)$|부모님께:([\s\S]*?)$/);
+    const parentMessage = parentMessageMatch
+      ? (parentMessageMatch[1] || parentMessageMatch[2]).trim()
+      : '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다. 모든 아이는 자신의 속도로 발달합니다!';
 
     return {
       success: true,
@@ -135,6 +171,7 @@ function parseGeminiFeedback(responseText: string) {
       trainingStep3,
       trainingStep4,
       recommendedWords,
+      parentMessage, // 부모 응원 메시지 추가
     };
   } catch (error) {
     console.error('Gemini 응답 파싱 오류:', error);

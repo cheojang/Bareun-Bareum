@@ -145,17 +145,18 @@ model LocalAnalysis {
   createdAt             DateTime          @default(now())
 }
 
-// GeminiFeedback: Gemini API 응답 결과
+// GeminiFeedback: Gemini API 응답 결과 (언어치료학적 분석)
 model GeminiFeedback {
   id                    String            @id @default(cuid())
   errorRecordId         String            @unique
   errorRecord           ErrorRecord       @relation(fields: [errorRecordId], references: [id], onDelete: Cascade)
-  rootCause             String            @db.Text // 원인 설명 (부모 이해 수준)
-  trainingStep1         String            @db.Text // 1단계: 제목 + 방법
-  trainingStep2         String            @db.Text // 2단계
-  trainingStep3         String            @db.Text // 3단계
-  trainingStep4         String            @db.Text // 4단계
-  recommendedWords      String            @db.Text // JSON array: ["수박", "소보", ...]
+  rootCause             String            @db.Text // 원인 설명 (부모 이해 수준, 신체감각 포함)
+  trainingStep1         String            @db.Text // 1단계: 조음 감각 깨우기 (방법 + 포인트)
+  trainingStep2         String            @db.Text // 2단계: 소리 느끼기
+  trainingStep3         String            @db.Text // 3단계: 음절/단어로 연결하기
+  trainingStep4         String            @db.Text // 4단계: 문장과 일상에서 적용
+  recommendedWords      String            @db.Text // JSON array: ["수박", "소리", "사자", ...] - 같은 음소 포함 단어들
+  parentMessage         String            @db.Text @default("") // 부모님을 향한 공감과 격려 메시지
   createdAt             DateTime          @default(now())
 }
 

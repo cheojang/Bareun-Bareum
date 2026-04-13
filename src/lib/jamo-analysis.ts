@@ -72,52 +72,218 @@ export function decomposeWord(word: string) {
 }
 
 /**
- * 오류 패턴 매칭 테이블
- * 목표 자음 → 아이 자음 → 패턴명
+ * 오류 패턴 매칭 테이블 (언어치료학적 분류)
+ * 목표 자음 → 아이 자음 → { 패턴명, 카테고리, 설명 }
  */
-const ERROR_PATTERNS: Record<string, Record<string, string>> = {
-  // 대치 (Substitution)
+interface ErrorPattern {
+  name: string;
+  category: '대치' | '동화' | '탈락' | '첨가';
+  description: string; // 부모 친화적 설명
+  parentHint: string; // "바람이 숨어버렸어요!" 같은 표현
+}
+
+const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
+  // ═══════════════════════════════════════════════════════════
+  // 대치 (Substitution) - 한 음소가 다른 음소로 바뀜
+  // ═══════════════════════════════════════════════════════════
+
+  // [마찰음→파열음화] 시원한 바람이 막혀버리는 현상
   'ㅅ': {
-    'ㄷ': '경음화', // 사과 → 따과
-    'ㄱ': '음화',
-    'ㄹ': '유음의 비음화'
+    'ㄷ': {
+      name: '마찰음의 파열음화',
+      category: '대치',
+      description: '시원한 바람 소리(ㅅ)를 내지 못하고, 혀로 꽉 막아버리는 파열음(ㄷ)으로 바꾸고 있어요.',
+      parentHint: '바람이 숨어버렸어요! 혀가 꽉 닫혀서 강한 소리가 나고 있어요.'
+    },
+    'ㄲ': {
+      name: '마찰음의 경음화',
+      category: '대치',
+      description: '시원한 바람 소리(ㅅ)를 경음(ㄲ)으로 발음하고 있어요.',
+      parentHint: '힘을 주어서 발음하는 습관이 있어요.'
+    },
+    'ㄱ': {
+      name: '마찰음의 연구개음화',
+      category: '대치',
+      description: '시원한 바람 소리(ㅅ)를 목 뒤쪽 소리(ㄱ)로 바꾸고 있어요.',
+      parentHint: '혀 위치가 뒤로 물러나고 있는 것 같아요.'
+    },
+    'ㅆ': {
+      name: '마찰음의 경음화 (쌍시옷)',
+      category: '대치',
+      description: '시원한 바람 소리(ㅅ)를 경음의 쌍시옷(ㅆ)으로 발음하고 있어요.',
+      parentHint: '더 강하게 발음하려는 경향이 있어요.'
+    }
   },
-  'ㄱ': {
-    'ㄲ': '경음화',
-    'ㅋ': '기음화'
-  },
-  'ㄴ': {
-    'ㅁ': '양순동화 (순행)' // 신발 → 심발 (선택)
-  },
-  'ㄷ': {
-    'ㄸ': '경음화',
-    'ㅌ': '기음화',
-    'ㄱ': '음화'
-  },
-  'ㄹ': {
-    'ㄴ': '유음의 비음화', // 라디오 → 나디오
-    'ㄷ': '음화'
-  },
-  'ㅂ': {
-    'ㅃ': '경음화',
-    'ㅍ': '기음화',
-    'ㅁ': '양순동화'
-  },
+
+  // [마찰음 시리즈 상호 교환]
   'ㅈ': {
-    'ㅉ': '경음화',
-    'ㅊ': '기음화'
+    'ㅉ': {
+      name: '마찰음의 경음화',
+      category: '대치',
+      description: 'ㅈ을 더 강하게 경음(ㅉ)으로 발음하고 있어요.',
+      parentHint: '혀와 입천장에 더 큰 힘을 주고 있어요.'
+    },
+    'ㅊ': {
+      name: '마찰음 상호교환',
+      category: '대치',
+      description: 'ㅈ을 ㅊ으로 바꾸어 발음하고 있어요.',
+      parentHint: '입술과 혀 위치의 미세한 차이를 아직 구분 못 하고 있어요.'
+    }
   },
-  'ㅎ': {
-    'ㅍ': '기음화',
-    '∅': '탈락'
-  }
+
+  'ㅊ': {
+    'ㅈ': {
+      name: '마찰음 상호교환',
+      category: '대치',
+      description: 'ㅊ을 ㅈ으로 바꾸어 발음하고 있어요.',
+      parentHint: '입술과 혀 위치의 미세한 차이를 아직 구분 못 하고 있어요.'
+    },
+    'ㅉ': {
+      name: '마찰음의 경음화',
+      category: '대치',
+      description: 'ㅊ을 경음(ㅉ)으로 발음하고 있어요.',
+      parentHint: '혀와 입천장에 더 큰 힘을 주고 있어요.'
+    }
+  },
+
+  // [유음의 비음화] 혀를 굴려야 하는데 코로 내는 현상
+  'ㄹ': {
+    'ㄴ': {
+      name: '유음의 비음화',
+      category: '대치',
+      description: '혀를 굴려야 하는 음(ㄹ)을 코로 내는 음(ㄴ)으로 바꾸고 있어요.',
+      parentHint: '혀를 굴리는 방법을 아직 배우지 못했어요. 혀를 치아뒤에서 굴려보세요!'
+    },
+    'ㄷ': {
+      name: '유음의 파열음화',
+      category: '대치',
+      description: '혀를 굴려야 하는 음(ㄹ)을 파열음(ㄷ)으로 바꾸고 있어요.',
+      parentHint: '혀를 굴리지 못하고 한 번 튕기는 형태로 발음하고 있어요.'
+    }
+  },
+
+  // [파열음 상호교환] 혀 위치의 차이 구분 못 함
+  'ㄱ': {
+    'ㄲ': {
+      name: '파열음의 경음화',
+      category: '대치',
+      description: 'ㄱ을 경음(ㄲ)으로 더 강하게 발음하고 있어요.',
+      parentHint: '혀가 목 뒤쪽을 더 세게 막고 있어요.'
+    },
+    'ㅋ': {
+      name: '파열음의 기음화',
+      category: '대치',
+      description: 'ㄱ을 기음(ㅋ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '숨을 더 세게 내보내고 있어요.'
+    },
+    'ㄷ': {
+      name: '파열음의 치조음화',
+      category: '대치',
+      description: 'ㄱ을 치조음(ㄷ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '혀가 위 이빨 뒤쪽에 닿고 있어요. 목 뒤쪽에 닿도록 해야 해요.'
+    }
+  },
+
+  'ㄷ': {
+    'ㄸ': {
+      name: '파열음의 경음화',
+      category: '대치',
+      description: 'ㄷ을 경음(ㄸ)으로 더 강하게 발음하고 있어요.',
+      parentHint: '혀가 입천장을 더 강하게 막고 있어요.'
+    },
+    'ㅌ': {
+      name: '파열음의 기음화',
+      category: '대치',
+      description: 'ㄷ을 기음(ㅌ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '숨을 더 세게 내보내고 있어요.'
+    },
+    'ㄱ': {
+      name: '파열음의 연구개음화',
+      category: '대치',
+      description: 'ㄷ을 연구개음(ㄱ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '혀가 뒤로 물러나고 있어요. 앞니 뒤에 닿도록 도와주세요.'
+    }
+  },
+
+  'ㅂ': {
+    'ㅃ': {
+      name: '파열음의 경음화',
+      category: '대치',
+      description: 'ㅂ을 경음(ㅃ)으로 더 강하게 발음하고 있어요.',
+      parentHint: '입술에 더 큰 힘을 주고 있어요.'
+    },
+    'ㅍ': {
+      name: '파열음의 기음화',
+      category: '대치',
+      description: 'ㅂ을 기음(ㅍ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '숨을 더 세게 내보내고 있어요.'
+    },
+    'ㅁ': {
+      name: '양순동화 (파열음→비음)',
+      category: '동화',
+      description: 'ㅂ을 비음(ㅁ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '입술을 닫아서 코로 바람을 내보내고 있어요.'
+    }
+  },
+
+  // [비음 시리즈]
+  'ㅁ': {
+    'ㅂ': {
+      name: '비음의 파열음화',
+      category: '대치',
+      description: 'ㅁ을 파열음(ㅂ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '입술을 닫았다 열면서 발음해야 해요. 코로 내보내는 느낌을 빼야 합니다.'
+    }
+  },
+
+  'ㄴ': {
+    'ㄷ': {
+      name: '비음의 파열음화',
+      category: '대치',
+      description: 'ㄴ을 파열음(ㄷ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '혀를 코에서 입천장으로 옮겨서 발음해야 해요.'
+    },
+    'ㅁ': {
+      name: '양순동화 (비음 상호교환)',
+      category: '동화',
+      description: 'ㄴ을 양순 비음(ㅁ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '코로 내보내되, 입술을 닫아야 해요.'
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 동화 (Assimilation) - 이웃한 음소의 영향으로 변함
+  // ═══════════════════════════════════════════════════════════
+  // (종성 변화는 주로 Gemini에서 처리하지만, 여기도 패턴 추가 가능)
+};
+
+/**
+ * 대치/동화/탈락 카테고리별 설명 메타데이터
+ */
+export const ERROR_CATEGORY_INFO = {
+  '대치': {
+    label: '음소가 다른 음소로 바뀌었어요',
+    example: '사과 → 따과 (ㅅ이 ㄷ으로 바뀜)',
+  },
+  '동화': {
+    label: '이웃한 음소의 영향을 받았어요',
+    example: '신발 → 심발 (뒤에 오는 ㅂ의 영향으로 ㄴ이 ㅁ으로 바뀜)',
+  },
+  '탈락': {
+    label: '음소가 빠졌어요',
+    example: '할머니 → 하니 (음절이 줄어듦)',
+  },
+  '첨가': {
+    label: '음소가 추가되었어요',
+    example: '개 → 개에 (음절이 늘어남)',
+  },
 };
 
 /**
  * 오류 분석 - 대치 오류 탐지
  * @param targetWord 목표 단어
  * @param childWord 아이 발음
- * @returns { errorType, errorCategory, errorPattern, confidence, requiresGemini }
+ * @returns { errorType, errorCategory, errorPattern, confidence, requiresGemini, parentHint }
  */
 export function analyzeSubstitutionError(targetWord: string, childWord: string) {
   const targetDecomposed = decomposeWord(targetWord);
@@ -147,21 +313,24 @@ export function analyzeSubstitutionError(targetWord: string, childWord: string) 
           targetJamo: target.choseong,
           childJamo: '(없음)',
           confidence: 90,
-          requiresGemini: false
+          requiresGemini: false,
+          parentHint: '첫 자음이 빠졌어요.'
         };
       }
 
-      const pattern = ERROR_PATTERNS[target.choseong]?.[child.choseong];
-      if (pattern) {
+      const patternObj = ERROR_PATTERNS[target.choseong]?.[child.choseong];
+      if (patternObj) {
         return {
-          errorType: pattern,
-          errorCategory: '대치',
-          errorPattern: pattern,
+          errorType: patternObj.name,
+          errorCategory: patternObj.category,
+          errorPattern: patternObj.name,
           affectedSyllable: i,
           targetJamo: target.choseong,
           childJamo: child.choseong,
           confidence: 95,
-          requiresGemini: false
+          requiresGemini: false,
+          parentHint: patternObj.parentHint,
+          description: patternObj.description
         };
       }
     }
