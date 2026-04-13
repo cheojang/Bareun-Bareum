@@ -49,6 +49,5 @@ function toRecommended(w: PracticeWord): RecommendedWord {
     sentence: w.sampleSentence,
     targetPhonemes: w.targetPhonemes,
     difficulty: w.difficulty,
-    imageEmoji: w.emoji,
   };
 }

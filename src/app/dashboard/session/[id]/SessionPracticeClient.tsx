@@ -343,8 +343,8 @@ export function SessionPracticeClient({
       <BubbleCard color="peach" className="text-center">
         <p className="text-sm text-[#8B7E74] mb-2">아이에게 이 단어를 말하게 해보세요</p>
 
-        {/* Emoji */}
-        {wordInfo && <div className="text-6xl mb-2">{wordInfo.emoji}</div>}
+        {/* Image placeholder — will be replaced with actual image */}
+        {wordInfo && <div className="h-20 mb-2 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400"></div>}
 
         {/* Main word */}
         <div className="text-5xl font-black text-[#3D3530] mb-1">{currentWord}</div>

@@ -23,7 +23,6 @@ export interface RecommendedWord {
   sentence: string;
   targetPhonemes: string[];
   difficulty: "easy" | "medium" | "hard";
-  imageEmoji: string;
 }
 
 export interface AnalysisRequest {

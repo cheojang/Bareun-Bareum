@@ -34,12 +34,12 @@ interface Props {
 
 // ─── 카테고리 색상 매핑 ────────────────────────────────────────────────────────
 
-const CATEGORY_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
-  대치: { bg: "bg-[#FFF5EE]", text: "text-[#FFB38A]", emoji: "🔄" },
-  동화: { bg: "bg-[#F5F3FF]", text: "text-[#C4B5FD]", emoji: "🌀" },
-  탈락: { bg: "bg-[#FFF8DC]", text: "text-[#D97706]", emoji: "✂️" },
-  첨가: { bg: "bg-[#F0FAF8]", text: "text-[#7EDFD0]", emoji: "➕" },
-  미판정: { bg: "bg-[#F5F5F5]", text: "text-[#8B7E74]", emoji: "❓" },
+const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
+  대치: { bg: "bg-[#FFF5EE]", text: "text-[#FFB38A]" },
+  동화: { bg: "bg-[#F5F3FF]", text: "text-[#C4B5FD]" },
+  탈락: { bg: "bg-[#FFF8DC]", text: "text-[#D97706]" },
+  첨가: { bg: "bg-[#F0FAF8]", text: "text-[#7EDFD0]" },
+  미판정: { bg: "bg-[#F5F5F5]", text: "text-[#8B7E74]" },
 };
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ export function AnswerNoteClient({ childId, childName }: Props) {
           {/* ── 오류 유형 카드 ── */}
           <BubbleCard className={`${categoryStyle.bg} border-2 border-[#F0E8E0]`}>
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-3xl">{categoryStyle.emoji}</span>
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex-shrink-0"></div>
               <div>
                 <p className="text-xs font-semibold text-[#8B7E74]">오류 유형</p>
                 <p className="text-xl font-black text-[#3D3530]">

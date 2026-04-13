@@ -209,7 +209,7 @@ export function NewSessionClient({ children }: { children: Child[] }) {
                   }
                 `}
               >
-                <span className="text-2xl">{word.emoji}</span>
+                <span className="w-8 h-8 bg-gray-100 rounded flex-shrink-0"></span>
                 <span>{word.word}</span>
               </button>
             ))}
@@ -242,7 +242,7 @@ export function NewSessionClient({ children }: { children: Child[] }) {
                 >
                   {/* Word 1 */}
                   <div className="text-center">
-                    <div className="text-2xl">{pair.emoji1}</div>
+                    <div className="w-12 h-12 bg-gray-100 rounded mb-2 mx-auto"></div>
                     <p className="font-black text-[#3D3530] text-lg">{pair.word1}</p>
                   </div>
 
@@ -255,7 +255,7 @@ export function NewSessionClient({ children }: { children: Child[] }) {
 
                   {/* Word 2 */}
                   <div className="text-center">
-                    <div className="text-2xl">{pair.emoji2}</div>
+                    <div className="w-12 h-12 bg-gray-100 rounded mb-2 mx-auto"></div>
                     <p className="font-black text-[#3D3530] text-lg">{pair.word2}</p>
                   </div>
                 </button>
