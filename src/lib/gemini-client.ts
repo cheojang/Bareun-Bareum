@@ -29,7 +29,8 @@ export async function getGeminiFeedback(
   childPronunciation: string,
   errorType: string,
   errorCategory: string,
-  child: any
+  child: any,
+  isUnknownPattern = false
 ) {
   try {
     const ai = getGenAI();
@@ -67,8 +68,13 @@ export async function getGeminiFeedback(
 - 3단계: 연결하고 반복하기 (음절/단어 결합)
 - 4단계: 일상 대화에서 적용 (문장 및 자연스러운 상황)`;
 
+    // 알 수 없는 패턴일 경우 추가 안내
+    const unknownPatternNote = isUnknownPattern
+      ? `\n⚠️ 참고: 이 발음은 일반적인 조음 오류 패턴 데이터베이스에 등록되지 않은 경우입니다. 최선을 다해 분석해주되, 분석이 불확실하다면 8번 신뢰도를 낮게 주세요.`
+      : '';
+
     // 사용자 프롬프트
-    const userPrompt = `다음 조음 오류를 분석해주세요:
+    const userPrompt = `다음 조음 오류를 분석해주세요:${unknownPatternNote}
 
 【오류 정보】
 - 목표 단어: ${targetWord}
@@ -101,7 +107,11 @@ export async function getGeminiFeedback(
 6. 추천 단어 (쉼표로 구분): 이 발음 오류 패턴이 적용될 가능성이 높은 단어 5개 이상
    (예: 사자, 수박, 우산, 소리, 사진 - 같은 음소가 포함된 쉬운 단어들)
 
-7. 부모님께: (공감과 격려의 메시지. 아이의 발달 속도는 개인차가 크며, 꾸준한 연습이 중요하다는 따뜻한 말씀)`;
+7. 부모님께: (공감과 격려의 메시지. 아이의 발달 속도는 개인차가 크며, 꾸준한 연습이 중요하다는 따뜻한 말씀)
+
+8. 분석 신뢰도 (1~5): (숫자만. 5=확실한 패턴, 3=보통, 1=매우 불확실한 개별 습관)
+
+9. 개별 습관 여부 (예/아니오): (일반적인 조음 발달 패턴으로 설명하기 어려운 아이만의 독특한 습관인지)`;
 
     // Gemini 호출
     const result = await model.generateContent({
@@ -158,10 +168,20 @@ function parseGeminiFeedback(responseText: string) {
       .slice(0, 10); // 최대 10개
 
     // 4. 부모님께 응원 메시지 추출
-    const parentMessageMatch = responseText.match(/7\.\s*부모님께:([\s\S]*?)$|부모님께:([\s\S]*?)$/);
+    const parentMessageMatch = responseText.match(/7\.\s*부모님께:([\s\S]*?)(?=8\.|$)|부모님께:([\s\S]*?)(?=8\.|$)/);
     const parentMessage = parentMessageMatch
       ? (parentMessageMatch[1] || parentMessageMatch[2]).trim()
       : '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다. 모든 아이는 자신의 속도로 발달합니다!';
+
+    // 5. 분석 신뢰도 추출 (1~5)
+    const confidenceMatch = responseText.match(/8\.\s*분석 신뢰도[^:]*:\s*(\d)/);
+    const geminiConfidence = confidenceMatch ? parseInt(confidenceMatch[1], 10) : 3;
+
+    // 6. 개별 습관 여부 추출
+    const individualHabitMatch = responseText.match(/9\.\s*개별 습관 여부[^:]*:\s*(예|아니오|네|yes|no)/i);
+    const isIndividualHabit =
+      geminiConfidence <= 2 ||
+      (individualHabitMatch ? ['예', '네', 'yes'].includes(individualHabitMatch[1].toLowerCase()) : false);
 
     return {
       success: true,
@@ -171,7 +191,9 @@ function parseGeminiFeedback(responseText: string) {
       trainingStep3,
       trainingStep4,
       recommendedWords,
-      parentMessage, // 부모 응원 메시지 추가
+      parentMessage,
+      geminiConfidence,
+      isIndividualHabit,
     };
   } catch (error) {
     console.error('Gemini 응답 파싱 오류:', error);

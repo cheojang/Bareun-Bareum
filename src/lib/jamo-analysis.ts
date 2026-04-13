@@ -277,6 +277,10 @@ export const ERROR_CATEGORY_INFO = {
     label: '음소가 추가되었어요',
     example: '개 → 개에 (음절이 늘어남)',
   },
+  '개별습관': {
+    label: '아이만의 독특한 발음 습관이에요',
+    example: '일반적인 패턴으로 분류되지 않는 개인적인 발음 특성',
+  },
 };
 
 /**
@@ -333,6 +337,20 @@ export function analyzeSubstitutionError(targetWord: string, childWord: string) 
           description: patternObj.description
         };
       }
+
+      // ERROR_PATTERNS에 없는 자음 조합 → 패턴미인식으로 명시 반환 후 Gemini 위임
+      return {
+        errorType: '패턴미인식',
+        errorCategory: '미판정',
+        errorPattern: `${target.choseong}→${child.choseong} (미등록 패턴)`,
+        affectedSyllable: i,
+        targetJamo: target.choseong,
+        childJamo: child.choseong,
+        confidence: 30,
+        requiresGemini: true,
+        isUnknownPattern: true,
+        note: `[${target.choseong}→${child.choseong}] 패턴이 데이터베이스에 없습니다. AI 분석을 시도합니다.`
+      };
     }
 
     // 중성 비교
@@ -497,8 +515,9 @@ export function analyzeError(targetWord: string, childWord: string) {
     errorType: '복합오류',
     errorCategory: '미판정',
     errorPattern: '맥락 필요',
-    confidence: 50,
+    confidence: 40,
     requiresGemini: true,
+    isUnknownPattern: true,
     note: '로컬 엔진으로 판정 불가. Gemini API 호출 필요'
   };
 }

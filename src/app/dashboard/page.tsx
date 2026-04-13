@@ -303,7 +303,7 @@ export default async function DashboardHome() {
             {totalErrorRecords < 100 && (
               <div className="bg-[#FFF5EE] rounded-xl p-3 border border-[#FFE4D8] mb-1">
                 <div className="flex justify-between items-center mb-1.5">
-                  <p className="text-[11px] font-bold text-[#FFB38A]">✨ 정교한 분석으로 가는 중</p>
+                  <p className="text-[11px] font-bold text-[#FFB38A]">✨ 정교한 분석 진행 중</p>
                   <p className="text-[10px] font-black text-[#FFB38A]">{totalErrorRecords}%</p>
                 </div>
                 <div className="h-1.5 bg-white/50 rounded-full overflow-hidden">

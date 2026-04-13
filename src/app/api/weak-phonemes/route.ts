@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 
 /**
  * GET /api/weak-phonemes?childId=...
@@ -7,20 +8,29 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
+    }
+
     const childId = request.nextUrl.searchParams.get('childId');
 
     if (!childId) {
       return NextResponse.json({ error: 'childId 필수' }, { status: 400 });
     }
 
-    // Child 확인
+    // Child 확인 + 소유권 검증
     const child = await prisma.child.findUnique({
       where: { id: childId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, userId: true },
     });
 
     if (!child) {
       return NextResponse.json({ error: '아이를 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    if (child.userId !== session.user.id) {
+      return NextResponse.json({ error: '접근 권한이 없습니다' }, { status: 403 });
     }
 
     // 오답 총 개수
