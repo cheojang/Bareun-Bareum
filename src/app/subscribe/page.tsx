@@ -58,7 +58,7 @@ export default async function SubscribePage() {
           <TossPaymentButton
             userId={userId}
             amount={9900}
-            orderName="바름또박 프리미엄 구독"
+            orderName="바른발음 프리미엄 구독"
           />
         </BubbleCard>
       </div>

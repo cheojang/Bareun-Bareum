@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { WORD_DATABASE } from "@/lib/word-database";
+import { WordImage } from "@/components/ui/WordImage";
 import Link from "next/link";
 
 interface Props {
@@ -106,9 +107,8 @@ export function ChildPlayClient({ childName, mascotLevel, recentWords }: Props) 
               className="bubble-card bg-white/90 p-8 text-center mb-6"
               style={{ borderRadius: "32px" }}
             >
-              {/* Image placeholder — will be replaced with actual image */}
-              <div className="h-24 mb-4 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                {/* TODO: Replace with {currentWord.word} image */}
+              <div className="flex justify-center mb-4">
+                <WordImage word={currentWord.word} imageSlug={currentWord.imageSlug} size="xl" />
               </div>
               <div className="text-5xl font-black text-[#3D3530] mb-2">
                 {currentWord.word}

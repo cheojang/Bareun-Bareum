@@ -75,6 +75,19 @@ export default function LandingPage() {
           </Link>
         </BubbleCard>
       </section>
+
+      {/* 푸터 */}
+      <footer className="text-center py-8 px-5 border-t border-[#F0E8E0]">
+        <p className="text-xs text-[#C4B5A8] mb-3">
+          바른발음은 학습 보조 도구이며 의료기기가 아닙니다.<br />
+          발음 문제가 우려되면 전문 언어재활사와 상담하세요.
+        </p>
+        <div className="flex justify-center gap-4 text-xs text-[#8B7E74]">
+          <Link href="/terms" className="hover:underline">이용약관</Link>
+          <Link href="/privacy" className="hover:underline">개인정보 처리방침</Link>
+        </div>
+        <p className="text-xs text-[#C4B5A8] mt-3">© 2026 바른발음</p>
+      </footer>
     </main>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 소리새 (Sori-sae) — SORI app mascot
+ * 소리새 (Sori-sae) — 바른발음 마스코트
  * 몽글몽글 파랑새: round, fluffy, pastel blue bird
  * Animations: floating, blinking, wing flutter
  */

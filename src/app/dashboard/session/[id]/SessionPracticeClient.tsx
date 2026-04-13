@@ -5,6 +5,7 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { PastelBadge } from "@/components/ui/PastelBadge";
+import { WordImage } from "@/components/ui/WordImage";
 import { AnalysisResult } from "@/types/analysis";
 import { PhonemeError } from "@/types/phonetics";
 import { getWordByText } from "@/lib/word-database";
@@ -343,8 +344,11 @@ export function SessionPracticeClient({
       <BubbleCard color="peach" className="text-center">
         <p className="text-sm text-[#8B7E74] mb-2">아이에게 이 단어를 말하게 해보세요</p>
 
-        {/* Image placeholder — will be replaced with actual image */}
-        {wordInfo && <div className="h-20 mb-2 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400"></div>}
+        {wordInfo && (
+          <div className="flex justify-center mb-2">
+            <WordImage word={currentWord} imageSlug={wordInfo.imageSlug} size="lg" />
+          </div>
+        )}
 
         {/* Main word */}
         <div className="text-5xl font-black text-[#3D3530] mb-1">{currentWord}</div>

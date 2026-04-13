@@ -10,7 +10,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="text-center mb-10">
         <div className="text-7xl mb-4 animate-float inline-block">🐣</div>
-        <h1 className="text-3xl font-black text-[#3D3530]">바름또박</h1>
+        <h1 className="text-3xl font-black text-[#3D3530]">바른발음</h1>
         <p className="text-[#8B7E74] mt-2">발음 연습, 놀이처럼 즐겁게!</p>
       </div>
 

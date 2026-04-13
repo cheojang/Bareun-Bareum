@@ -44,7 +44,7 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
       amount,
       orderId,
       orderName,
-      customerName: "바름또박 사용자",
+      customerName: "바른발음 사용자",
       successUrl: `${window.location.origin}/subscribe/success?orderId=${orderId}&amount=${amount}`,
       failUrl: `${window.location.origin}/subscribe?failed=1`,
     });

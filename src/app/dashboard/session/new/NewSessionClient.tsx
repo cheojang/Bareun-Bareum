@@ -6,7 +6,8 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { PastelBadge } from "@/components/ui/PastelBadge";
-import { WORD_DATABASE, MINIMAL_PAIRS } from "@/lib/word-database";
+import { WordImage } from "@/components/ui/WordImage";
+import { WORD_DATABASE, MINIMAL_PAIRS, getWordByText } from "@/lib/word-database";
 
 interface Child {
   id: string;
@@ -56,18 +57,6 @@ export function NewSessionClient({ children }: { children: Child[] }) {
     );
   }
 
-  // Build word list from selected minimal pairs (word1 then word2)
-  function buildMinimalPairWordList(): string[] {
-    const words: string[] = [];
-    for (const id of selectedPairIds) {
-      const pair = MINIMAL_PAIRS.find((p) => p.id === id);
-      if (pair) {
-        words.push(pair.word1, pair.word2);
-      }
-    }
-    return words;
-  }
-
   const hasSelection =
     mode === "normal" ? selectedWords.length > 0 : selectedPairIds.length > 0;
 
@@ -87,10 +76,18 @@ export function NewSessionClient({ children }: { children: Child[] }) {
 
       if (res.ok) {
         const session = await res.json();
-        const wordList =
-          mode === "normal" ? selectedWords : buildMinimalPairWordList();
-        const wordParam = encodeURIComponent(JSON.stringify(wordList));
-        router.push(`/dashboard/session/${session.id}?words=${wordParam}`);
+
+        if (mode === "minimal-pairs") {
+          // 대립쌍 전체 데이터를 넘김 → MinimalPairsPracticeClient에서 변별 훈련
+          const selectedPairs = MINIMAL_PAIRS.filter((p) =>
+            selectedPairIds.includes(p.id)
+          );
+          const pairsParam = encodeURIComponent(JSON.stringify(selectedPairs));
+          router.push(`/dashboard/session/${session.id}?pairs=${pairsParam}`);
+        } else {
+          const wordParam = encodeURIComponent(JSON.stringify(selectedWords));
+          router.push(`/dashboard/session/${session.id}?words=${wordParam}`);
+        }
       }
     } finally {
       setLoading(false);
@@ -209,7 +206,7 @@ export function NewSessionClient({ children }: { children: Child[] }) {
                   }
                 `}
               >
-                <span className="w-8 h-8 bg-gray-100 rounded flex-shrink-0"></span>
+                <WordImage word={word.word} imageSlug={word.imageSlug} size="xs" />
                 <span>{word.word}</span>
               </button>
             ))}
@@ -242,7 +239,9 @@ export function NewSessionClient({ children }: { children: Child[] }) {
                 >
                   {/* Word 1 */}
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-gray-100 rounded mb-2 mx-auto"></div>
+                    <div className="flex justify-center mb-2">
+                      <WordImage word={pair.word1} imageSlug={getWordByText(pair.word1)?.imageSlug} size="sm" />
+                    </div>
                     <p className="font-black text-[#3D3530] text-lg">{pair.word1}</p>
                   </div>
 
@@ -255,7 +254,9 @@ export function NewSessionClient({ children }: { children: Child[] }) {
 
                   {/* Word 2 */}
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-gray-100 rounded mb-2 mx-auto"></div>
+                    <div className="flex justify-center mb-2">
+                      <WordImage word={pair.word2} imageSlug={getWordByText(pair.word2)?.imageSlug} size="sm" />
+                    </div>
                     <p className="font-black text-[#3D3530] text-lg">{pair.word2}</p>
                   </div>
                 </button>

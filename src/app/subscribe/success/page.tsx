@@ -30,7 +30,7 @@ async function SuccessContent({ searchParams }: Props) {
       <div className="text-8xl mb-6 animate-bounce-in">🎉</div>
       <h2 className="text-3xl font-black text-[#3D3530] mb-3">구독 완료!</h2>
       <p className="text-[#8B7E74] mb-8 max-w-xs leading-relaxed">
-        바름또박 프리미엄을 시작했어요. 아이와 함께 신나게 연습해보세요!
+        바른발음 프리미엄을 시작했어요. 아이와 함께 신나게 연습해보세요!
       </p>
       <Link href="/dashboard">
         <BubbleButton variant="peach" size="lg">연습 시작하기 🚀</BubbleButton>
