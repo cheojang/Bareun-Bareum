@@ -107,7 +107,7 @@ export default async function DashboardHome() {
 
   // Weekly stats for all children (for sibling comparison)
   const weeklyStatsPerChild = await Promise.all(
-    children.map(async (c) => {
+    children.map(async (c: { id: string; name: string; mascotLevel: number; totalWords: number; createdAt: Date; userId: string }) => {
       const thisWeekCount = await prisma.wordRecord.count({
         where: { session: { childId: c.id }, practicedAt: { gte: thisMonday } },
       });
@@ -193,11 +193,11 @@ export default async function DashboardHome() {
         <BubbleCard>
           <p className="font-bold text-[#3D3530] mb-3">👨‍👩‍👧‍👦 형제자매 이번 주 현황</p>
           <div className="space-y-3">
-            {weeklyStatsPerChild.map(({ child: c, thisWeek }, idx) => {
-              const maxWords = Math.max(...weeklyStatsPerChild.map((s) => s.thisWeek), 1);
+            {weeklyStatsPerChild.map(({ child: c, thisWeek }: { child: { id: string; name: string; mascotLevel: number }; thisWeek: number; lastWeek: number }, idx: number) => {
+              const maxWords = Math.max(...weeklyStatsPerChild.map((s: { thisWeek: number }) => s.thisWeek), 1);
               const barW = Math.max((thisWeek / maxWords) * 100, 4);
               const isLeading =
-                thisWeek === Math.max(...weeklyStatsPerChild.map((s) => s.thisWeek)) &&
+                thisWeek === Math.max(...weeklyStatsPerChild.map((s: { thisWeek: number }) => s.thisWeek)) &&
                 thisWeek > 0;
               const MASCOT_EMOJIS = ["🥚", "🐣", "🐥", "🐤", "🐦"];
               return (
@@ -236,7 +236,7 @@ export default async function DashboardHome() {
         <div>
           <h3 className="font-bold text-[#3D3530] mb-3">최근 연습</h3>
           <div className="space-y-3">
-            {recentSessions.map((s) => (
+            {recentSessions.map((s: { id: string; startedAt: Date; child: { name: string }; _count: { wordRecords: number } }) => (
               <BubbleCard key={s.id} padding="sm" className="flex items-center gap-4">
                 <span className="text-2xl">📖</span>
                 <div className="flex-1">
@@ -319,7 +319,7 @@ export default async function DashboardHome() {
               <p className="text-sm text-[#8B7E74] text-center py-3">분석 준비 중이에요...</p>
             ) : (
               <div className="space-y-3">
-                {weakPhonemes.map((w) => {
+                {weakPhonemes.map((w: { id: string; phoneme: string; errorRate: number; weaknessLevel: string; errorCount: number; totalAttempts: number }) => {
               const style = WEAKNESS_COLOR[w.weaknessLevel] ?? WEAKNESS_COLOR["정상범위"];
               const barW = Math.max(Math.round(w.errorRate), 4);
               return (

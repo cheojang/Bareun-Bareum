@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
   });
 
   const errorHistory = recentRecords.map(
-    (r) => (r.errorPhonemes as unknown as PhonemeError[]) ?? []
+    (r: { errorPhonemes: unknown; targetWord: string }) => (r.errorPhonemes as unknown as PhonemeError[]) ?? []
   );
-  const practicedWords = recentRecords.map((r) => r.targetWord);
+  const practicedWords = recentRecords.map((r: { errorPhonemes: unknown; targetWord: string }) => r.targetWord);
 
   const recommendations = getRecommendations(errorHistory, practicedWords, 5);
 

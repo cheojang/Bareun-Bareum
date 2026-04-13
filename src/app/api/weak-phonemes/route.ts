@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/weak-phonemes?childId=...
  * 누적 약점 음소 분석 결과 조회 (최근 300개 오답 기준)
  */
 export async function GET(request: NextRequest) {
-  const prisma = new PrismaClient();
-
   try {
     const childId = request.nextUrl.searchParams.get('childId');
 
@@ -42,7 +40,7 @@ export async function GET(request: NextRequest) {
       childName: child.name,
       totalRecords,
       dataQuality,
-      weakPhonemes: weakPhonemes.map((w) => ({
+      weakPhonemes: weakPhonemes.map((w: { phoneme: string; totalAttempts: number; errorCount: number; errorRate: number; weaknessLevel: string }) => ({
         phoneme: w.phoneme,
         totalAttempts: w.totalAttempts,
         errorCount: w.errorCount,
@@ -53,8 +51,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/weak-phonemes error:', error);
     return NextResponse.json({ error: '분석 데이터를 가져오지 못했습니다' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

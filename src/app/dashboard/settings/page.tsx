@@ -68,7 +68,7 @@ export default async function SettingsPage() {
       <BubbleCard>
         <p className="font-bold text-[#3D3530] mb-3">아이 프로필</p>
         <div className="space-y-3">
-          {children.map((child) => (
+          {children.map((child: { id: string; name: string; mascotLevel: number; totalWords: number }) => (
             <div key={child.id} className="flex items-center gap-3 p-3 bg-[#FFF5EE] rounded-2xl">
               <span className="text-2xl">👶</span>
               <div className="flex-1">

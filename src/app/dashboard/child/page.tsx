@@ -26,7 +26,7 @@ export default async function ChildPage() {
     <ChildPlayClient
       childName={child.name}
       mascotLevel={child.mascotLevel}
-      recentWords={recentRecords.map((r) => r.targetWord)}
+      recentWords={recentRecords.map((r: { targetWord: string; errorPhonemes: unknown }) => r.targetWord)}
     />
   );
 }

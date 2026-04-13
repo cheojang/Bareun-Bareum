@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { analyzeError } from '@/lib/jamo-analysis';
 import { getGeminiFeedback } from '@/lib/gemini-client';
 
@@ -14,7 +14,6 @@ function getWeaknessLevel(errorRate: number, totalRecords: number): string {
 }
 
 async function recalculateWeakPhonemes(
-  prisma: PrismaClient,
   childId: string,
   latestTargetJamo?: string
 ) {
@@ -75,7 +74,6 @@ async function recalculateWeakPhonemes(
  * 오답 입력 → 로컬 분석 → Gemini 호출 (필요시) → 결과 저장
  */
 export async function POST(request: NextRequest) {
-  const prisma = new PrismaClient();
 
   try {
     const body = await request.json();
@@ -167,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     // 6. WeakPhoneme 자동 집계 (백그라운드 처리, 실패해도 응답에 영향 없음)
     const targetJamo = (localAnalysis as Record<string, unknown>).targetJamo as string | undefined;
-    recalculateWeakPhonemes(prisma, childId, targetJamo).catch((e) =>
+    recalculateWeakPhonemes(childId, targetJamo).catch((e) =>
       console.error('WeakPhoneme 집계 오류:', e)
     );
 
@@ -208,7 +206,5 @@ export async function POST(request: NextRequest) {
       { error: '오답 분석 중 오류가 발생했습니다' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
