@@ -12,65 +12,59 @@ export default async function PracticePage() {
     orderBy: { createdAt: "asc" },
   });
 
-  if (children.length === 0) {
-    redirect("/onboarding");
-  }
+  if (children.length === 0) redirect("/onboarding");
 
   const child = children[0];
 
-  // 1. 최근 오답노트 단어 (최대 5개)
+  // ── 1단계: 최근 오답노트 단어 (최대 5개, 중복 제거) ────────────────────────
   const errorRecords = await prisma.errorRecord.findMany({
     where: { childId: child.id },
     orderBy: { createdAt: "desc" },
-    take: 5,
+    take: 10,
     include: {
-      geminiFeedback: {
-        select: { recommendedWords: true },
-      },
+      geminiFeedback: { select: { recommendedWords: true } },
     },
   });
 
-  // 2. 오답노트 단어 목록 (중복 제거)
-  const errorWords: { word: string; errorPattern: string }[] = [];
-  const seen = new Set<string>();
+  const stage1Words: { word: string; errorPattern: string }[] = [];
+  const stage1Seen = new Set<string>();
   for (const rec of errorRecords) {
-    if (!seen.has(rec.targetWord)) {
-      seen.add(rec.targetWord);
-      errorWords.push({
-        word: rec.targetWord,
-        errorPattern: rec.errorPattern,
-      });
+    if (!stage1Seen.has(rec.targetWord) && stage1Words.length < 5) {
+      stage1Seen.add(rec.targetWord);
+      stage1Words.push({ word: rec.targetWord, errorPattern: rec.errorPattern });
     }
   }
 
-  // 3. AI 추천 단어 (GeminiFeedback.recommendedWords 합산, 중복·오답 단어 제거)
-  const recommendedWords: string[] = [];
-  const recSeen = new Set<string>(seen);
+  // ── 2단계: AI 추천 유사 패턴 단어 (GeminiFeedback.recommendedWords 합산) ──
+  const stage2Words: string[] = [];
+  const stage2Seen = new Set<string>(stage1Seen); // 오답 단어 중복 방지
   for (const rec of errorRecords) {
     if (!rec.geminiFeedback?.recommendedWords) continue;
     try {
       const words: string[] = JSON.parse(rec.geminiFeedback.recommendedWords);
       for (const w of words) {
         const clean = w.trim();
-        if (clean && !recSeen.has(clean)) {
-          recSeen.add(clean);
-          recommendedWords.push(clean);
-          if (recommendedWords.length >= 8) break;
+        if (clean && !stage2Seen.has(clean)) {
+          stage2Seen.add(clean);
+          stage2Words.push(clean);
+          if (stage2Words.length >= 8) break;
         }
       }
-    } catch {
-      // JSON 파싱 실패 무시
-    }
-    if (recommendedWords.length >= 8) break;
+    } catch { /* JSON 파싱 실패 무시 */ }
+    if (stage2Words.length >= 8) break;
   }
+
+  // ── 주요 오류 패턴 (문장 생성 힌트용) ───────────────────────────────────────
+  const errorPattern = stage1Words[0]?.errorPattern;
 
   return (
     <PracticeClient
       childId={child.id}
       childName={child.name}
       mascotLevel={child.mascotLevel}
-      errorWords={errorWords}
-      recommendedWords={recommendedWords}
+      stage1Words={stage1Words}
+      stage2Words={stage2Words}
+      errorPattern={errorPattern}
     />
   );
 }
