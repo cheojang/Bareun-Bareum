@@ -58,6 +58,21 @@ export default async function ProgressPage() {
       ? Math.round((correctCount / recentRecords.length) * 100)
       : 0;
 
+  // ── 오답노트 기반 약점 음소 (WeakPhoneme) ─────────────────────────────────
+  const weakPhonemes = await prisma.weakPhoneme.findMany({
+    where: { childId: child.id },
+    orderBy: { errorCount: "desc" },
+    take: 6,
+  });
+
+  const totalErrorRecords = await prisma.errorRecord.count({
+    where: { childId: child.id },
+  });
+
+  const savedWordsCount = await prisma.savedWord.count({
+    where: { childId: child.id },
+  });
+
   // ── Weekly report ──────────────────────────────────────────────────────────
   const now = new Date();
   // Start of this week (Monday)
@@ -83,8 +98,8 @@ export default async function ProgressPage() {
 
   const thisWeekTotal = thisWeekRecords.length;
   const lastWeekTotal = lastWeekRecords.length;
-  const thisWeekCorrect = thisWeekRecords.filter((r) => r.isCorrect).length;
-  const lastWeekCorrect = lastWeekRecords.filter((r) => r.isCorrect).length;
+  const thisWeekCorrect = thisWeekRecords.filter((r: { isCorrect: boolean }) => r.isCorrect).length;
+  const lastWeekCorrect = lastWeekRecords.filter((r: { isCorrect: boolean }) => r.isCorrect).length;
 
   const thisWeekAccuracy =
     thisWeekTotal > 0 ? Math.round((thisWeekCorrect / thisWeekTotal) * 100) : 0;
@@ -140,10 +155,11 @@ export default async function ProgressPage() {
       </BubbleCard>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard value={child.totalWords} label="총 단어" emoji="📝" color="#FFB38A" />
-        <StatCard value={child.totalMinutes} label="학습 분" emoji="⏱️" color="#7EDFD0" />
-        <StatCard value={child.streakDays} label="연속일" emoji="🔥" color="#FCA5A5" />
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard value={child.totalWords} label="총 연습 단어" emoji="📝" color="#FFB38A" />
+        <StatCard value={child.streakDays} label="연속 출석" emoji="🔥" color="#FCA5A5" />
+        <StatCard value={totalErrorRecords} label="오답노트 기록" emoji="🗒️" color="#C4B5FD" />
+        <StatCard value={savedWordsCount} label="복습 저장" emoji="📌" color="#7EDFD0" />
       </div>
 
       {/* ── Weekly report ───────────────────────────────────────────── */}
@@ -224,6 +240,64 @@ export default async function ProgressPage() {
           <p className="text-sm text-[#8B7E74] text-center py-2">
             아직 연습 기록이 없어요. 오늘 첫 연습을 시작해봐요! 🎯
           </p>
+        )}
+      </BubbleCard>
+
+      {/* ── 오답노트 기반 약점 음소 분석 ────────────────────────────── */}
+      <BubbleCard>
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-bold text-[#3D3530]">🎯 약점 음소 분석</p>
+          <span className="text-xs text-[#8B7E74]">오답노트 {totalErrorRecords}개 기준</span>
+        </div>
+
+        {weakPhonemes.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-[#8B7E74]">
+              {totalErrorRecords < 10
+                ? `오답노트 ${totalErrorRecords}/10개 — 10개 이상 입력하면 분석이 시작돼요`
+                : "약점 분석 준비 중이에요"}
+            </p>
+            {totalErrorRecords < 10 && (
+              <div className="mt-3 h-2 bg-[#F0E8E0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#FFB38A] rounded-full transition-all"
+                  style={{ width: `${(totalErrorRecords / 10) * 100}%` }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {weakPhonemes.map((w: { id: string; phoneme: string; errorCount: number; errorRate: number; weaknessLevel: string }) => {
+              const levelMeta: Record<string, { color: string; bar: string; label: string }> = {
+                집중교정필요: { color: "text-[#EF4444]", bar: "#FCA5A5", label: "🔴 집중 교정" },
+                꾸준한연습필요: { color: "text-[#D97706]", bar: "#FDE68A", label: "🟡 꾸준히 연습" },
+                관찰중:       { color: "text-[#16A34A]", bar: "#86EFAC", label: "🟢 관찰 중" },
+                정상범위:     { color: "text-[#0D9488]", bar: "#7EDFD0", label: "✅ 정상" },
+              };
+              const meta = levelMeta[w.weaknessLevel] ?? levelMeta["관찰중"];
+              const barW = Math.max(Math.round(w.errorRate), 4);
+              return (
+                <div key={w.id} className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#F0E8E0] flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-black text-[#3D3530]">{w.phoneme}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-semibold ${meta.color}`}>{meta.label}</span>
+                      <span className="text-xs text-[#8B7E74]">{w.errorCount}회 오류</span>
+                    </div>
+                    <div className="h-2.5 bg-[#F0E8E0] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${barW}%`, backgroundColor: meta.bar }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </BubbleCard>
 
