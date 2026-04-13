@@ -412,6 +412,196 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "수영복",  meaning: "수영복",  emoji: "👙", targetPhonemes: ["ㅅ"], difficulty: "hard",   ageGroup: "5-6세", sampleSentence: "수영복을 입어요." },
   { word: "줄넘기",  meaning: "줄넘기",  emoji: "🪢", targetPhonemes: ["ㅈ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "줄넘기를 해요.",     soundEffect: "휙휙~" },
   { word: "미술",    meaning: "미술",    emoji: "🎨", targetPhonemes: ["ㅁ"], difficulty: "medium", ageGroup: "5-6세", sampleSentence: "미술 시간이 재미있어요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 직업 (직업 관련 단어들)
+  // ══════════════════════════════════════════════════════════
+  { word: "의사",    meaning: "의사",    emoji: "👨‍⚕️", targetPhonemes: ["ㅇ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "의사가 병을 고쳐요." },
+  { word: "경찰관",  meaning: "경찰관",  emoji: "👮", targetPhonemes: ["ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "경찰관이 질서를 지켜요." },
+  { word: "소방관",  meaning: "소방관",  emoji: "🧑‍🚒", targetPhonemes: ["ㅅ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "소방관이 불을 꺼요." },
+  { word: "교사",    meaning: "교사",    emoji: "👩‍🏫", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "교사가 우리에게 배워요." },
+  { word: "농부",    meaning: "농부",    emoji: "👨‍🌾", targetPhonemes: ["ㄴ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "농부가 쌀을 키워요." },
+  { word: "요리사",  meaning: "요리사",  emoji: "👨‍🍳", targetPhonemes: ["ㅇ", "ㄹ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "요리사가 맛있는 음식을 만들어요." },
+  { word: "의사선생님",meaning: "의사선생님",emoji: "👨‍⚕️", targetPhonemes: ["ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "의사선생님께서 약을 주셨어요." },
+  { word: "우체부",  meaning: "우체부",  emoji: "📬", targetPhonemes: ["ㅇ", "ㅊ", "ㅂ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "우체부가 편지를 나르는 일을 해요." },
+  { word: "경찰",    meaning: "경찰",    emoji: "👮", targetPhonemes: ["ㄱ", "ㅊ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "경찰이 우리를 지켜줘요." },
+  { word: "화가",    meaning: "화가",    emoji: "🎨", targetPhonemes: ["ㅎ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "화가가 그림을 그려요." },
+  { word: "음악가",  meaning: "음악가",  emoji: "🎵", targetPhonemes: ["ㅇ", "ㅁ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "음악가가 아름다운 곡을 만들어요." },
+  { word: "운동선수",meaning: "운동선수",emoji: "🏃", targetPhonemes: ["ㅇ", "ㄴ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "운동선수가 경쟁에서 우승했어요." },
+  { word: "선수",    meaning: "선수",    emoji: "🏅", targetPhonemes: ["ㅅ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "선수가 게임에서 이겼어요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 운동·게임
+  // ══════════════════════════════════════════════════════════
+  { word: "야구",    meaning: "야구",    emoji: "⚾", targetPhonemes: ["ㅇ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "야구를 해요.",             soundEffect: "탁!" },
+  { word: "탁구",    meaning: "탁구",    emoji: "🏓", targetPhonemes: ["ㅌ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "탁구 경기가 재미있어요.",   soundEffect: "탁탁~" },
+  { word: "배드민턴",meaning: "배드민턴",emoji: "🏸", targetPhonemes: ["ㅂ", "ㄷ", "ㅁ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "배드민턴을 친다." },
+  { word: "스키",    meaning: "스키",    emoji: "⛷️", targetPhonemes: ["ㅅ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "눈 위에서 스키를 타요." },
+  { word: "스케이트",meaning: "스케이트",emoji: "⛸️", targetPhonemes: ["ㅅ", "ㄱ", "ㅌ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "스케이트를 신고 미끄러져요." },
+  { word: "멀리뛰기",meaning: "멀리뛰기",emoji: "🤸", targetPhonemes: ["ㅁ", "ㄹ", "ㄷ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "멀리뛰기 대회에 나갔어요." },
+  { word: "높이뛰기",meaning: "높이뛰기",emoji: "🤸", targetPhonemes: ["ㄴ", "ㄱ", "ㄷ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "높이뛰기를 해요." },
+  { word: "체조",    meaning: "체조",    emoji: "🤸", targetPhonemes: ["ㅊ", "ㅈ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "체조 시간이 재미있어요." },
+  { word: "무술",    meaning: "무술",    emoji: "🥋", targetPhonemes: ["ㅁ", "ㅅ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "무술을 배워요." },
+  { word: "태권도",  meaning: "태권도",  emoji: "🥋", targetPhonemes: ["ㅌ", "ㄱ", "ㄷ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "태권도를 배우고 있어요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 감정·상태
+  // ══════════════════════════════════════════════════════════
+  { word: "행복",    meaning: "행복",    emoji: "😊", targetPhonemes: ["ㅎ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "행복한 기분이에요." },
+  { word: "슬픔",    meaning: "슬픔",    emoji: "😢", targetPhonemes: ["ㅅ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "슬픈 영화를 봤어요." },
+  { word: "화남",    meaning: "화남",    emoji: "😠", targetPhonemes: ["ㅎ", "ㄴ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "화나면 안 돼요." },
+  { word: "무서움",  meaning: "무서움",  emoji: "😨", targetPhonemes: ["ㅁ", "ㅅ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "무서운 영화 보지 말아요." },
+  { word: "신남",    meaning: "신남",    emoji: "🤩", targetPhonemes: ["ㅅ", "ㄴ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "신나는 음악을 들어요." },
+  { word: "졸음",    meaning: "졸음",    emoji: "😴", targetPhonemes: ["ㅊ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "졸음이 와요." },
+  { word: "피로",    meaning: "피로",    emoji: "😩", targetPhonemes: ["ㅍ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "피로해 보여요." },
+  { word: "부끄러움",meaning: "부끄러움",emoji: "🙈", targetPhonemes: ["ㅂ", "ㄲ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "부끄러워하지 말아요." },
+  { word: "설렘",    meaning: "설렘",    emoji: "✨", targetPhonemes: ["ㅅ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "설레는 마음이에요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 더 많은 동물들
+  // ══════════════════════════════════════════════════════════
+  { word: "사자",    meaning: "사자",    emoji: "🦁", targetPhonemes: ["ㅅ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "사자가 사바나에 살아요." },
+  { word: "얼룩말",  meaning: "얼룩말",  emoji: "🦓", targetPhonemes: ["ㅇ", "ㄹ", "ㄱ", "ㅁ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "얼룩말이 줄무늬가 있어요." },
+  { word: "코끼리",  meaning: "코끼리",  emoji: "🐘", targetPhonemes: ["ㄱ", "ㄹ"], difficulty: "medium", ageGroup: "3-4세", sampleSentence: "코끼리 코는 길어요." },
+  { word: "캥거루",  meaning: "캥거루",  emoji: "🦘", targetPhonemes: ["ㄱ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "캥거루가 뛰어가요." },
+  { word: "오랑우탄",meaning: "오랑우탄",emoji: "🦧", targetPhonemes: ["ㅇ", "ㄹ", "ㄴ", "ㅇ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "오랑우탄이 나무에 매달려요." },
+  { word: "침팬지",  meaning: "침팬지",  emoji: "🐵", targetPhonemes: ["ㅊ", "ㅍ", "ㄴ", "ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "침팬지가 똑똑해요." },
+  { word: "고릴라",  meaning: "고릴라",  emoji: "🦍", targetPhonemes: ["ㄱ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "고릴라가 힘이 세요." },
+  { word: "사슴",    meaning: "사슴",    emoji: "🦌", targetPhonemes: ["ㅅ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "사슴의 뿔이 크네요." },
+  { word: "들소",    meaning: "들소",    emoji: "🐂", targetPhonemes: ["ㄷ", "ㄹ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "들소는 목초지에 산다." },
+  { word: "라마",    meaning: "라마",    emoji: "🦙", targetPhonemes: ["ㄹ", "ㅁ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "라마가 털이 복슬복슬해요." },
+  { word: "양",      meaning: "양",      emoji: "🐑", targetPhonemes: ["ㅇ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "양이 메메 울어요.",      soundEffect: "메메~" },
+  { word: "염소",    meaning: "염소",    emoji: "🐐", targetPhonemes: ["ㅇ", "ㅁ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "염소가 풀을 뜯어 먹어요." },
+  { word: "사슴벌레",meaning: "사슴벌레",emoji: "🦬", targetPhonemes: ["ㅅ", "ㅂ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "사슴벌레 애벌레를 찾았어요." },
+  { word: "나방",    meaning: "나방",    emoji: "🦋", targetPhonemes: ["ㄴ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "나방이 불빛에 모여요." },
+  { word: "매",      meaning: "매",      emoji: "🦅", targetPhonemes: ["ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "매가 높이 날아가요." },
+  { word: "문제",    meaning: "문제",    emoji: "❓", targetPhonemes: ["ㅁ", "ㄴ", "ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "어려운 문제를 풀어요." },
+  { word: "악어",    meaning: "악어",    emoji: "🐊", targetPhonemes: ["ㅇ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "악어의 입이 커요." },
+  { word: "개미",    meaning: "개미",    emoji: "🐜", targetPhonemes: ["ㄱ", "ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "개미가 줄지어 가요." },
+  { word: "나뭇잎",  meaning: "나뭇잎",  emoji: "🍃", targetPhonemes: ["ㄴ", "ㅁ", "ㄷ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "나뭇잎이 바스락거려요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 더 많은 음식
+  // ══════════════════════════════════════════════════════════
+  { word: "소시지",  meaning: "소시지",  emoji: "🌭", targetPhonemes: ["ㅅ", "ㅅ", "ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "소시지를 구워먹어요." },
+  { word: "비빔밥",  meaning: "비빔밥",  emoji: "🍚", targetPhonemes: ["ㅂ", "ㅂ", "ㅂ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "비빔밥이 맛있어요." },
+  { word: "김밥",    meaning: "김밥",    emoji: "🍣", targetPhonemes: ["ㄱ", "ㅂ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "김밥을 말아요." },
+  { word: "우동",    meaning: "우동",    emoji: "🍜", targetPhonemes: ["ㅇ", "ㄷ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "우동이 길고 맛있어요." },
+  { word: "스파게티",meaning: "스파게티",emoji: "🍝", targetPhonemes: ["ㅅ", "ㅍ", "ㄱ", "ㅌ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "스파게티를 먹어요." },
+  { word: "카레",    meaning: "카레",    emoji: "🍛", targetPhonemes: ["ㄱ", "ㄹ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "카레가 맵지만 맛있어요." },
+  { word: "핫도그",  meaning: "핫도그",  emoji: "🌭", targetPhonemes: ["ㅎ", "ㄷ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "핫도그를 먹어요." },
+  { word: "케첩",    meaning: "케첩",    emoji: "🍅", targetPhonemes: ["ㄱ", "ㅊ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "감자튀김에 케첩을 쳐요." },
+  { word: "마요네즈",meaning: "마요네즈",emoji: "🧈", targetPhonemes: ["ㅁ", "ㅇ", "ㄴ", "ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "마요네즈를 짜요." },
+  { word: "기름",    meaning: "기름",    emoji: "🫙", targetPhonemes: ["ㄱ, ㄹ, ㅁ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "기름으로 부쳐요." },
+  { word: "소금",    meaning: "소금",    emoji: "🧂", targetPhonemes: ["ㅅ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "소금을 뿌려요." },
+  { word: "설탕",    meaning: "설탕",    emoji: "🍯", targetPhonemes: ["ㅅ", "ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "설탕이 달콤해요." },
+  { word: "초콜릿",  meaning: "초콜릿",  emoji: "🍫", targetPhonemes: ["ㅊ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "초콜릿을 먹어요." },
+  { word: "아이스크림",meaning:"아이스크림",emoji:"🍦",targetPhonemes: ["ㄹ"], difficulty: "medium", ageGroup: "3-4세", sampleSentence: "아이스크림이 차가워요." },
+  { word: "요구르트",meaning: "요구르트",emoji: "🥛", targetPhonemes: ["ㅇ", "ㄱ", "ㄹ", "ㅌ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "요구르트를 마셔요." },
+  { word: "버터",    meaning: "버터",    emoji: "🧈", targetPhonemes: ["ㅂ", "ㅌ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "버터를 빵에 바르는거예요." },
+  { word: "잼",      meaning: "잼",      emoji: "🍓", targetPhonemes: ["ㅈ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "딸기잼이 맛있어요." },
+  { word: "누텔라",  meaning: "누텔라",  emoji: "🍫", targetPhonemes: ["ㄴ", "ㅌ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "누텔라를 빵에 발라요." },
+  { word: "두유",    meaning: "두유",    emoji: "🥛", targetPhonemes: ["ㄷ", "ㅇ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "두유를 마셔요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 신체 부위 추가
+  // ══════════════════════════════════════════════════════════
+  { word: "머리카락",meaning: "머리카락",emoji: "💇", targetPhonemes: ["ㅁ", "ㄹ", "ㄱ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "머리카락이 길어요." },
+  { word: "이마",    meaning: "이마",    emoji: "👶", targetPhonemes: ["ㅇ", "ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "이마에 뽀뽀했어요." },
+  { word: "눈썹",    meaning: "눈썹",    emoji: "😠", targetPhonemes: ["ㄴ", "ㅆ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "눈썹이 진하네요." },
+  { word: "코",      meaning: "코",      emoji: "👃", targetPhonemes: ["ㄱ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "코로 숨을 쉬어요." },
+  { word: "입술",    meaning: "입술",    emoji: "👄", targetPhonemes: ["ㅇ", "ㅅ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "입술이 빨갛네요." },
+  { word: "이빨",    meaning: "이빨",    emoji: "😁", targetPhonemes: ["ㅇ", "ㅃ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "이빨을 닦아요." },
+  { word: "혀",      meaning: "혀",      emoji: "👅", targetPhonemes: ["ㅎ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "혀로 맛을 봐요." },
+  { word: "턱",      meaning: "턱",      emoji: "🦷", targetPhonemes: ["ㅌ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "턱이 뾰족해요." },
+  { word: "목",      meaning: "목",      emoji: "🧣", targetPhonemes: ["ㅁ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "목이 아파요." },
+  { word: "어깨",    meaning: "어깨",    emoji: "💪", targetPhonemes: ["ㅇ, ㄲ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "어깨가 아파요." },
+  { word: "팔꿈치",  meaning: "팔꿈치",  emoji: "💪", targetPhonemes: ["ㅍ", "ㄲ", "ㅁ", "ㅊ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "팔꿈치로 탁자에 부딪혔어요." },
+  { word: "손가락",  meaning: "손가락",  emoji: "🖐️", targetPhonemes: ["ㅅ", "ㄱ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "손가락 다섯 개가 있어요." },
+  { word: "가슴",    meaning: "가슴",    emoji: "💓", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "가슴이 철렁했어요." },
+  { word: "배",      meaning: "배",      emoji: "🤰", targetPhonemes: ["ㅂ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "배가 고파요." },
+  { word: "엉덩이",  meaning: "엉덩이",  emoji: "🍑", targetPhonemes: ["ㅇ", "ㄷ", "ㅁ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "엉덩이를 탁탁 치지 마요." },
+  { word: "정강이",  meaning: "정강이",  emoji: "🦵", targetPhonemes: ["ㅈ", "ㄱ", "ㅇ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "정강이가 아파요." },
+  { word: "발목",    meaning: "발목",    emoji: "🦶", targetPhonemes: ["ㅂ", "ㅁ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "발목이 삐끗했어요." },
+  { word: "발톱",    meaning: "발톱",    emoji: "🦶", targetPhonemes: ["ㅂ", "ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "발톱을 깎아요." },
+  { word: "피",      meaning: "피",      emoji: "🩸", targetPhonemes: ["ㅍ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "피가 나왔어요." },
+  { word: "근육",    meaning: "근육",    emoji: "💪", targetPhonemes: ["ㄱ", "ㄴ", "ㅇ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "근육이 커야 세요." },
+  { word: "뼈",      meaning: "뼈",      emoji: "🦴", targetPhonemes: ["ㄲ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "뼈가 부러졌어요." },
+  { word: "뇌",      meaning: "뇌",      emoji: "🧠", targetPhonemes: ["ㄴ"], difficulty: "medium", ageGroup: "5-6세", sampleSentence: "뇌는 중요한 기관이에요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 옷과 신발
+  // ══════════════════════════════════════════════════════════
+  { word: "셔츠",    meaning: "셔츠",    emoji: "👔", targetPhonemes: ["ㅅ", "ㅊ", "ㅊ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "셔츠를 입어요." },
+  { word: "바지",    meaning: "바지",    emoji: "👖", targetPhonemes: ["ㅂ", "ㅈ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "파란 바지를 입어요." },
+  { word: "속옷",    meaning: "속옷",    emoji: "🩱", targetPhonemes: ["ㅅ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "속옷을 입어요." },
+  { word: "양말",    meaning: "양말",    emoji: "🧦", targetPhonemes: ["ㅇ", "ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "양말을 신어요." },
+  { word: "부츠",    meaning: "부츠",    emoji: "👢", targetPhonemes: ["ㅂ", "ㅊ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "부츠가 따뜻해요." },
+  { word: "운동화",  meaning: "운동화",  emoji: "👟", targetPhonemes: ["ㅇ", "ㄷ", "ㅇ", "ㅎ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "운동화로 뛰어요." },
+  { word: "슬리퍼",  meaning: "슬리퍼",  emoji: "🩴", targetPhonemes: ["ㅅ", "ㄹ", "ㅍ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "슬리퍼를 신어요." },
+  { word: "내복",    meaning: "내복",    emoji: "🧥", targetPhonemes: ["ㄴ, ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "겨울에 내복을 입어요." },
+  { word: "스웨터",  meaning: "스웨터",  emoji: "🧶", targetPhonemes: ["ㅅ, ㅇ, ㅌ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "스웨터가 따뜻해요." },
+  { word: "코트",    meaning: "코트",    emoji: "🧥", targetPhonemes: ["ㄱ, ㅌ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "겨울 코트를 입어요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 동사 (행동)
+  // ══════════════════════════════════════════════════════════
+  { word: "웃다",    meaning: "웃다",    emoji: "😂", targetPhonemes: ["ㅇ", "ㅆ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "재미있어서 웃어요." },
+  { word: "울다",    meaning: "울다",    emoji: "😭", targetPhonemes: ["ㅇ", "ㄹ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "슬파서 울어요." },
+  { word: "걷다",    meaning: "걷다",    emoji: "🚶", targetPhonemes: ["ㄱ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "천천히 걸어요." },
+  { word: "앉다",    meaning: "앉다",    emoji: "🪑", targetPhonemes: ["ㅇ", "ㄴ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "의자에 앉아요." },
+  { word: "누우다",  meaning: "누우다",  emoji: "🛏️", targetPhonemes: ["ㄴ", "ㅇ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "침대에 누워요." },
+  { word: "일어나다",meaning: "일어나다",emoji: "⬆️", targetPhonemes: ["ㅇ", "ㄹ", "ㄴ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "아침에 일어나요." },
+  { word: "자다",    meaning: "자다",    emoji: "😴", targetPhonemes: ["ㅈ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "밤에 자요." },
+  { word: "먹다",    meaning: "먹다",    emoji: "🍽️", targetPhonemes: ["ㅁ", "ㄱ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "밥을 먹어요." },
+  { word: "마시다",  meaning: "마시다",  emoji: "🥛", targetPhonemes: ["ㅁ", "ㅅ", "ㄷ"], difficulty: "medium", ageGroup: "3-4세", sampleSentence: "물을 마셔요." },
+  { word: "보다",    meaning: "보다",    emoji: "👀", targetPhonemes: ["ㅂ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "하늘을 봐요." },
+  { word: "듣다",    meaning: "듣다",    emoji: "👂", targetPhonemes: ["ㄷ", "ㅅ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "음악을 들어요." },
+  { word: "말하다",  meaning: "말하다",  emoji: "💬", targetPhonemes: ["ㅁ", "ㄹ", "ㅎ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "천천히 말해요." },
+  { word: "쓰다",    meaning: "쓰다",    emoji: "✏️", targetPhonemes: ["ㅆ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "글씨를 써요." },
+  { word: "읽다",    meaning: "읽다",    emoji: "📚", targetPhonemes: ["ㅇ", "ㄷ", "ㄱ", "ㄷ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "책을 읽어요." },
+  { word: "그리다",  meaning: "그리다",  emoji: "🎨", targetPhonemes: ["ㄱ", "ㄹ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "그림을 그려요." },
+  { word: "만들다",  meaning: "만들다",  emoji: "🏗️", targetPhonemes: ["ㅁ", "ㄷ", "ㄹ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "장난감을 만들어요." },
+  { word: "찾다",    meaning: "찾다",    emoji: "🔍", targetPhonemes: ["ㅊ", "ㅊ", "ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "물건을 찾아요." },
+  { word: "숨다",    meaning: "숨다",    emoji: "🙈", targetPhonemes: ["ㅅ", "ㅁ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "숨바꼭질을 해요." },
+  { word: "밀다",    meaning: "밀다",    emoji: "🚪", targetPhonemes: ["ㅁ", "ㄹ", "ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "문을 밀어요." },
+  { word: "당기다",  meaning: "당기다",  emoji: "📬", targetPhonemes: ["ㄷ", "ㄲ", "ㄱ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "손으로 당겨요." },
+
+  // ══════════════════════════════════════════════════════════
+  // 형용사 (특성)
+  // ══════════════════════════════════════════════════════════
+  { word: "크다",    meaning: "크다",    emoji: "📏", targetPhonemes: ["ㄲ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "상자가 커요." },
+  { word: "작다",    meaning: "작다",    emoji: "📏", targetPhonemes: ["ㅈ", "ㄲ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "아기가 작아요." },
+  { word: "길다",    meaning: "길다",    emoji: "📏", targetPhonemes: ["ㄱ", "ㄹ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "막대가 길어요." },
+  { word: "짧다",    meaning: "짧다",    emoji: "📏", targetPhonemes: ["ㅆ", "ㅃ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "머리가 짧네요." },
+  { word: "높다",    meaning: "높다",    emoji: "📏", targetPhonemes: ["ㄴ", "ㅁ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "하늘이 높아요." },
+  { word: "낮다",    meaning: "낮다",    emoji: "📏", targetPhonemes: ["ㄴ", "ㅅ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "의자가 낮아요." },
+  { word: "넓다",    meaning: "넓다",    emoji: "📏", targetPhonemes: ["ㄴ", "ㄹ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "공원이 넓어요." },
+  { word: "좁다",    meaning: "좁다",    emoji: "📏", targetPhonemes: ["ㅈ, ㅇ, ㅂ, ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "방이 좁아요." },
+  { word: "뜨겁다",  meaning: "뜨겁다",  emoji: "🔥", targetPhonemes: ["ㄷ, ㄲ, ㅂ, ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "물이 뜨거워요." },
+  { word: "차갑다",  meaning: "차갑다",  emoji: "❄️", targetPhonemes: ["ㅊ, ㄱ, ㅂ, ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "얼음이 차가워요." },
+  { word: "빠르다",  meaning: "빠르다",  emoji: "⚡", targetPhonemes: ["ㅃ, ㄹ, ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "차가 빨라요." },
+  { word: "느리다",  meaning: "느리다",  emoji: "🐢", targetPhonemes: ["ㄴ, ㄹ, ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "달팽이가 느려요." },
+  { word: "밝다",    meaning: "밝다",    emoji: "💡", targetPhonemes: ["ㅂ, ㅂ, ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "햇빛이 밝아요." },
+  { word: "어둡다",  meaning: "어둡다",  emoji: "🌙", targetPhonemes: ["ㅇ, ㄷ, ㅂ, ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "밤이 어두워요." },
+  { word: "깨끗하다",meaning: "깨끗하다",emoji: "✨", targetPhonemes: ["ㄲ, ㄷ, ㅎ, ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "손을 깨끗이 씻어요." },
+  { word: "더럽다",  meaning: "더럽다",  emoji: "💩", targetPhonemes: ["ㄷ, ㄹ, ㅂ, ㄷ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "진흙이 더러워요." },
+  { word: "단맛",    meaning: "단맛",    emoji: "🍯", targetPhonemes: ["ㄷ, ㅁ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "단맛이 좋아요." },
+  { word: "짠맛",    meaning: "짠맛",    emoji: "🧂", targetPhonemes: ["ㅆ, ㅁ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "짠맛이 난다." },
+
+  // ══════════════════════════════════════════════════════════
+  // 마지막 추가 카테고리 (교실, 학용품, 기타)
+  // ══════════════════════════════════════════════════════════
+  { word: "책상",    meaning: "책상",    emoji: "🪑", targetPhonemes: ["ㄲ, ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "책상에 책을 놓아요." },
+  { word: "의자",    meaning: "의자",    emoji: "🪑", targetPhonemes: ["ㅇ, ㅈ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "의자에 앉아요." },
+  { word: "칠판",    meaning: "칠판",    emoji: "🖊️", targetPhonemes: ["ㅊ, ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "칠판에 글씨를 써요." },
+  { word: "지우개",  meaning: "지우개",  emoji: "🧹", targetPhonemes: ["ㅈ, ㅇ, ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "지우개로 지워요." },
+  { word: "딱지",    meaning: "딱지",    emoji: "🎫", targetPhonemes: ["ㄷ, ㄲ, ㅊ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "딱지를 모아요." },
+  { word: "그림책",  meaning: "그림책",  emoji: "📚", targetPhonemes: ["ㄱ, ㄹ, ㅁ, ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "그림책을 읽어요." },
+  { word: "교실",    meaning: "교실",    emoji: "🏫", targetPhonemes: ["ㄱ, ㅇ, ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "교실에서 공부해요." },
+  { word: "운동장",  meaning: "운동장",  emoji: "⚽", targetPhonemes: ["ㅇ, ㄷ, ㅇ, ㄴ, ㄷ, ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "운동장에서 달려요." },
+  { word: "화장실",  meaning: "화장실",  emoji: "🚽", targetPhonemes: ["ㅎ, ㅈ, ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "화장실에 갔어요." },
+  { word: "급식실",  meaning: "급식실",  emoji: "🍽️", targetPhonemes: ["ㄲ, ㅂ, ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "급식실에서 밥을 먹어요." },
 ];
 
 export function getWordsByPhoneme(phoneme: string): PracticeWord[] {
