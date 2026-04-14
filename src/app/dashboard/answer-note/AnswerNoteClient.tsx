@@ -40,7 +40,11 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
   탈락: { bg: "bg-[#FFF8DC]", text: "text-[#D97706]" },
   첨가: { bg: "bg-[#F0FAF8]", text: "text-[#7EDFD0]" },
   미판정: { bg: "bg-[#F5F5F5]", text: "text-[#8B7E74]" },
+  개별습관: { bg: "bg-[#F0FDF4]", text: "text-[#4ADE80]" },
 };
+
+// ✨ Pro Fix 3: 예상치 못한 카테고리 방어용 기본값
+const DEFAULT_CATEGORY_STYLE = { bg: "bg-[#F5F5F5]", text: "text-[#8B7E74]" };
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 
@@ -62,6 +66,11 @@ export function AnswerNoteClient({ childId, childName }: Props) {
       return;
     }
 
+    // ✨ Pro Fix 1: 모바일 키보드 내리기 및 포커스 해제 (UX 향상)
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     setError("");
     setLoading(true);
     setResult(null);
@@ -77,11 +86,15 @@ export function AnswerNoteClient({ childId, childName }: Props) {
         }),
       });
 
-      if (!res.ok) throw new Error("분석 중 오류가 발생했습니다");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || "분석 중 오류가 발생했습니다");
+      }
       const data = await res.json();
       setResult(data);
-    } catch {
-      setError("분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } catch (err) {
+      // ✨ Pro Fix 2: 명시적인 에러 핸들링
+      setError(err instanceof Error ? err.message : "네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +107,8 @@ export function AnswerNoteClient({ childId, childName }: Props) {
     setError("");
   }
 
-  const categoryStyle = CATEGORY_STYLE[result?.errorCategory ?? "미판정"];
+  // ✨ Pro Fix 3: 안전한 카테고리 스타일 매핑 방어 로직
+  const categoryStyle = CATEGORY_STYLE[result?.errorCategory ?? "미판정"] || DEFAULT_CATEGORY_STYLE;
 
   return (
     <div className="px-5 pt-6 pb-8 max-w-lg mx-auto space-y-5">
@@ -152,9 +166,11 @@ export function AnswerNoteClient({ childId, childName }: Props) {
             />
           </div>
 
-          {/* 에러 메시지 */}
+          {/* ✨ Pro Fix 2: 에러를 단순 텍스트가 아닌 눈에 띄는 박스로 처리 */}
           {error && (
-            <p className="text-sm text-[#FCA5A5] font-semibold px-1">{error}</p>
+            <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl px-4 py-3">
+              <p className="text-sm text-[#EF4444] font-bold text-center">🚨 {error}</p>
+            </div>
           )}
 
           {/* 분석 버튼 */}
@@ -172,10 +188,24 @@ export function AnswerNoteClient({ childId, childName }: Props) {
 
       {/* 로딩 */}
       {loading && (
-        <BubbleCard color="peach" className="text-center py-8">
-          <div className="text-4xl mb-3 animate-bounce">🧠</div>
-          <p className="font-bold text-[#3D3530]">AI가 분석 중이에요...</p>
-          <p className="text-sm text-[#8B7E74] mt-1">잠시만 기다려주세요</p>
+        <BubbleCard color="peach" className="text-center py-8 space-y-3">
+          <div className="flex justify-center gap-2">
+            <div className="text-4xl animate-bounce" style={{ animationDelay: "0s" }}>
+              🤖
+            </div>
+            <div className="text-4xl animate-bounce" style={{ animationDelay: "0.2s" }}>
+              🔍
+            </div>
+          </div>
+          <div>
+            <p className="font-bold text-[#3D3530] text-lg">또비가 분석 중이에요</p>
+            <p className="text-sm text-[#8B7E74] mt-1">
+              {childName}의 발음을 자세히 살펴보고 있어요 ✨
+            </p>
+          </div>
+          <div className="mt-3 h-1 bg-gradient-to-r from-[#FFB38A] via-[#FFE4CC] to-[#FFB38A] rounded-full overflow-hidden">
+            <div className="h-full bg-[#FFB38A] animate-pulse"></div>
+          </div>
         </BubbleCard>
       )}
 
@@ -262,7 +292,7 @@ export function AnswerNoteClient({ childId, childName }: Props) {
                     ];
                     const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
                     return (
-                      <div key={i} className="flex gap-3">
+                      <div key={`training-step-${i}`} className="flex gap-3">
                         <div className="flex flex-col items-center gap-1 flex-shrink-0">
                           <span className={`w-7 h-7 rounded-full ${meta.color} text-white text-xs font-black flex items-center justify-center`}>
                             {i + 1}
