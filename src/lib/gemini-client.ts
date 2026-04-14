@@ -1,6 +1,9 @@
+'use server';
+
 /**
  * Gemini Flash API 클라이언트
  * 공식 @google/generative-ai SDK 사용
+ * 서버 환경에서만 실행 (API Key 보안)
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -73,7 +76,7 @@ export async function getGeminiFeedback(
       ? `\n⚠️ 참고: 이 발음은 일반적인 조음 오류 패턴 데이터베이스에 등록되지 않은 경우입니다. 최선을 다해 분석해주되, 분석이 불확실하다면 8번 신뢰도를 낮게 주세요.`
       : '';
 
-    // 사용자 프롬프트
+    // 사용자 프롬프트 (JSON 응답 요청)
     const userPrompt = `다음 조음 오류를 분석해주세요:${unknownPatternNote}
 
 【오류 정보】
@@ -83,35 +86,20 @@ export async function getGeminiFeedback(
 - 판정된 패턴: ${errorType}
 - 아이 나이: ${childAge}세
 
-【요청 형식】
-다음 형식으로 정확히 한국어 답변해주세요. 마크다운 형식이 아닌 순수 텍스트로:
+【응답 형식】
+아래의 JSON 형식으로 정확히 응답해주세요. (Markdown 코드 블록 없이 순수 JSON만 출력):
 
-1. 원인: (2~3문장, 부모가 이해할 수 있는 쉬운 말과 신체감각. 혀/입술의 위치 설명 포함)
-
-2. 1단계: (제목: 조음 감각 깨우기)
-   방법: (구체적이고 따라하기 쉬운 방법. 도구나 인형 활용 가능)
-   포인트: (주의할 점 - 부모가 놓치기 쉬운 것)
-
-3. 2단계: (제목: 소리 느끼기)
-   방법: (아이가 정상/오답을 구분하도록 하는 방법)
-   포인트: (주의할 점)
-
-4. 3단계: (제목: 음절/단어로 연결하기)
-   방법: (목표 단어에 가까운 단어들로 연습)
-   포인트: (주의할 점)
-
-5. 4단계: (제목: 문장과 일상 상황에서)
-   방법: (자연스러운 대화 속에서 반복 연습)
-   포인트: (주의할 점)
-
-6. 추천 단어 (쉼표로 구분): 이 발음 오류 패턴이 적용될 가능성이 높은 단어 5개 이상
-   (예: 사자, 수박, 우산, 소리, 사진 - 같은 음소가 포함된 쉬운 단어들)
-
-7. 부모님께: (공감과 격려의 메시지. 아이의 발달 속도는 개인차가 크며, 꾸준한 연습이 중요하다는 따뜻한 말씀)
-
-8. 분석 신뢰도 (1~5): (숫자만. 5=확실한 패턴, 3=보통, 1=매우 불확실한 개별 습관)
-
-9. 개별 습관 여부 (예/아니오): (일반적인 조음 발달 패턴으로 설명하기 어려운 아이만의 독특한 습관인지)`;
+{
+  "rootCause": "아이가 왜 이런 발음을 했는지 부모가 이해하기 쉬운 1-2문장 설명 (혀/입술 위치 포함)",
+  "trainingStep1": "1단계 조음 감각 깨우기: 구체적이고 따라하기 쉬운 방법과 주의점 (1문장)",
+  "trainingStep2": "2단계 소리 느끼기: 아이가 정상/오답을 구분하도록 하는 방법과 주의점 (1문장)",
+  "trainingStep3": "3단계 음절/단어로 연결하기: 목표 단어에 가까운 단어들로 연습하는 방법과 주의점 (1문장)",
+  "trainingStep4": "4단계 문장과 일상 상황에서: 자연스러운 대화 속 반복 연습 방법과 주의점 (1문장)",
+  "recommendedWords": ["사자", "수박", "우산", "소리", "사진"],
+  "parentMessage": "아이의 발달 속도는 개인차가 크며, 꾸준한 연습이 중요합니다. 따뜻한 격려 메시지 (1문장)",
+  "geminiConfidence": 4,
+  "isIndividualHabit": false
+}`;
 
     // Gemini 호출
     const result = await model.generateContent({
@@ -126,82 +114,111 @@ export async function getGeminiFeedback(
 
     const responseText = result.response.text();
 
-    // 응답 파싱
-    const parsed = parseGeminiFeedback(responseText);
-    return parsed;
+    // JSON 응답 파싱
+    try {
+      const parsed = JSON.parse(responseText);
+
+      // 필수 필드 검증
+      if (!parsed.rootCause || !parsed.trainingStep1) {
+        console.error('[Gemini Response Validation] 필수 필드 누락:', parsed);
+        return buildFallbackGuidance(
+          [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+          childPronunciation
+        );
+      }
+
+      return {
+        success: true,
+        rootCause: parsed.rootCause,
+        trainingStep1: parsed.trainingStep1,
+        trainingStep2: parsed.trainingStep2 || '2단계 정보 없음',
+        trainingStep3: parsed.trainingStep3 || '3단계 정보 없음',
+        trainingStep4: parsed.trainingStep4 || '4단계 정보 없음',
+        recommendedWords: Array.isArray(parsed.recommendedWords)
+          ? parsed.recommendedWords.filter((w: string) => w && w.length > 0).slice(0, 10)
+          : [],
+        parentMessage: parsed.parentMessage || '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다.',
+        geminiConfidence: Math.min(Math.max(parsed.geminiConfidence || 3, 1), 5),
+        isIndividualHabit: Boolean(parsed.isIndividualHabit),
+      };
+    } catch (parseError) {
+      console.error('[Gemini JSON Parsing Error]', {
+        rawResponse: responseText,
+        error: parseError,
+      });
+      return buildFallbackGuidance(
+        [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+        childPronunciation
+      );
+    }
   } catch (error) {
-    console.error('Gemini API 오류:', error);
-    return null;
+    console.error('[Gemini API Error in getGeminiFeedback]', {
+      targetWord,
+      childPronunciation,
+      errorType,
+      errorCategory,
+      error,
+    });
+    return buildFallbackGuidance(
+      [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+      childPronunciation
+    );
   }
 }
 
 /**
- * Gemini 응답 파싱 (언어치료학적 형식)
- * 구조화된 형식으로 추출 + 부모님께 응원 메시지 포함
+ * Gemini API 오류 또는 파싱 실패 시 fallback 훈련법 생성
+ * 첨가 오류(Addition)처럼 targetPhoneme이 없는 경우도 대비
  */
-function parseGeminiFeedback(responseText: string) {
-  try {
-    // 1. 원인 추출
-    const causeMatch = responseText.match(/1\.\s*원인:([\s\S]*?)(?=2\.|3\.)/);
-    const rootCause = causeMatch
-      ? causeMatch[1].trim()
-      : '원인을 분석할 수 없습니다';
+function buildFallbackGuidance(
+  errors: Array<{ targetPhoneme?: string; hearedPhoneme?: string; errorType?: string; errorCategory?: string }>,
+  childPronunciation: string
+) {
+  const primary = errors?.[0] || {};
+  const phonemeKey = primary.targetPhoneme || primary.hearedPhoneme || '';
 
-    // 2. 훈련 단계별 추출 (정규식 패턴 개선)
-    const step1Match = responseText.match(/2\.\s*1단계:([\s\S]*?)(?=3\.)/);
-    const step2Match = responseText.match(/3\.\s*2단계:([\s\S]*?)(?=4\.)/);
-    const step3Match = responseText.match(/4\.\s*3단계:([\s\S]*?)(?=5\.)/);
-    const step4Match = responseText.match(/5\.\s*4단계:([\s\S]*?)(?=6\.)/);
+  // 음소별 팁 (첨가 오류 포함)
+  const tips: Record<string, string> = {
+    'ㄹ': '혀 끝을 윗잇몸에 올려두고 옆으로 공기를 내보내세요.',
+    'ㅅ': '이 사이로 혀가 나와 찬 바람이 나오도록 하세요.',
+    'ㅈ': '혀를 입천장에 붙였다가 떼어내며 "츠" 소리를 내세요.',
+    'ㅊ': '"ㅈ" 소리를 내면서 뜨거운 바람을 부드럽게 내보내세요.',
+    'ㄱ': '목 뒤에서 나오는 소리입니다. 목구멍에 힘을 주고 자세히 들어보세요.',
+    'ㄲ': '일반적인 "ㄱ"보다 더 세게 터뜨리는 쌌쌌한 소리예요.',
+  };
 
-    const trainingStep1 = step1Match ? step1Match[1].trim() : '단계 정보 없음';
-    const trainingStep2 = step2Match ? step2Match[1].trim() : '단계 정보 없음';
-    const trainingStep3 = step3Match ? step3Match[1].trim() : '단계 정보 없음';
-    const trainingStep4 = step4Match ? step4Match[1].trim() : '단계 정보 없음';
+  const tip = tips[phonemeKey] ?? '정확한 입모양에 주의하며 천천히 연습해보세요.';
 
-    // 3. 추천 단어 추출
-    const wordsMatch = responseText.match(/6\.\s*추천 단어[:\s]*([\s\S]*?)(?=7\.|부모님께|$)/);
-    const wordsText = wordsMatch ? wordsMatch[1].trim() : '';
-    const recommendedWords = wordsText
-      .split(/[,،、]/) // 쉼표와 다양한 구분 기호 지원
-      .map((w) => w.trim())
-      .filter((w) => w.length > 0 && w !== '예:' && !w.includes('('))
-      .slice(0, 10); // 최대 10개
+  return {
+    success: true,
+    rootCause:
+      `"${childPronunciation}"은 발달 과정에서 자주 나타나는 패턴입니다. ` +
+      `정확한 소리 구조를 귀와 입으로 천천히 느껴가며 연습하세요.`,
 
-    // 4. 부모님께 응원 메시지 추출
-    const parentMessageMatch = responseText.match(/7\.\s*부모님께:([\s\S]*?)(?=8\.|$)|부모님께:([\s\S]*?)(?=8\.|$)/);
-    const parentMessage = parentMessageMatch
-      ? (parentMessageMatch[1] || parentMessageMatch[2]).trim()
-      : '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다. 모든 아이는 자신의 속도로 발달합니다!';
+    trainingStep1:
+      `1단계 조음 감각 깨우기: 아이의 혀와 입술이 어떻게 움직이는지 거울 앞에서 함께 관찰해보세요. ` +
+      `손가락으로 아이의 턱이나 뺨을 만지며 진동을 느껴보는 것도 좋습니다.`,
 
-    // 5. 분석 신뢰도 추출 (1~5)
-    const confidenceMatch = responseText.match(/8\.\s*분석 신뢰도[^:]*:\s*(\d)/);
-    const geminiConfidence = confidenceMatch ? parseInt(confidenceMatch[1], 10) : 3;
+    trainingStep2:
+      `2단계 소리 느끼기: "${tip}" ` +
+      `부모님이 먼저 천천히 정확한 소리를 들려주고, 아이가 따라 해보도록 격려하세요.`,
 
-    // 6. 개별 습관 여부 추출
-    const individualHabitMatch = responseText.match(/9\.\s*개별 습관 여부[^:]*:\s*(예|아니오|네|yes|no)/i);
-    const isIndividualHabit =
-      geminiConfidence <= 2 ||
-      (individualHabitMatch ? ['예', '네', 'yes'].includes(individualHabitMatch[1].toLowerCase()) : false);
+    trainingStep3:
+      `3단계 음절/단어로 연결하기: 목표 음소가 들어간 쉬운 단어부터 시작해서 ` +
+      `"ㄱ→가→고양이" 처럼 단계적으로 확장하며 연습하세요.`,
 
-    return {
-      success: true,
-      rootCause,
-      trainingStep1,
-      trainingStep2,
-      trainingStep3,
-      trainingStep4,
-      recommendedWords,
-      parentMessage,
-      geminiConfidence,
-      isIndividualHabit,
-    };
-  } catch (error) {
-    console.error('Gemini 응답 파싱 오류:', error);
-    return {
-      success: false,
-      error: 'Gemini 응답 파싱 실패',
-    };
-  }
+    trainingStep4:
+      `4단계 문장과 일상 상황에서: 평소 대화 중에 자연스럽게 그 소리를 의도적으로 써 보면서 ` +
+      `"밥 먹을 때", "산책할 때" 같은 구체적 상황에서 반복하세요.`,
+
+    recommendedWords: [],
+    parentMessage:
+      `모든 아이는 자신의 속도로 발달합니다. ` +
+      `매일 5-10분 정도 즐겁게 함께 연습하는 것이 가장 효과적입니다!`,
+
+    geminiConfidence: 2,
+    isIndividualHabit: false,
+  };
 }
 
 /**
@@ -237,7 +254,11 @@ ${phonemeList}
 
     return result.response.text();
   } catch (error) {
-    console.error('약점 분석 리포트 생성 오류:', error);
+    console.error('[Gemini API Error in generateWeakPhonemeReport]', {
+      childName,
+      weakPhonemeCount: weakPhonemes?.length || 0,
+      error,
+    });
     return null;
   }
 }
