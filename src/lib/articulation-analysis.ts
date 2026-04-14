@@ -81,6 +81,42 @@ const ARTICULATION_GUIDES: Record<string, Omit<ArticulationGuide, "phoneme">> = 
     imageKey: "glottal-fricative",
     tipText: "목 안에서 바람을 내보내듯이 '하~' 하세요",
   },
+  "ㅌ": {
+    place: "치조음",
+    manner: "파열음",
+    imageKey: "tongue-alveolar-stop-aspirated",
+    tipText: "혀 끝을 윗잇몸에 대었다가 바람을 강하게 내뱉으며 떼세요",
+  },
+  "ㄸ": {
+    place: "치조음",
+    manner: "파열음",
+    imageKey: "tongue-alveolar-stop-tense",
+    tipText: "혀 끝에 힘을 주고 윗잇몸에 대었다가 강하게 떼세요",
+  },
+  "ㅃ": {
+    place: "양순음",
+    manner: "파열음",
+    imageKey: "lips-bilabial-tense",
+    tipText: "입술을 꽉 다물었다가 힘주어 강하게 떼세요",
+  },
+  "ㅉ": {
+    place: "치조구개음",
+    manner: "파찰음",
+    imageKey: "tongue-palato-affricate-tense",
+    tipText: "혀를 윗잇몸에 강하게 댔다가 떼세요",
+  },
+  "ㄲ": {
+    place: "연구개음",
+    manner: "파열음",
+    imageKey: "tongue-velar-tense",
+    tipText: "혀 뒤쪽에 힘을 주고 목 안쪽에 대었다가 강하게 떼세요",
+  },
+  "ㅇ": {
+    place: "연구개음",
+    manner: "비음",
+    imageKey: "tongue-velar-nasal",
+    tipText: "혀 뒤쪽을 목 안쪽에 대고 코로 '응~' 소리를 내보내세요",
+  },
 };
 
 export function buildArticulationGuides(errors: PhonemeError[]): ArticulationGuide[] {
@@ -88,6 +124,9 @@ export function buildArticulationGuides(errors: PhonemeError[]): ArticulationGui
   const guides: ArticulationGuide[] = [];
 
   for (const error of errors) {
+    // 첨가 오류로 인한 빈 문자열 필터링
+    if (!error.targetPhoneme) continue;
+
     if (seen.has(error.targetPhoneme)) continue;
     seen.add(error.targetPhoneme);
 
@@ -107,6 +146,9 @@ export function getMostFrequentErrors(
 
   for (const errors of errorHistory) {
     for (const error of errors) {
+      // 첨가 오류로 인한 빈 문자열 통계 집계 방지
+      if (!error.targetPhoneme) continue;
+
       counts[error.targetPhoneme] = (counts[error.targetPhoneme] ?? 0) + 1;
     }
   }
