@@ -2,6 +2,13 @@
  * 한글 자모 분해 엔진
  * 유니코드를 이용하여 한글을 초성/중성/종성으로 분해하고,
  * 두 단어를 비교하여 조음 오류를 탐지합니다.
+ *
+ * [수정 이력]
+ * - fix: 초성 'ㅇ'(음가 없음) → 다른 자음 변화는 "대치"가 아닌 "첨가"로 처리
+ * - fix: 목표보다 아이 발음이 길 때 음절 수준 첨가 감지 보강
+ * - fix: 겹받침(ㄳ, ㄵ 등)을 첫 자음으로 분해해 조음 정보 조회
+ * - feat: CONSONANT_INFO 기반 세부 패턴 판별 (경음화, 치조음화 등)
+ * - feat: VOWEL_INFO 추가 (모음 고/저/전/후설 정보)
  */
 
 // 한글 자모 테이블
@@ -21,6 +28,121 @@ const JONGSEONG = [
   'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ',
   'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
 ];
+
+// ─── 겹받침 → 대표 단일 자음 분해 테이블 ─────────────────────────────────────
+// "앉다→안다"처럼 겹받침이 단일 자음으로 분석될 때 첫 자음 정보로 fallback
+const COMPOUND_JONGSEONG: Record<string, string> = {
+  'ㄳ': 'ㄱ', 'ㄵ': 'ㄴ', 'ㄶ': 'ㄴ', 'ㄺ': 'ㄹ',
+  'ㄻ': 'ㄹ', 'ㄼ': 'ㄹ', 'ㄽ': 'ㄹ', 'ㄾ': 'ㄹ',
+  'ㄿ': 'ㄹ', 'ㅀ': 'ㄹ', 'ㅄ': 'ㅂ',
+};
+
+/** 겹받침이면 대표 단일 자음 반환, 아니면 그대로 반환 */
+function normalizeJongseong(j: string): string {
+  return COMPOUND_JONGSEONG[j] ?? j;
+}
+
+// ─── 자음 조음 정보 ────────────────────────────────────────────────────────────
+interface ConsonantInfo {
+  place: string;    // 조음 위치 (양순음/치조음/경구개음/연구개음/성문음)
+  manner: string;   // 조음 방법 (파열음/마찰음/파찰음/비음/유음)
+  tense: boolean;   // 경음 여부 (ㄲ ㄸ ㅃ ㅆ ㅉ)
+  aspirated: boolean; // 기음 여부 (ㅋ ㅌ ㅍ ㅊ ㅎ)
+}
+
+const CONSONANT_INFO: Record<string, ConsonantInfo> = {
+  'ㄱ': { place: '연구개음', manner: '파열음',  tense: false, aspirated: false },
+  'ㄲ': { place: '연구개음', manner: '파열음',  tense: true,  aspirated: false },
+  'ㅋ': { place: '연구개음', manner: '파열음',  tense: false, aspirated: true  },
+  'ㄷ': { place: '치조음',   manner: '파열음',  tense: false, aspirated: false },
+  'ㄸ': { place: '치조음',   manner: '파열음',  tense: true,  aspirated: false },
+  'ㅌ': { place: '치조음',   manner: '파열음',  tense: false, aspirated: true  },
+  'ㅂ': { place: '양순음',   manner: '파열음',  tense: false, aspirated: false },
+  'ㅃ': { place: '양순음',   manner: '파열음',  tense: true,  aspirated: false },
+  'ㅍ': { place: '양순음',   manner: '파열음',  tense: false, aspirated: true  },
+  'ㅅ': { place: '치조음',   manner: '마찰음',  tense: false, aspirated: false },
+  'ㅆ': { place: '치조음',   manner: '마찰음',  tense: true,  aspirated: false },
+  'ㅎ': { place: '성문음',   manner: '마찰음',  tense: false, aspirated: true  },
+  'ㅈ': { place: '경구개음', manner: '파찰음',  tense: false, aspirated: false },
+  'ㅉ': { place: '경구개음', manner: '파찰음',  tense: true,  aspirated: false },
+  'ㅊ': { place: '경구개음', manner: '파찰음',  tense: false, aspirated: true  },
+  'ㄴ': { place: '치조음',   manner: '비음',    tense: false, aspirated: false },
+  'ㅁ': { place: '양순음',   manner: '비음',    tense: false, aspirated: false },
+  'ㅇ': { place: '연구개음', manner: '비음',    tense: false, aspirated: false }, // 종성 ㅇ만 [ŋ]
+  'ㄹ': { place: '치조음',   manner: '유음',    tense: false, aspirated: false },
+};
+
+// ─── 모음 조음 정보 ────────────────────────────────────────────────────────────
+interface VowelInfo {
+  height: string;    // 혀 높이: 고모음/중모음/저모음
+  backness: string;  // 혀 위치: 전설/후설
+  rounded: boolean;  // 원순 여부
+}
+
+const VOWEL_INFO: Record<string, VowelInfo> = {
+  'ㅏ': { height: '저모음',  backness: '후설', rounded: false },
+  'ㅐ': { height: '중모음',  backness: '전설', rounded: false },
+  'ㅑ': { height: '저모음',  backness: '후설', rounded: false },
+  'ㅒ': { height: '중모음',  backness: '전설', rounded: false },
+  'ㅓ': { height: '중모음',  backness: '후설', rounded: false },
+  'ㅔ': { height: '중모음',  backness: '전설', rounded: false },
+  'ㅕ': { height: '중모음',  backness: '후설', rounded: false },
+  'ㅖ': { height: '중모음',  backness: '전설', rounded: false },
+  'ㅗ': { height: '고모음',  backness: '후설', rounded: true  },
+  'ㅛ': { height: '고모음',  backness: '후설', rounded: true  },
+  'ㅜ': { height: '고모음',  backness: '후설', rounded: true  },
+  'ㅠ': { height: '고모음',  backness: '후설', rounded: true  },
+  'ㅡ': { height: '고모음',  backness: '후설', rounded: false },
+  'ㅣ': { height: '고모음',  backness: '전설', rounded: false },
+};
+
+/**
+ * CONSONANT_INFO를 이용해 두 자음 간 세부 대치 패턴 판별
+ * ERROR_PATTERNS 테이블에 없는 조합에 대한 fallback
+ */
+function getDetailedSubstitutionPattern(
+  target: string,
+  heard: string
+): { name: string; description: string } | null {
+  const t = CONSONANT_INFO[target];
+  const h = CONSONANT_INFO[heard];
+  if (!t || !h) return null;
+
+  // 같은 조음 위치, 예사소리 → 경음
+  if (t.place === h.place && !t.tense && h.tense && !h.aspirated) {
+    return { name: '경음화', description: `${target}을 더 강하게 ${heard}로 발음하고 있어요.` };
+  }
+  // 같은 조음 위치, 예사소리 → 기음
+  if (t.place === h.place && !t.aspirated && h.aspirated) {
+    return { name: '기음화', description: `${target}을 숨을 내뿜는 ${heard}로 발음하고 있어요.` };
+  }
+  // 연구개음 → 치조음 (ㄱ→ㄷ 등)
+  if (t.place === '연구개음' && h.place === '치조음') {
+    return { name: '치조음화', description: `혀가 뒤에서 앞쪽으로 이동해 ${target} 대신 ${heard}를 발음하고 있어요.` };
+  }
+  // 치조음 → 연구개음 (ㄷ→ㄱ 등)
+  if (t.place === '치조음' && h.place === '연구개음') {
+    return { name: '연구개음화', description: `혀가 앞에서 뒤쪽으로 이동해 ${target} 대신 ${heard}를 발음하고 있어요.` };
+  }
+  // 마찰음 → 파열음
+  if (t.manner === '마찰음' && h.manner === '파열음') {
+    return { name: '파열음화', description: `바람 소리(${target})를 막히는 소리(${heard})로 발음하고 있어요.` };
+  }
+  // 파열음 → 비음
+  if (t.manner === '파열음' && h.manner === '비음') {
+    return { name: '비음화', description: `막히는 소리(${target})를 코 소리(${heard})로 발음하고 있어요.` };
+  }
+  // 비음 → 파열음
+  if (t.manner === '비음' && h.manner === '파열음') {
+    return { name: '탈비음화', description: `코 소리(${target})를 막히는 소리(${heard})로 발음하고 있어요.` };
+  }
+  // 유음 관련
+  if (t.manner === '유음' && h.manner !== '유음') {
+    return { name: '유음대치', description: `혀를 굴리는 소리(${target})를 다른 소리(${heard})로 바꾸고 있어요.` };
+  }
+
+  return null;
+}
 
 /**
  * 한 글자를 초성/중성/종성으로 분해
@@ -128,6 +250,12 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
       category: '대치',
       description: 'ㅈ을 ㅊ으로 바꾸어 발음하고 있어요.',
       parentHint: '입술과 혀 위치의 미세한 차이를 아직 구분 못 하고 있어요.'
+    },
+    'ㅅ': {
+      name: '마찰음 교환 (ㅈ→ㅅ)',
+      category: '대치',
+      description: 'ㅈ을 더 약한 마찰음(ㅅ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '혀 위치를 입천장 앞쪽에서 뒤쪽으로 옮기도록 도와주세요.'
     }
   },
 
@@ -159,6 +287,18 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
       category: '대치',
       description: '혀를 굴려야 하는 음(ㄹ)을 파열음(ㄷ)으로 바꾸고 있어요.',
       parentHint: '혀를 굴리지 못하고 한 번 튕기는 형태로 발음하고 있어요.'
+    },
+    'ㄲ': {
+      name: '유음의 경음화',
+      category: '대치',
+      description: 'ㄹ을 경음(ㄲ)으로 더 강하게 발음하고 있어요.',
+      parentHint: '혀를 굴릴 때 너무 많은 힘을 주고 있어요. 가볍게 굴려보세요.'
+    },
+    'ㅇ': {
+      name: '유음의 초성탈락',
+      category: '탈락',
+      description: 'ㄹ 음소가 완전히 빠지고 있어요. (예: 라도 → 아도)',
+      parentHint: '혀를 굴리는 움직임을 아직 습득하지 못했어요. 천천히 따라 해보세요.'
     }
   },
 
@@ -223,6 +363,12 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
       category: '동화',
       description: 'ㅂ을 비음(ㅁ)으로 바꾸어 발음하고 있어요.',
       parentHint: '입술을 닫아서 코로 바람을 내보내고 있어요.'
+    },
+    'ㅇ': {
+      name: '양순음의 초성탈락',
+      category: '탈락',
+      description: 'ㅂ이 완전히 빠지고 있어요. (예: 바나나 → 아나나)',
+      parentHint: '입술 접촉 움직임을 배워야 해요. 손가락으로 입술을 터치하게 해보세요.'
     }
   },
 
@@ -233,6 +379,18 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
       category: '대치',
       description: 'ㅁ을 파열음(ㅂ)으로 바꾸어 발음하고 있어요.',
       parentHint: '입술을 닫았다 열면서 발음해야 해요. 코로 내보내는 느낌을 빼야 합니다.'
+    },
+    'ㅇ': {
+      name: '비음의 초성탈락',
+      category: '탈락',
+      description: 'ㅁ이 완전히 빠지고 있어요. (예: 마 → 아)',
+      parentHint: '코로 내보내는 소리를 배우지 못했어요. 콧소리를 내도록 유도해보세요.'
+    },
+    'ㄱ': {
+      name: '비음→파열음 치환 (ㅁ→ㄱ)',
+      category: '대치',
+      description: 'ㅁ을 뒤쪽 파열음(ㄱ)으로 바꾸어 발음하고 있어요.',
+      parentHint: '입술을 닫는 것이 아니라 혀 뒤쪽을 막고 있어요. 입술 닫기 연습을 도와주세요.'
     }
   },
 
@@ -248,6 +406,28 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
       category: '동화',
       description: 'ㄴ을 양순 비음(ㅁ)으로 바꾸어 발음하고 있어요.',
       parentHint: '코로 내보내되, 입술을 닫아야 해요.'
+    },
+    'ㅇ': {
+      name: '비음의 초성탈락 (ㄴ탈락)',
+      category: '탈락',
+      description: 'ㄴ이 완전히 빠지고 있어요. (예: 나라 → 아라)',
+      parentHint: '혀끝을 윗잇몸에 붙이면서 콧소리를 내는 연습이 필요해요.'
+    }
+  },
+
+  // [ㅎ 시리즈 (중요한 누락 패턴)]
+  'ㅎ': {
+    'ㅇ': {
+      name: 'ㅎ의 무성화/탈락',
+      category: '탈락',
+      description: 'ㅎ 소리를 내지 못하고 무성 모음으로 발음하고 있어요.',
+      parentHint: '숨을 가늘게 내보내면서 "호" 소리를 내도록 도와주세요.'
+    },
+    'ㄱ': {
+      name: 'ㅎ의 경음화',
+      category: '대치',
+      description: 'ㅎ을 ㄱ으로 발음하고 있어요.',
+      parentHint: '혀가 뒤로 물러나고 있어요. 목 뒤쪽을 더 세게 막으려는 경향이 있습니다.'
     }
   },
 
@@ -285,9 +465,11 @@ export const ERROR_CATEGORY_INFO = {
 
 /**
  * 오류 분석 - 대치 오류 탐지
- * @param targetWord 목표 단어
- * @param childWord 아이 발음
- * @returns { errorType, errorCategory, errorPattern, confidence, requiresGemini, parentHint }
+ * fix: 초성 'ㅇ'(음가 없음) 특별 처리
+ *   - target='ㅇ', heard=다른자음 → 첨가 (무음 자리에 소리가 생김)
+ *   - target=다른자음, heard='ㅇ' → 탈락 (소리가 사라짐)
+ * fix: 겹받침은 normalizeJongseong으로 단일 자음 변환 후 비교
+ * feat: ERROR_PATTERNS 미등록 시 CONSONANT_INFO 기반 세부 패턴 판별
  */
 export function analyzeSubstitutionError(targetWord: string, childWord: string) {
   const targetDecomposed = decomposeWord(targetWord);
@@ -298,94 +480,147 @@ export function analyzeSubstitutionError(targetWord: string, childWord: string) 
     return null;
   }
 
-  // 각 음절에서 자음 비교
   for (let i = 0; i < targetDecomposed.length; i++) {
     const target = targetDecomposed[i];
     const child = childDecomposed[i];
 
     if (!target || !child) continue;
 
-    // 초성 비교 (가장 일반적)
+    // ── 초성 비교 ──────────────────────────────────────────────────────────
     if (target.choseong !== child.choseong) {
-      // ㅇ(무음)으로 변하면 초성탈락
-      if (child.choseong === 'ㅇ') {
+      const tCho = target.choseong;
+      const cCho = child.choseong;
+
+      // [fix] 초성 'ㅇ'은 음가 없음 (placeholder)
+      // target='ㅇ' → heard=실제자음: 없던 소리가 생긴 "첨가"
+      if (tCho === 'ㅇ' && cCho !== 'ㅇ') {
         return {
-          errorType: '초성탈락',
-          errorCategory: '탈락',
-          errorPattern: '초성 탈락',
+          errorType: '초성첨가',
+          errorCategory: '첨가',
+          errorPattern: `초성 첨가 (ㅇ→${cCho})`,
           affectedSyllable: i,
-          targetJamo: target.choseong,
-          childJamo: '(없음)',
+          targetJamo: '(없음)',
+          childJamo: cCho,
           confidence: 90,
           requiresGemini: false,
-          parentHint: '첫 자음이 빠졌어요.'
+          parentHint: `없어야 할 ${cCho} 소리가 앞에 생겼어요.`
         };
       }
 
-      const patternObj = ERROR_PATTERNS[target.choseong]?.[child.choseong];
+      // target=실제자음 → heard='ㅇ': 소리가 사라진 "탈락"
+      if (tCho !== 'ㅇ' && cCho === 'ㅇ') {
+        const patternEntry = ERROR_PATTERNS[tCho]?.['ㅇ'];
+        return {
+          errorType: patternEntry?.name ?? '초성탈락',
+          errorCategory: '탈락' as const,
+          errorPattern: '초성 탈락',
+          affectedSyllable: i,
+          targetJamo: tCho,
+          childJamo: '(없음)',
+          confidence: 90,
+          requiresGemini: false,
+          parentHint: patternEntry?.parentHint ?? `${tCho} 소리가 빠졌어요.`,
+          description: patternEntry?.description
+        };
+      }
+
+      // 둘 다 실제 자음인 경우 — 대치
+      // 1순위: ERROR_PATTERNS 테이블 조회
+      const patternObj = ERROR_PATTERNS[tCho]?.[cCho];
       if (patternObj) {
         return {
           errorType: patternObj.name,
           errorCategory: patternObj.category,
           errorPattern: patternObj.name,
           affectedSyllable: i,
-          targetJamo: target.choseong,
-          childJamo: child.choseong,
+          targetJamo: tCho,
+          childJamo: cCho,
           confidence: 95,
-          requiresGemini: false,
+          requiresGemini: patternObj.category === '동화',
           parentHint: patternObj.parentHint,
           description: patternObj.description
         };
       }
 
-      // ERROR_PATTERNS에 없는 자음 조합 → 패턴미인식으로 명시 반환 후 Gemini 위임
+      // 2순위: CONSONANT_INFO 기반 세부 패턴 판별
+      const detailedPattern = getDetailedSubstitutionPattern(tCho, cCho);
+      if (detailedPattern) {
+        return {
+          errorType: detailedPattern.name,
+          errorCategory: '대치' as const,
+          errorPattern: detailedPattern.name,
+          affectedSyllable: i,
+          targetJamo: tCho,
+          childJamo: cCho,
+          confidence: 75,
+          requiresGemini: false,
+          parentHint: detailedPattern.description,
+          description: detailedPattern.description
+        };
+      }
+
+      // 3순위: 미등록 패턴 → Gemini 위임
       return {
         errorType: '패턴미인식',
-        errorCategory: '미판정',
-        errorPattern: `${target.choseong}→${child.choseong} (미등록 패턴)`,
+        errorCategory: '미판정' as const,
+        errorPattern: `${tCho}→${cCho} (미등록 패턴)`,
         affectedSyllable: i,
-        targetJamo: target.choseong,
-        childJamo: child.choseong,
+        targetJamo: tCho,
+        childJamo: cCho,
         confidence: 30,
         requiresGemini: true,
         isUnknownPattern: true,
-        note: `[${target.choseong}→${child.choseong}] 패턴이 데이터베이스에 없습니다. AI 분석을 시도합니다.`
+        note: `[${tCho}→${cCho}] 패턴이 데이터베이스에 없습니다. AI 분석을 시도합니다.`
       };
     }
 
-    // 중성 비교
+    // ── 중성(모음) 비교 ────────────────────────────────────────────────────
     if (target.jungseong !== child.jungseong) {
+      const tV = VOWEL_INFO[target.jungseong];
+      const cV = VOWEL_INFO[child.jungseong];
+      let vowelDetail = '모음 대치';
+      if (tV && cV) {
+        if (tV.height !== cV.height) vowelDetail = `모음 높이 변화 (${tV.height}→${cV.height})`;
+        else if (tV.backness !== cV.backness) vowelDetail = `모음 위치 변화 (${tV.backness}→${cV.backness})`;
+        else if (tV.rounded !== cV.rounded) vowelDetail = `원순성 변화`;
+      }
       return {
         errorType: '모음 오류',
-        errorCategory: '대치',
-        errorPattern: '모음 대치',
+        errorCategory: '대치' as const,
+        errorPattern: vowelDetail,
         affectedSyllable: i,
         targetJamo: target.jungseong,
         childJamo: child.jungseong,
         confidence: 80,
-        requiresGemini: false
+        requiresGemini: false,
+        parentHint: `모음 ${target.jungseong}를 ${child.jungseong}로 발음하고 있어요.`
       };
     }
 
-    // 종성 비교 — 변화 원인이 동화일 수 있으므로 Gemini 위임
-    if (target.jongseong !== child.jongseong) {
-      if (!child.jongseong) {
+    // ── 종성(받침) 비교 ────────────────────────────────────────────────────
+    // [fix] 겹받침은 단일 자음으로 정규화해서 비교
+    const tJong = normalizeJongseong(target.jongseong);
+    const cJong = normalizeJongseong(child.jongseong);
+
+    if (tJong !== cJong) {
+      if (!cJong) {
         return {
           errorType: '종성탈락',
-          errorCategory: '탈락',
+          errorCategory: '탈락' as const,
           errorPattern: '종성 탈락',
           affectedSyllable: i,
           targetJamo: target.jongseong,
           childJamo: '(없음)',
           confidence: 90,
-          requiresGemini: false
+          requiresGemini: false,
+          parentHint: `받침 ${target.jongseong} 소리가 빠졌어요.`
         };
       }
       // 종성이 다른 자음으로 바뀐 경우 → 동화 가능성 → Gemini 위임
       return {
         errorType: '동화',
-        errorCategory: '동화',
-        errorPattern: '동화',
+        errorCategory: '동화' as const,
+        errorPattern: `종성 변화 (${target.jongseong}→${child.jongseong})`,
         affectedSyllable: i,
         targetJamo: target.jongseong,
         childJamo: child.jongseong,
@@ -493,9 +728,10 @@ export function analyzeError(targetWord: string, childWord: string) {
   }
 
   // 1. 대치 오류 우선 확인
+  // [fix] requiresGemini를 false로 덮어씌우지 않음 (동화 오류는 true 유지)
   const substitution = analyzeSubstitutionError(targetWord, childWord);
   if (substitution) {
-    return { ...substitution, requiresGemini: false };
+    return substitution;
   }
 
   // 2. 탈락 오류 확인
