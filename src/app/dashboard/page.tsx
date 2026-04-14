@@ -89,6 +89,13 @@ export default async function DashboardHome() {
   const missionPhoneme = getDailyMissionPhoneme(child.id, topErrorPhoneme);
   const missionText = MISSION_TEXTS[missionPhoneme] ?? `'${missionPhoneme}' 소리 3번 성공하기`;
 
+  // ── 오늘 복습 개수 (SM-2) ────────────────────────────────────────────────────
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  const reviewDueCount = await prisma.reviewSchedule.count({
+    where: { childId: child.id, isLearned: false, nextReviewAt: { lte: todayEnd } },
+  });
+
   // ── 약점 음소 데이터 조회 ────────────────────────────────────────────────────
   const totalErrorRecords = await prisma.errorRecord.count({ where: { childId: child.id } });
   const weakPhonemes = await prisma.weakPhoneme.findMany({
@@ -145,6 +152,26 @@ export default async function DashboardHome() {
         <StatMini value={child.totalMinutes} label="분" emoji="⏱️" />
         <StatMini value={child.streakDays} label="연속" emoji="🔥" />
       </div>
+
+      {/* 오늘 복습 배지 */}
+      {reviewDueCount > 0 && (
+        <Link href="/dashboard/bookmarks">
+          <BubbleCard padding="sm" className="flex items-center gap-3 border-2 border-[#FCA5A5]/40 bg-[#FFF5EE] cursor-pointer hover:bg-[#FFE4D8] transition-colors">
+            <span className="text-2xl">🔔</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-[#3D3530]">
+                오늘 복습할 단어가 있어요
+              </p>
+              <p className="text-xs text-[#8B7E74]">
+                망각 곡선 — 지금 복습하면 기억이 오래 남아요
+              </p>
+            </div>
+            <span className="bg-[#FCA5A5] text-white text-sm font-black px-3 py-1 rounded-full">
+              {reviewDueCount}개
+            </span>
+          </BubbleCard>
+        </Link>
+      )}
 
       {/* ── Daily mission card ──────────────────────────────────────── */}
       <MissionCard

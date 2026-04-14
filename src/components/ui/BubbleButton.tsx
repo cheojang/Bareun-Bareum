@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
 interface BubbleButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "peach" | "mint" | "lavender" | "white" | "ghost";
+  variant?: "peach" | "mint" | "lavender" | "white" | "ghost" | "gray";
   size?: "sm" | "md" | "lg" | "xl";
 }
 
@@ -13,6 +13,7 @@ const variantStyles = {
   lavender: "bg-[#C4B5FD] hover:bg-[#A899FB] text-white",
   white: "bg-white hover:bg-gray-50 text-[#3D3530] border-2 border-[#F0E8E0]",
   ghost: "bg-transparent hover:bg-[#FFF5EE] text-[#8B7E74]",
+  gray: "bg-[#F0E8E0] hover:bg-[#E0D8D0] text-[#8B7E74]",
 };
 
 const sizeStyles = {

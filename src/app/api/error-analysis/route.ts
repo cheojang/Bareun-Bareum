@@ -223,6 +223,20 @@ export async function POST(request: NextRequest) {
       console.error('WeakPhoneme 집계 오류:', e)
     );
 
+    // 7. ReviewSchedule 자동 생성 (오답 등록 시 즉시 복습 스케줄 추가)
+    const phoneme = (targetJamo && targetJamo !== '(없음)') ? targetJamo : '미분류';
+    prisma.reviewSchedule.create({
+      data: {
+        childId,
+        errorRecordId: errorRecord.id,
+        targetWord,
+        childPronunciation,
+        phoneme,
+        errorPattern: errorRecord.errorPattern,
+        nextReviewAt: new Date(), // 오늘 바로 첫 복습
+      },
+    }).catch((e) => console.error('ReviewSchedule 생성 오류:', e));
+
     // 7. 응답 반환
     return NextResponse.json(
       {

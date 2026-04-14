@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
+import { ReviewSection } from "./ReviewSection";
 import Link from "next/link";
 
 const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
@@ -33,6 +34,18 @@ export default async function BookmarksPage() {
     orderBy: { savedAt: "desc" },
   });
 
+  // ── 오늘 복습이 필요한 단어 (SM-2 스케줄) ────────────────────────────────────
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  const reviewItems = await prisma.reviewSchedule.findMany({
+    where: {
+      childId: child.id,
+      isLearned: false,
+      nextReviewAt: { lte: todayEnd },
+    },
+    orderBy: { nextReviewAt: "asc" },
+  });
+
   // ── 오답노트 최근 기록 (빠른 복습용) ─────────────────────────────────────────
   const recentErrors = await prisma.errorRecord.findMany({
     where: { childId: child.id },
@@ -48,7 +61,7 @@ export default async function BookmarksPage() {
     },
   });
 
-  const isEmpty = savedWords.length === 0 && recentErrors.length === 0;
+  const isEmpty = savedWords.length === 0 && recentErrors.length === 0 && reviewItems.length === 0;
 
   return (
     <div className="px-5 pt-6 max-w-lg mx-auto space-y-5 pb-8">
@@ -78,6 +91,23 @@ export default async function BookmarksPage() {
         </BubbleCard>
       ) : (
         <>
+          {/* ── 오늘 복습 (SM-2 망각 곡선) ──────────────────────────────── */}
+          {reviewItems.length > 0 && (
+            <ReviewSection
+              initialItems={reviewItems.map((item) => ({
+                id: item.id,
+                targetWord: item.targetWord,
+                childPronunciation: item.childPronunciation,
+                phoneme: item.phoneme,
+                errorPattern: item.errorPattern,
+                reviewCount: item.reviewCount,
+                interval: item.interval,
+                nextReviewAt: item.nextReviewAt.toISOString(),
+              }))}
+              childName={child.name}
+            />
+          )}
+
           {/* ── 복습 단어 목록 ───────────────────────────────────────────── */}
           {savedWords.length > 0 && (
             <section>

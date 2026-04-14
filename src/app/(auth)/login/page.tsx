@@ -1,7 +1,20 @@
+"use client";
+
+import { useState } from "react";
 import { SocialLoginButton } from "@/components/auth/SocialLoginButton";
+import { TermsAgreementModal } from "@/components/auth/TermsAgreementModal";
 import { BubbleCard } from "@/components/ui/BubbleCard";
+import { BubbleButton } from "@/components/ui/BubbleButton";
 
 export default function LoginPage() {
+  const [showModal, setShowModal] = useState(false);
+  const [hasAgreed, setHasAgreed] = useState(false);
+
+  const handleAgreeTerms = () => {
+    setHasAgreed(true);
+    setShowModal(false);
+  };
+
   return (
     <main
       className="min-h-dvh flex flex-col items-center justify-center px-6 py-12"
@@ -20,16 +33,48 @@ export default function LoginPage() {
           시작하기
         </h2>
 
-        <div className="flex flex-col gap-3">
-          <SocialLoginButton provider="kakao" />
-          <SocialLoginButton provider="google" />
-        </div>
+        {hasAgreed ? (
+          <div className="flex flex-col gap-3">
+            <SocialLoginButton provider="kakao" />
+            <SocialLoginButton provider="google" />
 
-        <p className="text-xs text-[#C4B5A8] text-center mt-6 leading-relaxed">
-          계속 진행하면 <span className="underline">이용약관</span>과{" "}
-          <span className="underline">개인정보처리방침</span>에 동의하는 것으로 간주됩니다.
-        </p>
+            <button
+              onClick={() => setHasAgreed(false)}
+              className="text-xs text-[#8B7E74] hover:underline text-center mt-2"
+            >
+              약관 다시 보기
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="bg-[#FFF5EE] border-l-4 border-[#FFB38A] rounded-r-lg px-4 py-3">
+              <p className="text-xs font-bold text-[#3D3530] mb-1">
+                ⚠️ 중요 안내
+              </p>
+              <p className="text-xs text-[#8B7E74] leading-relaxed">
+                바른발음은 가정 학습 보조 도구이며, 의료 서비스가 아닙니다.
+                발음에 우려가 있으면 반드시 언어재활사와 상담하세요.
+              </p>
+            </div>
+
+            <BubbleButton
+              variant="peach"
+              size="lg"
+              onClick={() => setShowModal(true)}
+              className="w-full"
+            >
+              약관 확인 및 동의
+            </BubbleButton>
+          </div>
+        )}
       </BubbleCard>
+
+      {/* 약관 동의 모달 */}
+      <TermsAgreementModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onAgree={handleAgreeTerms}
+      />
     </main>
   );
 }
