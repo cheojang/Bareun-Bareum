@@ -38,6 +38,7 @@ model Child {
   errorRecords          ErrorRecord[]     @relation("ChildErrors")
   weakPhonemes          WeakPhoneme[]     @relation("ChildWeakPhonemes")
   reviewSchedules       ReviewSchedule[]
+  savedWords            SavedWord[]
 }
 
 model PracticeSession {
@@ -212,10 +213,11 @@ model ReviewSchedule {
 model SavedWord {
   id                    String            @id @default(cuid())
   childId               String
+  child                 Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
   word                  String
   targetPhoneme         String            // 이 단어로 교정하려는 음소
   difficulty            String            @default("medium") // "easy" | "medium" | "hard"
-  savedAt               DateTime          @default(now())
+  savedAt               DateTime          @default(now()) @updatedAt
 
   @@unique([childId, word])
   @@index([childId])
