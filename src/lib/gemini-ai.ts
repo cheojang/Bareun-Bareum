@@ -1,6 +1,9 @@
+'use server';
+
 /**
  * Gemini AI 모델 - 세션 브리핑 및 가이던스 생성
  * 공식 @google/generative-ai SDK 사용
+ * 서버 환경에서만 실행 (API Key 보안)
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -26,7 +29,13 @@ export async function generateGuidance(
   targetWord: string,
   heardWord: string,
   errors: PhonemeError[]
-): Promise<string> {
+): Promise<{
+  rootCause: string;
+  trainingStep1: string;
+  trainingStep2?: string;
+  parentMessage: string;
+  geminiConfidence: number;
+}> {
   if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your-gemini-api-key') {
     return buildFallbackGuidance(errors);
   }
@@ -35,32 +44,73 @@ export async function generateGuidance(
     const ai = getGenAI();
     if (!ai) return buildFallbackGuidance(errors);
 
-    const errorDescriptions = errors.map((e) => {
-      if (e.errorType === 'omission') {
-        return `'${e.syllableChar}'에서 '${e.targetPhoneme}' 소리가 생략됨 (${e.articulationPlace}, ${e.articulationManner})`;
-      }
-      if (e.errorType === 'addition') {
-        return `'${e.syllableChar}'에서 음소가 첨가됨 (${e.articulationPlace}, ${e.articulationManner})`;
-      }
-      return `'${e.syllableChar}'에서 '${e.targetPhoneme}' 대신 '${e.heardPhoneme}' 발음 (${e.articulationPlace}, ${e.articulationManner})`;
-    });
+    const errorDescriptions = errors
+      .filter((e) => e.targetPhoneme)
+      .map((e) => {
+        if (e.errorType === 'omission') {
+          return `'${e.syllableChar}'에서 '${e.targetPhoneme}' 소리가 생략됨 (${e.articulationPlace}, ${e.articulationManner})`;
+        }
+        if (e.errorType === 'addition') {
+          return `'${e.syllableChar}'에서 음소가 첨가됨 (${e.articulationPlace}, ${e.articulationManner})`;
+        }
+        return `'${e.syllableChar}'에서 '${e.targetPhoneme}' 대신 '${e.heardPhoneme}' 발음 (${e.articulationPlace}, ${e.articulationManner})`;
+      });
 
-    const prompt = `
-목표 단어: "${targetWord}"
+    const prompt = `목표 단어: "${targetWord}"
 아이가 발음한 것: "${heardWord}"
 발견된 조음 오류:
 ${errorDescriptions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
-이 오류를 부모에게 설명하고 집에서 연습하는 방법을 2-3문장으로 안내해주세요.`;
+아래 JSON 형식으로 정확히 응답해주세요:
+
+{
+  "rootCause": "아이가 왜 이런 발음을 했는지 부모가 이해하기 쉬운 1-2문장",
+  "trainingStep1": "집에서 연습할 구체적인 방법 (1문장)",
+  "trainingStep2": "어려운 부분과 주의사항 (1문장)",
+  "parentMessage": "격려 메시지 (1문장)",
+  "geminiConfidence": 4
+}`;
 
     const model = ai.getGenerativeModel({
       model: 'gemini-1.5-flash',
       systemInstruction: SYSTEM_INSTRUCTION
     });
 
-    const result = await model.generateContent(prompt);
-    return result.response.text() || buildFallbackGuidance(errors);
-  } catch {
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+
+    const responseText = result.response.text();
+    try {
+      const parsed = JSON.parse(responseText);
+
+      if (!parsed.rootCause || !parsed.trainingStep1) {
+        console.error('[Gemini Response Validation in generateGuidance] 필수 필드 누락:', parsed);
+        return buildFallbackGuidance(errors);
+      }
+
+      return {
+        rootCause: parsed.rootCause,
+        trainingStep1: parsed.trainingStep1,
+        trainingStep2: parsed.trainingStep2 || '추가 연습 팁을 참고하세요.',
+        parentMessage: parsed.parentMessage || '꾸준한 연습이 가장 중요합니다.',
+        geminiConfidence: Math.min(Math.max(parsed.geminiConfidence || 3, 1), 5),
+      };
+    } catch (parseError) {
+      console.error('[Gemini JSON Parsing Error in generateGuidance]', {
+        rawResponse: responseText,
+        error: parseError,
+      });
+      return buildFallbackGuidance(errors);
+    }
+  } catch (error) {
+    console.error('[Gemini API Error in generateGuidance]', {
+      targetWord,
+      heardWord,
+      errorCount: errors?.length || 0,
+      error,
+    });
     return buildFallbackGuidance(errors);
   }
 }
@@ -81,7 +131,11 @@ export async function generateWordRecommendationContext(errorPatterns: string[])
     const result = await model.generateContent(prompt);
 
     return result.response.text() || '';
-  } catch {
+  } catch (error) {
+    console.error('[Gemini API Error in generateWordRecommendationContext]', {
+      errorPatternCount: errorPatterns?.length || 0,
+      error,
+    });
     return '';
   }
 }
@@ -116,7 +170,11 @@ export async function generateSessionBriefing(topErrorPhonemes: string[]): Promi
 
     const result = await model.generateContent(prompt);
     return result.response.text() || buildFallbackBriefing(topErrorPhonemes);
-  } catch {
+  } catch (error) {
+    console.error('[Gemini API Error in generateSessionBriefing]', {
+      phonemeCount: topErrorPhonemes?.length || 0,
+      error,
+    });
     return buildFallbackBriefing(topErrorPhonemes);
   }
 }
@@ -141,22 +199,43 @@ function buildFallbackBriefing(topErrorPhonemes: string[]): string {
   return tip + ' 아이가 정말 잘 할 수 있을 거예요, 응원해주세요! 🌟';
 }
 
-function buildFallbackGuidance(errors: PhonemeError[]): string {
+function buildFallbackGuidance(errors: PhonemeError[]): {
+  rootCause: string;
+  trainingStep1: string;
+  trainingStep2?: string;
+  parentMessage: string;
+  geminiConfidence: number;
+} {
   if (errors.length === 0) {
-    return '완벽해요! 아이가 정확하게 발음했어요. 계속 연습하면 더 잘할 거예요! 🌟';
+    return {
+      rootCause: '완벽해요! 아이가 정확하게 발음했어요.',
+      trainingStep1: '계속 연습하면 더 잘할 거예요!',
+      trainingStep2: '자신감을 가지고 계속 진행해주세요.',
+      parentMessage: '훌륭한 진전입니다! 매일 함께 연습해주세요.',
+      geminiConfidence: 5,
+    };
   }
 
   const primary = errors[0];
   const tips: Record<string, string> = {
-    'ㄹ': "혀 끝을 윗니 뒤쪽에 살짝 대고 튕겨보세요. '라라라' 노래를 함께 불러보는 것도 좋아요!",
-    'ㅅ': "이를 살짝 붙이고 바람을 조금씩 내보내보세요. '쉬~' 소리를 내보게 해보세요.",
-    'ㅈ': "혀를 윗잇몸에 대었다가 '자' 하고 떼어보세요.",
-    'ㅊ': "혀를 윗잇몸에 대었다가 바람과 함께 '차!' 하고 강하게 내보내세요.",
-    'ㄱ': "목 뒤쪽에서 소리가 나도록 '꿀꺽' 삼키는 느낌으로 해보세요.",
+    'ㄹ': "혀 끝을 윗니 바로 뒤쪽(입천장)에 살짝 대고 튕겨보세요.",
+    'ㅅ': "윗니와 아랫니를 가깝게 모으고, 혀가 이빨 밖으로 나오지 않게 바람을 '스~' 하고 내보내세요.",
+    'ㅈ': "혀를 윗잇몸에 붙였다가 떼어내며 가볍게 '자' 소리를 내보세요.",
+    'ㅊ': "'ㅈ' 소리보다 훨씬 더 바람을 세게, '차!' 하고 강하게 터뜨리듯 내보내세요.",
+    'ㄱ': "혀뿌리를 들어올려 목구멍 쪽을 막았다가 떼면서 소리를 내보세요.",
+    'ㄲ': "일반적인 'ㄱ'보다 목에 힘을 꽉 주고 단단하게 터뜨리는 소리예요.",
     'ㄴ': "혀 끝을 윗잇몸에 붙이고 콧소리로 '은~' 해보세요.",
     'ㅂ': "입술을 붙였다가 '팝!' 하고 터트려보세요.",
   };
 
-  const tip = tips[primary.targetPhoneme] ?? `'${primary.targetPhoneme}' 소리를 연습해보세요.`;
-  return `'${primary.targetPhoneme}' 발음이 조금 어려웠어요. ${tip} 아이와 함께 거울 앞에서 입 모양을 보면서 연습해보세요!`;
+  const phonemeKey = primary.targetPhoneme || '';
+  const tip = tips[phonemeKey] ?? `정확한 입모양에 주의하며 천천히 연습해보세요.`;
+
+  return {
+    rootCause: `"${phonemeKey}" 발음이 조금 어려웠어요. 발달 과정에서 자주 나타나는 패턴입니다.`,
+    trainingStep1: `${tip}`,
+    trainingStep2: '아이와 함께 거울 앞에서 입 모양을 보면서 연습해보세요!',
+    parentMessage: '모든 아이는 자신의 속도로 발달합니다. 매일 5-10분 정도 즐겁게 함께 연습하는 것이 가장 효과적입니다!',
+    geminiConfidence: 2,
+  };
 }

@@ -32,6 +32,9 @@ export interface SM2Result {
   isLearned: boolean;    // 5회 이상 성공 시 true (졸업)
 }
 
+// 🧠 모터 러닝(근육 기억): 아이가 배운 입모양을 잊어버리기 전에 복습하도록 제한
+const MAX_INTERVAL_DAYS = 14;
+
 export function calculateNextReview(input: SM2Input): SM2Result {
   const { reviewCount, interval, easeFactor, quality } = input;
 
@@ -62,9 +65,18 @@ export function calculateNextReview(input: SM2Input): SM2Result {
     newEaseFactor = Math.max(1.3, easeFactor - 0.2);
   }
 
-  const nextReviewAt = new Date();
+  // 🧠 모터 러닝: 간격을 14일 이내로 제한 (근육 기억 손실 방지)
+  newInterval = Math.min(newInterval, MAX_INTERVAL_DAYS);
+
+  // 🌍 Vercel UTC → KST 변환 (한국 기준 자정)
+  const now = new Date();
+  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(utcNow + kstOffset);
+
+  const nextReviewAt = new Date(kstNow);
   nextReviewAt.setDate(nextReviewAt.getDate() + newInterval);
-  nextReviewAt.setHours(0, 0, 0, 0); // 자정 기준
+  nextReviewAt.setHours(0, 0, 0, 0);
 
   // 5회 이상 성공 → 졸업
   const isLearned = newReviewCount >= 5;
@@ -78,9 +90,13 @@ export function calculateNextReview(input: SM2Input): SM2Result {
   };
 }
 
-/** 오늘 복습이 필요한지 확인 */
+/** 오늘 복습이 필요한지 확인 (KST 기준) */
 export function isDueToday(nextReviewAt: Date): boolean {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  return nextReviewAt <= today;
+  const now = new Date();
+  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstToday = new Date(utcNow + kstOffset);
+
+  kstToday.setHours(23, 59, 59, 999);
+  return nextReviewAt <= kstToday;
 }

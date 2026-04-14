@@ -122,7 +122,7 @@ export async function getGeminiFeedback(
       if (!parsed.rootCause || !parsed.trainingStep1) {
         console.error('[Gemini Response Validation] 필수 필드 누락:', parsed);
         return buildFallbackGuidance(
-          [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+          [{ targetPhoneme: '', heardPhoneme: childPronunciation, errorType, errorCategory }],
           childPronunciation
         );
       }
@@ -147,7 +147,7 @@ export async function getGeminiFeedback(
         error: parseError,
       });
       return buildFallbackGuidance(
-        [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+        [{ targetPhoneme: '', heardPhoneme: childPronunciation, errorType, errorCategory }],
         childPronunciation
       );
     }
@@ -160,7 +160,7 @@ export async function getGeminiFeedback(
       error,
     });
     return buildFallbackGuidance(
-      [{ targetPhoneme: '', hearedPhoneme: childPronunciation, errorType, errorCategory }],
+      [{ targetPhoneme: '', heardPhoneme: childPronunciation, errorType, errorCategory }],
       childPronunciation
     );
   }
@@ -171,20 +171,20 @@ export async function getGeminiFeedback(
  * 첨가 오류(Addition)처럼 targetPhoneme이 없는 경우도 대비
  */
 function buildFallbackGuidance(
-  errors: Array<{ targetPhoneme?: string; hearedPhoneme?: string; errorType?: string; errorCategory?: string }>,
+  errors: Array<{ targetPhoneme?: string; heardPhoneme?: string; errorType?: string; errorCategory?: string }>,
   childPronunciation: string
 ) {
   const primary = errors?.[0] || {};
-  const phonemeKey = primary.targetPhoneme || primary.hearedPhoneme || '';
+  const phonemeKey = primary.targetPhoneme || primary.heardPhoneme || '';
 
-  // 음소별 팁 (첨가 오류 포함)
+  // 음소별 팁 (첨가 오류 포함) - 언어치료학적으로 정확한 조음 위치
   const tips: Record<string, string> = {
-    'ㄹ': '혀 끝을 윗잇몸에 올려두고 옆으로 공기를 내보내세요.',
-    'ㅅ': '이 사이로 혀가 나와 찬 바람이 나오도록 하세요.',
-    'ㅈ': '혀를 입천장에 붙였다가 떼어내며 "츠" 소리를 내세요.',
-    'ㅊ': '"ㅈ" 소리를 내면서 뜨거운 바람을 부드럽게 내보내세요.',
-    'ㄱ': '목 뒤에서 나오는 소리입니다. 목구멍에 힘을 주고 자세히 들어보세요.',
-    'ㄲ': '일반적인 "ㄱ"보다 더 세게 터뜨리는 쌌쌌한 소리예요.',
+    'ㄹ': '혀 끝을 윗니 바로 뒤쪽(입천장)에 살짝 대고 튕겨보세요.',
+    'ㅅ': '윗니와 아랫니를 가깝게 모으고, 혀가 이빨 밖으로 나오지 않게 바람을 "스~" 하고 내보내세요.',
+    'ㅈ': '혀를 윗잇몸에 붙였다가 떼어내며 가볍게 "자" 소리를 내보세요.',
+    'ㅊ': '"ㅈ" 소리보다 훨씬 더 바람을 세게, "차!" 하고 강하게 터뜨리듯 내보내세요.',
+    'ㄱ': '혀뿌리를 들어올려 목구멍 쪽을 막았다가 떼면서 소리를 내보세요.',
+    'ㄲ': '일반적인 "ㄱ"보다 목에 힘을 꽉 주고 단단하게 터뜨리는 소리예요.',
   };
 
   const tip = tips[phonemeKey] ?? '정확한 입모양에 주의하며 천천히 연습해보세요.';

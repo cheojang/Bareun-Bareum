@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { analyzeError } from '@/lib/jamo-analysis';
 import { getGeminiFeedback } from '@/lib/gemini-client';
@@ -7,11 +7,11 @@ import { auth } from '@/lib/auth';
 // ─── WeakPhoneme 자동 집계 ────────────────────────────────────────────────────
 
 function getWeaknessLevel(errorRate: number, totalRecords: number): string {
-  if (totalRecords < 10) return '관찰중';
-  if (errorRate >= 30) return '집중교정필요';
-  if (errorRate >= 20) return '꾸준한연습필요';
-  if (errorRate >= 10) return '관찰중';
-  return '정상범위';
+  if (totalRecords < 10) return "관찰중";
+  if (errorRate >= 30) return "집중교정필요";
+  if (errorRate >= 20) return "꾸준한연습필요";
+  if (errorRate >= 10) return "관찰중";
+  return "정상범위";
 }
 
 async function recalculateWeakPhonemes(
@@ -21,7 +21,7 @@ async function recalculateWeakPhonemes(
   // 최근 300개 오답 기록 조회
   const records = await prisma.errorRecord.findMany({
     where: { childId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: 300,
     include: { localAnalysis: true },
   });
@@ -42,8 +42,11 @@ async function recalculateWeakPhonemes(
           analysis?: { targetJamo?: string };
         };
         targetJamo = bd.analysis?.targetJamo ?? null;
-      } catch {
-        // JSON 파싱 실패 시 무시
+      } catch (parseError) {
+        console.warn(
+          `[WeakPhoneme] JSON 파싱 실패 (recordId: ${record.id}):`,
+          parseError
+        );
       }
     }
 
@@ -52,7 +55,7 @@ async function recalculateWeakPhonemes(
       targetJamo = latestTargetJamo;
     }
 
-    if (targetJamo && targetJamo !== '(없음)') {
+    if (targetJamo && targetJamo !== "(없음)") {
       phonemeCounts[targetJamo] = (phonemeCounts[targetJamo] ?? 0) + 1;
     }
   }
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: '로그인이 필요합니다' },
+        { error: "로그인이 필요합니다" },
         { status: 401 }
       );
     }
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
     // 1. 요청 검증
     if (!childId || !targetWord || !childPronunciation) {
       return NextResponse.json(
-        { error: 'childId, targetWord, childPronunciation 필수' },
+        { error: "childId, targetWord, childPronunciation 필수" },
         { status: 400 }
       );
     }
@@ -103,14 +106,14 @@ export async function POST(request: NextRequest) {
 
     if (!child) {
       return NextResponse.json(
-        { error: '해당 아이를 찾을 수 없습니다' },
+        { error: "해당 아이를 찾을 수 없습니다" },
         { status: 404 }
       );
     }
 
     if (child.userId !== session.user.id) {
       return NextResponse.json(
-        { error: '접근 권한이 없습니다' },
+        { error: "접근 권한이 없습니다" },
         { status: 403 }
       );
     }
@@ -118,15 +121,15 @@ export async function POST(request: NextRequest) {
     // 3. 로컬 자모 분해 분석
     const localAnalysis = analyzeError(targetWord, childPronunciation);
 
-    // 4. ErrorRecord 저장
-    const errorRecord = await prisma.errorRecord.create({
+    // 4. ErrorRecord 저장 (나중에 업데이트 가능하도록 let 사용)
+    let errorRecord = await prisma.errorRecord.create({
       data: {
         childId,
         targetWord,
         childPronunciation,
         errorType: localAnalysis.errorType,
-        errorCategory: localAnalysis.errorCategory || '미판정',
-        errorPattern: localAnalysis.errorPattern || '미판정',
+        errorCategory: localAnalysis.errorCategory || "미판정",
+        errorPattern: localAnalysis.errorPattern || "미판정",
         // LocalAnalysis는 별도로 저장 (관계 설정)
         localAnalysis: {
           create: {
@@ -134,10 +137,10 @@ export async function POST(request: NextRequest) {
             jamoBreakdown: JSON.stringify({
               target: targetWord,
               child: childPronunciation,
-              analysis: localAnalysis
+              analysis: localAnalysis,
             }),
             confidence: localAnalysis.confidence || 0,
-            requiresGemini: localAnalysis.requiresGemini || false
+            requiresGemini: localAnalysis.requiresGemini || false,
           }
         }
       },
@@ -153,8 +156,8 @@ export async function POST(request: NextRequest) {
     const localAnalysisTyped = localAnalysis as Record<string, unknown>;
     const needsGemini =
       localAnalysis.requiresGemini ||
-      localAnalysis.errorType === '복합오류' ||
-      localAnalysis.errorType === '패턴미인식';
+      localAnalysis.errorType === "복합오류" ||
+      localAnalysis.errorType === "패턴미인식";
 
     if (needsGemini) {
       try {
@@ -162,7 +165,7 @@ export async function POST(request: NextRequest) {
           targetWord,
           childPronunciation,
           localAnalysis.errorType,
-          localAnalysis.errorCategory || '미판정',
+          localAnalysis.errorCategory || "미판정",
           child,
           !!(localAnalysisTyped.isUnknownPattern)
         );
@@ -172,93 +175,104 @@ export async function POST(request: NextRequest) {
           isIndividualHabit = !!(geminiResult.isIndividualHabit);
 
           if (isIndividualHabit) {
-            // 독특한 개별 습관 → errorRecord 업데이트
-            await prisma.errorRecord.update({
+            // ✨ 독특한 개별 습관 → errorRecord 업데이트 + 결과 재사용
+            errorRecord = await prisma.errorRecord.update({
               where: { id: errorRecord.id },
               data: {
-                errorCategory: '개별습관',
-                errorPattern: '독특한 개별 발음 습관',
-              }
+                errorCategory: "개별습관",
+                errorPattern: "독특한 개별 발음 습관",
+              },
+              include: { localAnalysis: true },
             });
           }
 
           geminiFeedback = await prisma.geminiFeedback.create({
             data: {
               errorRecordId: errorRecord.id,
-              rootCause: geminiResult.rootCause || '분석할 수 없습니다',
-              trainingStep1: geminiResult.trainingStep1 || '단계 정보 없음',
-              trainingStep2: geminiResult.trainingStep2 || '단계 정보 없음',
-              trainingStep3: geminiResult.trainingStep3 || '단계 정보 없음',
-              trainingStep4: geminiResult.trainingStep4 || '단계 정보 없음',
+              rootCause: geminiResult.rootCause || "분석할 수 없습니다",
+              trainingStep1: geminiResult.trainingStep1 || "단계 정보 없음",
+              trainingStep2: geminiResult.trainingStep2 || "단계 정보 없음",
+              trainingStep3: geminiResult.trainingStep3 || "단계 정보 없음",
+              trainingStep4: geminiResult.trainingStep4 || "단계 정보 없음",
               recommendedWords: JSON.stringify(geminiResult.recommendedWords || []),
-              parentMessage: geminiResult.parentMessage || '매일 조금씩 함께 연습하며 아이의 성장을 응원합니다.'
+              parentMessage: geminiResult.parentMessage || "매일 조금씩 함께 연습하며 아이의 성장을 응원합니다.",
             }
           });
         } else if (!geminiResult || !geminiResult.success) {
-          // Gemini도 실패 → 개별 습관으로 분류
+          // ✨ Gemini도 실패 → 개별 습관으로 분류 + 결과 재사용
           isIndividualHabit = true;
-          await prisma.errorRecord.update({
+          errorRecord = await prisma.errorRecord.update({
             where: { id: errorRecord.id },
             data: {
-              errorCategory: '개별습관',
-              errorPattern: '독특한 개별 발음 습관',
-            }
+              errorCategory: "개별습관",
+              errorPattern: "독특한 개별 발음 습관",
+            },
+            include: { localAnalysis: true },
           });
         }
       } catch (geminError) {
-        console.error('Gemini API error:', geminError);
+        console.error("Gemini API error:", geminError);
         // Gemini 에러 발생 시에도 로컬 분석 결과는 반환 (나중에 재시도 가능)
+        isIndividualHabit = true;
+        errorRecord = await prisma.errorRecord.update({
+          where: { id: errorRecord.id },
+          data: {
+            errorCategory: "개별습관",
+            errorPattern: "Gemini 분석 실패",
+          },
+          include: { localAnalysis: true },
+        });
       }
     }
 
-    // 재조회 (개별습관 업데이트 반영)
-    const updatedRecord = await prisma.errorRecord.findUnique({
-      where: { id: errorRecord.id },
-      include: { localAnalysis: true }
-    });
+    // 6. WeakPhoneme 자동 집계 + ReviewSchedule 생성 (원자성 보장)
+    const targetJamo = (localAnalysis as Record<string, unknown>)
+      .targetJamo as string | undefined;
+    const phoneme =
+      targetJamo && targetJamo !== "(없음)" ? targetJamo : "미분류";
 
-    // 6. WeakPhoneme 자동 집계 (백그라운드 처리, 실패해도 응답에 영향 없음)
-    const targetJamo = localAnalysisTyped.targetJamo as string | undefined;
-    recalculateWeakPhonemes(childId, targetJamo).catch((e) =>
-      console.error('WeakPhoneme 집계 오류:', e)
-    );
+    // ✨ Vercel 서버리스 셧다운 방어: allSettled로 모든 작업 완료 보장
+    await Promise.allSettled([
+      recalculateWeakPhonemes(childId, targetJamo),
+      prisma.reviewSchedule.create({
+        data: {
+          childId,
+          errorRecordId: errorRecord.id,
+          targetWord,
+          childPronunciation,
+          phoneme,
+          errorPattern: errorRecord.errorPattern,
+          nextReviewAt: new Date(), // 오늘 바로 첫 복습
+        },
+      }),
+    ]);
 
-    // 7. ReviewSchedule 자동 생성 (오답 등록 시 즉시 복습 스케줄 추가)
-    const phoneme = (targetJamo && targetJamo !== '(없음)') ? targetJamo : '미분류';
-    prisma.reviewSchedule.create({
-      data: {
-        childId,
-        errorRecordId: errorRecord.id,
-        targetWord,
-        childPronunciation,
-        phoneme,
-        errorPattern: errorRecord.errorPattern,
-        nextReviewAt: new Date(), // 오늘 바로 첫 복습
-      },
-    }).catch((e) => console.error('ReviewSchedule 생성 오류:', e));
-
-    // 7. 응답 반환
+    // 7. 응답 반환 (errorRecord는 모든 업데이트를 반영한 최신 데이터)
     return NextResponse.json(
       {
         success: true,
         errorRecordId: errorRecord.id,
-        errorCategory: updatedRecord?.errorCategory ?? errorRecord.errorCategory,
-        errorPattern: updatedRecord?.errorPattern ?? errorRecord.errorPattern,
+        errorCategory: errorRecord.errorCategory,
+        errorPattern: errorRecord.errorPattern,
         isIndividualHabit,
         ...(isIndividualHabit && {
           individualHabitNote: {
-            message: '아이만의 독특한 발음 습관이에요!',
-            description: '일반적인 조음 발달 패턴으로 분류되지 않는 개성 있는 발음이에요. 아이가 특정 환경이나 상황에서 반복적으로 보이는 패턴인지 관찰하고, 언어재활사 상담을 통해 맞춤 접근법을 찾아보세요.',
-            suggestion: '전문가 상담을 통해 아이에게 맞는 개별화된 훈련법을 받아보세요.'
-          }
+            message: "아이만의 독특한 발음 습관이에요!",
+            description:
+              "일반적인 조음 발달 패턴으로 분류되지 않는 개성 있는 발음이에요. 아이가 특정 환경이나 상황에서 반복적으로 보이는 패턴인지 관찰하고, 언어재활사 상담을 통해 맞춤 접근법을 찾아보세요.",
+            suggestion:
+              "전문가 상담을 통해 아이에게 맞는 개별화된 훈련법을 받아보세요.",
+          },
         }),
         localAnalysis: {
           detectedPattern: errorRecord.localAnalysis?.detectedPattern,
           confidence: errorRecord.localAnalysis?.confidence,
           requiresGemini: errorRecord.localAnalysis?.requiresGemini,
-          note: localAnalysis.note || '',
-          parentHint: localAnalysisTyped.parentHint || '',
-          description: localAnalysisTyped.description || ''
+          note: (localAnalysis as Record<string, unknown>).note || "",
+          parentHint:
+            (localAnalysis as Record<string, unknown>).parentHint || "",
+          description:
+            (localAnalysis as Record<string, unknown>).description || "",
         },
         geminiFeedback: geminiFeedback
           ? {
@@ -270,16 +284,16 @@ export async function POST(request: NextRequest) {
                 geminiFeedback.trainingStep4
               ],
               recommendedWords: JSON.parse(geminiFeedback.recommendedWords),
-              parentMessage: geminiFeedback.parentMessage || ''
+              parentMessage: geminiFeedback.parentMessage || "",
             }
           : null
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error in /api/error-analysis:', error);
+    console.error("Error in /api/error-analysis:", error);
     return NextResponse.json(
-      { error: '오답 분석 중 오류가 발생했습니다' },
+      { error: "오답 분석 중 오류가 발생했습니다" },
       { status: 500 }
     );
   }

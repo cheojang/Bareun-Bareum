@@ -496,7 +496,7 @@ export function analyzeSubstitutionError(targetWord: string, childWord: string) 
       if (tCho === 'ㅇ' && cCho !== 'ㅇ') {
         return {
           errorType: '초성첨가',
-          errorCategory: '첨가',
+          errorCategory: '첨가' as const,
           errorPattern: `초성 첨가 (ㅇ→${cCho})`,
           affectedSyllable: i,
           targetJamo: '(없음)',
@@ -641,51 +641,17 @@ export function analyzeSubstitutionError(targetWord: string, childWord: string) 
  * @returns { errorType, errorCategory, errorPattern, confidence }
  */
 export function analyzeOmissionError(targetWord: string, childWord: string) {
-  const targetDecomposed = decomposeWord(targetWord);
-  const childDecomposed = decomposeWord(childWord);
+  const tLen = targetWord.length;
+  const cLen = childWord.length;
 
-  // 아이 발음이 목표보다 짧은 경우 탈락
-  if (childDecomposed.length < targetDecomposed.length) {
-    const omittedCount = targetDecomposed.length - childDecomposed.length;
-
-    // 초성 탈락 확인
-    if (omittedCount === 1) {
-      for (let i = 0; i < childDecomposed.length; i++) {
-        const target = targetDecomposed[i];
-        const child = childDecomposed[i];
-
-        if (target && child && target.choseong !== child.choseong) {
-          // 이 경우는 대치, 탈락 아님
-          return null;
-        }
-      }
-
-      // 첫 번째 음절 초성 확인
-      if (targetDecomposed[0]?.choseong) {
-        return {
-          errorType: '초성탈락',
-          errorCategory: '탈락',
-          errorPattern: '초성 탈락',
-          confidence: 90
-        };
-      }
-    }
-
-    // 음절 축약 (예: 고양이 → 괭이)
-    if (omittedCount > 1) {
-      return {
-        errorType: '음절축약',
-        errorCategory: '탈락',
-        errorPattern: '음절 축약',
-        confidence: 85
-      };
-    }
-
+  // 아이 발음이 목표보다 짧은 경우 탈락 (글자 수 비교로 음절 탈락 판정)
+  if (cLen < tLen) {
+    const omittedCount = tLen - cLen;
     return {
-      errorType: '탈락',
-      errorCategory: '탈락',
-      errorPattern: '음절 탈락',
-      confidence: 80
+      errorType: omittedCount > 1 ? '음절축약' : '음절탈락',
+      errorCategory: '탈락' as const,
+      errorPattern: omittedCount > 1 ? '여러 음절이 생략됨' : '한 음절이 생략됨',
+      confidence: 85
     };
   }
 
@@ -699,15 +665,12 @@ export function analyzeOmissionError(targetWord: string, childWord: string) {
  * @returns { errorType, errorCategory, errorPattern, confidence }
  */
 export function analyzeAdditionError(targetWord: string, childWord: string) {
-  const targetDecomposed = decomposeWord(targetWord);
-  const childDecomposed = decomposeWord(childWord);
-
-  // 아이 발음이 목표보다 긴 경우 첨가
-  if (childDecomposed.length > targetDecomposed.length) {
+  // 아이 발음이 목표보다 긴 경우 첨가 (글자 수 비교로 음절 첨가 판정)
+  if (childWord.length > targetWord.length) {
     return {
-      errorType: '음소첨가',
-      errorCategory: '첨가',
-      errorPattern: '음소 첨가',
+      errorType: '음절첨가',
+      errorCategory: '첨가' as const,
+      errorPattern: '없는 글자가 추가됨',
       confidence: 90
     };
   }

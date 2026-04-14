@@ -5,6 +5,15 @@ import { compareWords } from "@/lib/korean-phonetics";
 import { buildArticulationGuides } from "@/lib/articulation-analysis";
 import { generateGuidance } from "@/lib/gemini-ai";
 
+// 🌍 KST(한국 시간) 기준 자정 타임스탬프 구하기
+function getKSTMidnight(date: Date | string | number) {
+  const d = new Date(date);
+  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+  const kst = new Date(utc + 9 * 60 * 60 * 1000);
+  kst.setUTCHours(0, 0, 0, 0);
+  return kst.getTime();
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -17,13 +26,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Verify session belongs to user
+  // Verify session belongs to user + fetch child in one query
   const practiceSession = await prisma.practiceSession.findFirst({
     where: { id: sessionId, userId: session.user.id },
+    include: { child: true },
   });
   if (!practiceSession) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const child = practiceSession.child;
+  const newTotalWords = child.totalWords + 1;
 
   // Korean phoneme analysis
   const errors = compareWords(targetWord.trim(), heardWord.trim());
@@ -35,32 +48,59 @@ export async function POST(req: NextRequest) {
   // Generate AI guidance via Gemini Flash
   const guidanceText = await generateGuidance(targetWord, heardWord, errors);
 
-  // Save word record
-  const wordRecord = await prisma.wordRecord.create({
-    data: {
-      sessionId,
-      targetWord: targetWord.trim(),
-      heardWord: heardWord.trim(),
-      errorPhonemes: JSON.parse(JSON.stringify(errors)),
-      guidanceText,
-      isCorrect,
-    },
-  });
+  // 🧠 메모리 계산: 연속 학습일 (KST 기준)
+  const now = new Date();
+  const lastPractice = child.lastPractice;
+  let newStreakDays = child.streakDays;
 
-  // Update child's total word count
-  await prisma.child.update({
-    where: { id: childId },
-    data: {
-      totalWords: { increment: 1 },
-      lastPractice: new Date(),
-    },
-  });
+  if (!lastPractice) {
+    newStreakDays = 1;
+  } else {
+    const nowMidnight = getKSTMidnight(now);
+    const lastPracticeMidnight = getKSTMidnight(lastPractice);
+    const daysDiff = Math.floor((nowMidnight - lastPracticeMidnight) / 86400000);
 
-  // Update streak
-  await updateStreak(childId);
+    if (daysDiff === 0) {
+      // Same day: no change
+      newStreakDays = child.streakDays;
+    } else if (daysDiff === 1) {
+      // Consecutive day: increment
+      newStreakDays = child.streakDays + 1;
+    } else {
+      // Gap or future: reset to 1
+      newStreakDays = 1;
+    }
+  }
 
-  // Update mascot level based on total words
-  await updateMascotLevel(childId);
+  // 🎮 메모리 계산: 마스코트 레벨
+  let newMascotLevel = 1;
+  if (newTotalWords >= 100) newMascotLevel = 5;
+  else if (newTotalWords >= 50) newMascotLevel = 4;
+  else if (newTotalWords >= 20) newMascotLevel = 3;
+  else if (newTotalWords >= 5) newMascotLevel = 2;
+
+  // 원자적 트랜잭션: 단 2개 쿼리로 압축 (1번 트랜잭션 내부)
+  const [wordRecord] = await prisma.$transaction([
+    prisma.wordRecord.create({
+      data: {
+        sessionId,
+        targetWord: targetWord.trim(),
+        heardWord: heardWord.trim(),
+        errorPhonemes: JSON.parse(JSON.stringify(errors)),
+        guidanceText: JSON.stringify(guidanceText),
+        isCorrect,
+      },
+    }),
+    prisma.child.update({
+      where: { id: childId },
+      data: {
+        totalWords: newTotalWords,
+        lastPractice: now,
+        streakDays: newStreakDays,
+        mascotLevel: newMascotLevel,
+      },
+    }),
+  ]);
 
   return NextResponse.json({
     wordRecordId: wordRecord.id,
@@ -70,45 +110,6 @@ export async function POST(req: NextRequest) {
     errors,
     guidanceText,
     articulationGuides,
+    newMascotLevel, // 클라이언트 UI 애니메이션용
   });
-}
-
-async function updateStreak(childId: string) {
-  const child = await prisma.child.findUnique({ where: { id: childId } });
-  if (!child) return;
-
-  const now = new Date();
-  const lastPractice = child.lastPractice;
-
-  if (!lastPractice) {
-    await prisma.child.update({ where: { id: childId }, data: { streakDays: 1 } });
-    return;
-  }
-
-  const daysDiff = Math.floor(
-    (now.setHours(0, 0, 0, 0) - new Date(lastPractice).setHours(0, 0, 0, 0)) / 86400000
-  );
-
-  if (daysDiff === 0) return; // Same day, no change
-  if (daysDiff === 1) {
-    await prisma.child.update({ where: { id: childId }, data: { streakDays: { increment: 1 } } });
-  } else {
-    await prisma.child.update({ where: { id: childId }, data: { streakDays: 1 } });
-  }
-}
-
-async function updateMascotLevel(childId: string) {
-  const child = await prisma.child.findUnique({ where: { id: childId } });
-  if (!child) return;
-
-  const words = child.totalWords;
-  let level = 1;
-  if (words >= 100) level = 5;
-  else if (words >= 50) level = 4;
-  else if (words >= 20) level = 3;
-  else if (words >= 5) level = 2;
-
-  if (level !== child.mascotLevel) {
-    await prisma.child.update({ where: { id: childId }, data: { mascotLevel: level } });
-  }
 }

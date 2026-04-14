@@ -101,33 +101,91 @@ export function compareWords(targetWord: string, heardWord: string): PhonemeErro
     const target = targetSyllables[i];
     const heard = heardSyllables[i];
 
+    // 🚨 1. 음절 첨가 버그 수정: 아이가 불필요하게 덧붙인 글자 감지
+    if (!target && heard) {
+      errors.push({
+        syllableIndex: i,
+        syllableChar: "(없음)",
+        position: "cho",
+        targetPhoneme: "",
+        heardPhoneme: heard.char,
+        articulationPlace: "음절 첨가",
+        articulationManner: "음절 첨가",
+        errorType: "addition",
+      });
+      continue;
+    }
+
     if (!target) continue;
 
     const positions: PhonemePosition[] = ["cho", "jung", "jong"];
 
     for (const pos of positions) {
-      const targetPhoneme = target[pos];
-      const heardPhoneme = heard ? heard[pos] : "";
+      let targetPhoneme = target[pos];
+      let heardPhoneme = heard ? heard[pos] : "";
+
+      // 🌟 3. 초성 'ㅇ' 음운론적 예외 처리: 초성에서는 음가가 없으므로 빈 문자열로 취급
+      if (pos === "cho") {
+        if (targetPhoneme === "ㅇ") targetPhoneme = "";
+        if (heardPhoneme === "ㅇ") heardPhoneme = "";
+      }
 
       if (targetPhoneme === heardPhoneme) continue;
-      if (!targetPhoneme) continue;
 
-      const info = CONSONANT_INFO[targetPhoneme] ?? {
-        place: "알 수 없음",
-        placeEn: "unknown",
-        manner: "알 수 없음",
-      };
+      // 🚨 2. 받침 첨가 버그 수정: 없는 받침을 만들어내는 오류 감지
+      if (!targetPhoneme && heardPhoneme) {
+        errors.push({
+          syllableIndex: i,
+          syllableChar: target.char,
+          position: pos,
+          targetPhoneme: "",
+          heardPhoneme,
+          articulationPlace: "알 수 없음",
+          articulationManner: "음소 첨가",
+          errorType: "addition",
+        });
+        continue;
+      }
 
-      errors.push({
-        syllableIndex: i,
-        syllableChar: target.char,
-        position: pos,
-        targetPhoneme,
-        heardPhoneme: heardPhoneme || "(없음)",
-        articulationPlace: info.place,
-        articulationManner: info.manner,
-        errorType: heardPhoneme === "" ? "omission" : "substitution",
-      });
+      // 탈락: 있는 소리를 안 내는 경우
+      if (targetPhoneme && !heardPhoneme) {
+        const info = CONSONANT_INFO[targetPhoneme] ?? {
+          place: "알 수 없음",
+          placeEn: "unknown",
+          manner: "알 수 없음",
+        };
+        errors.push({
+          syllableIndex: i,
+          syllableChar: target.char,
+          position: pos,
+          targetPhoneme,
+          heardPhoneme: "(없음)",
+          articulationPlace: info.place,
+          articulationManner: info.manner,
+          errorType: "omission",
+        });
+        continue;
+      }
+
+      // 대치: A 소리가 B 소리로 바뀐 경우
+      if (targetPhoneme && heardPhoneme) {
+        // 🚨 4. 모음 오류 크래시 위험 해결: 모음이 들어와도 안전하게 처리
+        const info = CONSONANT_INFO[targetPhoneme] ?? {
+          place: "모음",
+          placeEn: "vowel",
+          manner: "모음",
+        };
+        errors.push({
+          syllableIndex: i,
+          syllableChar: target.char,
+          position: pos,
+          targetPhoneme,
+          heardPhoneme,
+          articulationPlace: info.place,
+          articulationManner: info.manner,
+          errorType: "substitution",
+        });
+      }
     }
   }
 

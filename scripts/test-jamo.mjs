@@ -13,10 +13,11 @@ const JUNGSEONG = [
   'ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ',
   'ㅙ', 'ㅚ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅢ', 'ㅤ', 'ㅥ', 'ㅦ', 'ㅧ', 'ㅨ'
 ];
+// ✨ 수정: 'ㅉ' 삭제 (총 28개) — 종성으로 사용되지 않음
 const JONGSEONG = [
   '', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ',
   'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ',
-  'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
+  'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
 ];
 
 const ERROR_PATTERNS = {
@@ -58,6 +59,7 @@ function analyzeError(targetWord, childWord) {
     const t = tArr[i], c = cArr[i];
     if (!t || !c) continue;
 
+    // 1. 초성 검사
     if (t.choseong !== c.choseong) {
       // ㅇ(무음)으로 변하면 초성탈락
       if (c.choseong === 'ㅇ') {
@@ -69,6 +71,13 @@ function analyzeError(targetWord, childWord) {
       }
       return { errorType: '복합오류', errorCategory: '동화', affectedSyllable: i, targetJamo: t.choseong, childJamo: c.choseong, confidence: 50, requiresGemini: true };
     }
+
+    // ✨ 2. 중성(모음) 검사 추가 — 예: "사과" → "서과" 오류 감지
+    if (t.jungseong !== c.jungseong) {
+      return { errorType: '모음오류', errorCategory: '대치', affectedSyllable: i, targetJamo: t.jungseong, childJamo: c.jungseong, confidence: 80, requiresGemini: false };
+    }
+
+    // 3. 종성 검사
     if (t.jongseong !== c.jongseong) {
       if (!c.jongseong) return { errorType: '종성탈락', errorCategory: '탈락', confidence: 90, requiresGemini: false };
       // 종성 변화 → 동화 가능성 → Gemini 위임
@@ -122,6 +131,22 @@ const TEST_CASES = [
     expected: '초성탈락',
     expectGemini: false,
   },
+  {
+    id: 6,
+    name: '모음오류 (대치) — 새로운 검사 로직 확인',
+    targetWord: '사과',
+    childWord: '서과',
+    expected: '모음오류',
+    expectGemini: false,
+  },
+  {
+    id: 7,
+    name: '종성탈락 (탈락) — "꽃" 검사',
+    targetWord: '꽃',
+    childWord: '꼬',
+    expected: '종성탈락',
+    expectGemini: false,
+  },
 ];
 
 // ─── 테스트 실행 ───────────────────────────────────────────────────────────────
@@ -150,7 +175,11 @@ for (const tc of TEST_CASES) {
   console.log(`   상태:  ${status}`);
   console.log('');
 
-  ok ? passed++ : failed++;
+  if (ok) {
+    passed++;
+  } else {
+    failed++;
+  }
 }
 
 console.log(`==============================`);
