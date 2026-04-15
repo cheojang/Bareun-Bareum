@@ -5,6 +5,7 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { SignOutButton } from "./SignOutButton";
+import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -75,6 +76,8 @@ export default async function SettingsPage() {
                 <p className="font-semibold text-[#3D3530]">{child.name}</p>
                 <p className="text-xs text-[#8B7E74]">Lv.{child.mascotLevel} · {child.totalWords}개 단어</p>
               </div>
+              {/* 🗑️ 휴지통 삭제 버튼 */}
+              <ChildDeleteButton childId={child.id} childName={child.name} />
             </div>
           ))}
           <Link href="/onboarding">

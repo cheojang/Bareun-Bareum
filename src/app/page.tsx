@@ -14,7 +14,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-2.5">
           <SoriLogo size={38} />
           <div>
-            <span className="text-xl font-black text-[#3D3530] leading-none block">소리</span>
+            <span className="text-xl font-black text-[#3D3530] leading-none block">바른발음</span>
             <span className="text-[10px] text-[#C4B5A8] font-semibold tracking-wide">발음 홈케어</span>
           </div>
         </div>

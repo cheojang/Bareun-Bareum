@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useEffect } from "react";
+
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
@@ -325,7 +325,7 @@ export function PracticeClient({
       <ConfettiEffect trigger={confetti} />
 
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-2">
+      <div className="max-w-lg mx-auto w-full flex items-center justify-between px-5 pt-6 pb-2">
         <Link href="/dashboard">
           <button className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center text-xl shadow-sm">
             ←
@@ -338,8 +338,8 @@ export function PracticeClient({
       </div>
 
       {/* 단계 표시 바 */}
-      <div className="px-5 py-3">
-        <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto w-full px-5 py-3">
+        <div>
           <div className="flex items-center justify-between mb-2">
             <span
               className="text-xs font-bold px-3 py-1 rounded-full"
@@ -365,7 +365,7 @@ export function PracticeClient({
       </div>
 
       {/* 3단계 스텝 표시 */}
-      <div className="flex justify-center gap-2 mb-2">
+      <div className="max-w-lg mx-auto w-full flex justify-center gap-2 mb-2">
         {([1, 2, 3] as Stage[]).map((s) => (
           <div key={s} className="flex items-center gap-1">
             <div
@@ -388,40 +388,36 @@ export function PracticeClient({
       </div>
 
       {/* 메인 영역 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+      <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-4 px-6">
 
-        {/* 연습 카드 + 식물 성장 */}
-        <div className="w-full flex items-end gap-3">
-          <div
-            className="flex-1 bg-white/90 rounded-[32px] shadow-lg text-center"
-            style={{
-              border: `2px solid ${meta.color}22`,
-              padding: currentItem?.kind === "sentence" ? "2rem 1.5rem" : "2.5rem 1.5rem",
-            }}
-          >
-            {currentItem?.badge && (
-              <span
-                className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
-                style={{ backgroundColor: meta.bg, color: meta.color }}
-              >
-                {currentItem.badge}
-              </span>
-            )}
-            <p
-              className="font-black text-[#3D3530] tracking-wide leading-snug"
-              style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : "4rem" }}
+        {/* 연습 카드 */}
+        <div
+          className="w-full bg-white/90 rounded-[32px] shadow-lg text-center"
+          style={{
+            border: `2px solid ${meta.color}22`,
+            padding: currentItem?.kind === "sentence" ? "2rem 1.5rem" : "2.5rem 1.5rem",
+          }}
+        >
+          {currentItem?.badge && (
+            <span
+              className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
+              style={{ backgroundColor: meta.bg, color: meta.color }}
             >
-              {currentItem?.text}
-            </p>
-            <p className="text-sm text-[#8B7E74] mt-3">
-              {currentItem?.kind === "sentence"
-                ? "문장을 천천히 읽어봐요"
-                : "소리내어 읽으면 부모님이 판단해주세요"}
-            </p>
-          </div>
-
-          {/* 식물 성장 애니메이션 */}
-          <PlantGrowth goodCount={goodCount} />
+              {currentItem.badge}
+            </span>
+          )}
+          <p
+            className="font-black text-[#3D3530] tracking-wide leading-snug"
+            style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : "4rem" }}
+          >
+            {currentItem?.text}
+          </p>
+          <p className="text-sm text-[#8B7E74] mt-3">
+            {currentItem?.kind === "sentence"
+              ? "문장을 천천히 읽어봐요"
+              : "소리내어 읽으면 부모님이 판단해주세요"}
+          </p>
         </div>
 
         {/* 도트 (5개) */}
@@ -456,9 +452,10 @@ export function PracticeClient({
           </p>
         )}
       </div>
+      </div>
 
       {/* 하단 버튼 */}
-      <div className="px-6 pb-8 space-y-3">
+      <div className="max-w-lg mx-auto w-full px-6 pb-8 space-y-3">
         {/* 평가 버튼 2개 */}
         {!isSlotsFull && (
           <div className="flex gap-3">
@@ -505,91 +502,7 @@ export function PracticeClient({
   );
 }
 
-// ─── 식물 성장 애니메이션 ──────────────────────────────────────────────────────
 
-const PLANT_STAGES = [
-  { emoji: "🫘", label: "씨앗 심기", fontSize: 28, bg: "#F5F0EB" },
-  { emoji: "🌱", label: "새싹",      fontSize: 36, bg: "#F0FAF8" },
-  { emoji: "🌿", label: "자라는 중", fontSize: 44, bg: "#DCFCE7" },
-  { emoji: "🌲", label: "나무",      fontSize: 52, bg: "#BBF7D0" },
-  { emoji: "🌳", label: "큰 나무",   fontSize: 60, bg: "#86EFAC" },
-  { emoji: "🍑", label: "열매!",     fontSize: 68, bg: "#FDE68A" },
-];
-
-function PlantGrowth({ goodCount }: { goodCount: number }) {
-  const stageIdx = Math.min(goodCount, PLANT_STAGES.length - 1);
-  const stage = PLANT_STAGES[stageIdx];
-  const isFruit = stageIdx === PLANT_STAGES.length - 1;
-  const prevRef = useRef(goodCount);
-  const didGrow = goodCount > prevRef.current;
-  useEffect(() => { prevRef.current = goodCount; }, [goodCount]);
-
-  return (
-    <div
-      className="flex flex-col items-center justify-end gap-1 flex-shrink-0"
-      style={{ width: 72, paddingBottom: 4 }}
-    >
-      {/* 파티클 (성장 순간) */}
-      <AnimatePresence>
-        {didGrow && (
-          <motion.div
-            key={`spark-${goodCount}`}
-            initial={{ opacity: 1, scale: 0.5 }}
-            animate={{ opacity: 0, scale: 2, y: -20 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute text-lg pointer-events-none"
-            style={{ marginBottom: stage.fontSize + 4 }}
-          >
-            ✨
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 이모지 */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={stageIdx}
-          initial={{ scale: 0.4, y: 16, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.4, y: -10, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 500, damping: 18 }}
-          style={{ fontSize: stage.fontSize, lineHeight: 1, display: "block" }}
-        >
-          {stage.emoji}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* 라벨 */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`lbl-${stageIdx}`}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ delay: 0.15, duration: 0.25 }}
-          className="text-center"
-        >
-          <span
-            className="text-[9px] font-black px-2 py-0.5 rounded-full"
-            style={{
-              backgroundColor: stage.bg,
-              color: isFruit ? "#92400E" : "#065F46",
-            }}
-          >
-            {stage.label}
-          </span>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* 토양 (항상 표시) */}
-      <div
-        className="w-12 h-2 rounded-full mt-1"
-        style={{ backgroundColor: "#D4B896", opacity: 0.5 }}
-      />
-    </div>
-  );
-}
 
 // ─── 결과 도트 컴포넌트 ────────────────────────────────────────────────────────
 

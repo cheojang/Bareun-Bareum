@@ -2,10 +2,22 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { SoriLogo } from "@/components/ui/SoriMascot";
+import { prisma } from "@/lib/prisma";
+import { getSelectedChildId } from "@/lib/child-cookie";
+import { ChildSelector } from "@/components/dashboard/ChildSelector";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const childList = await prisma.child.findMany({
+    where: { userId: session.user.id! },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, mascotLevel: true },
+  });
+
+  const savedId = await getSelectedChildId();
+  const validId = childList.find((c) => c.id === savedId)?.id ?? childList[0]?.id ?? "";
 
   return (
     <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "var(--color-bg-primary)" }}>
@@ -20,24 +32,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
         }}
       >
         <div className="mx-auto max-w-lg flex items-center gap-3 px-5 py-3">
-          {/* Logo mark */}
+          {/* Logo */}
           <SoriLogo size={40} />
 
           {/* Brand name */}
-          <div className="flex-1">
-            <p className="text-lg font-black text-[#3D3530] leading-none">소리</p>
+          <Link href="/dashboard" className="flex-1">
+            <p className="text-lg font-black text-[#3D3530] leading-none">바른발음</p>
             <p className="text-[10px] text-[#C4B5A8] font-semibold tracking-wide leading-none mt-0.5">
               발음 홈케어
             </p>
-          </div>
-
-          {/* Settings shortcut */}
-          <Link
-            href="/dashboard/settings"
-            className="w-9 h-9 rounded-full bg-[#F0E8E0] flex items-center justify-center text-lg hover:bg-[#FFD4B8] transition-colors"
-          >
-            ⚙️
           </Link>
+
+          {/* 아이 선택 드롭다운 */}
+          {childList.length > 0 && (
+            <ChildSelector children={childList} selectedId={validId} />
+          )}
+
+
         </div>
       </header>
 

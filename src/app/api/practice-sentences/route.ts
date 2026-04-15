@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   try {
     // ✨ ESM 방식 import로 Next.js 최적화 보장
     const genai = new GoogleGenerativeAI(apiKey);
-    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const wordList = words.slice(0, 8).join(", ");
     const prompt = `아동 언어치료 발음 연습용 짧은 문장을 만들어주세요.

@@ -33,7 +33,8 @@ type DotState = "empty" | "incorrect" | "correct";
 const MAX_ATTEMPTS = 5;
 
 // ─── Syllable Split Helper ────────────────────────────────────────────────────
-function splitSyllables(word: string): string {
+function splitSyllables(word: string | undefined): string {
+  if (!word) return "";
   return [...word].join(" · ");
 }
 
@@ -321,6 +322,23 @@ export function SessionPracticeClient({
   }
 
   // ── Practice screen ───────────────────────────────────────────────────────
+  // wordQueue가 비어있으면 빈 화면 방어
+  if (!currentWord) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-dvh px-6 text-center">
+        <div className="text-5xl mb-4">🎉</div>
+        <h2 className="text-2xl font-black text-[#3D3530] mb-2">연습 완료!</h2>
+        <p className="text-[#8B7E74] mb-6">모든 단어를 연습했어요</p>
+        <button
+          onClick={() => (window.location.href = "/dashboard")}
+          className="px-6 py-3 bg-[#FFB38A] text-white font-black rounded-2xl"
+        >
+          홈으로 돌아가기
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pt-6 max-w-lg mx-auto space-y-4 pb-8">
 

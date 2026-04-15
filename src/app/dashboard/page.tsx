@@ -45,6 +45,10 @@ export default async function DashboardHome() {
     orderBy: { createdAt: "asc" },
   });
 
+  // 선택된 아이 쿠키 반영
+  const { getSelectedChildId } = await import("@/lib/child-cookie");
+  const savedId = await getSelectedChildId();
+
   const recentSessions = await prisma.practiceSession.findMany({
     where: { userId },
     orderBy: { startedAt: "desc" },
@@ -68,7 +72,7 @@ export default async function DashboardHome() {
     );
   }
 
-  const child = children[0];
+  const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // Fetch top error phoneme for daily mission
   const recentErrors = await prisma.wordRecord.findMany({
@@ -159,10 +163,16 @@ export default async function DashboardHome() {
           <BubbleCard padding="sm" className="flex items-center gap-3 border-2 border-[#FCA5A5]/40 bg-[#FFF5EE] cursor-pointer hover:bg-[#FFE4D8] transition-colors">
             <span className="text-2xl">🔔</span>
             <div className="flex-1">
-              <p className="text-sm font-bold text-[#3D3530]">
-                오늘 복습할 단어가 있어요
-              </p>
-              <p className="text-xs text-[#8B7E74]">
+              {/* 목적 라벨 + 본문 한 줄 */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full leading-none bg-[#FCA5A5] text-white">
+                  오늘의 복습
+                </span>
+                <p className="text-sm font-bold text-[#3D3530] leading-tight">
+                  오늘 복습할 단어가 있어요
+                </p>
+              </div>
+              <p className="text-xs text-[#8B7E74] mt-0.5">
                 망각 곡선 — 지금 복습하면 기억이 오래 남아요
               </p>
             </div>
@@ -215,48 +225,7 @@ export default async function DashboardHome() {
         </Link>
       </BubbleCard>
 
-      {/* ── Sibling comparison (2+ children) ───────────────────────── */}
-      {children.length >= 2 && (
-        <BubbleCard>
-          <p className="font-bold text-[#3D3530] mb-3">👨‍👩‍👧‍👦 형제자매 이번 주 현황</p>
-          <div className="space-y-3">
-            {weeklyStatsPerChild.map(({ child: c, thisWeek }: { child: { id: string; name: string; mascotLevel: number }; thisWeek: number; lastWeek: number }, idx: number) => {
-              const maxWords = Math.max(...weeklyStatsPerChild.map((s: { thisWeek: number }) => s.thisWeek), 1);
-              const barW = Math.max((thisWeek / maxWords) * 100, 4);
-              const isLeading =
-                thisWeek === Math.max(...weeklyStatsPerChild.map((s: { thisWeek: number }) => s.thisWeek)) &&
-                thisWeek > 0;
-              const MASCOT_EMOJIS = ["🥚", "🐣", "🐥", "🐤", "🐦"];
-              return (
-                <div key={c.id} className="flex items-center gap-3">
-                  <span className="text-xl w-8 text-center">
-                    {MASCOT_EMOJIS[Math.min(c.mascotLevel - 1, 4)]}
-                  </span>
-                  <div className="w-16 text-sm font-semibold text-[#3D3530] truncate">
-                    {c.name}
-                  </div>
-                  <div className="flex-1 h-4 bg-[#F0E8E0] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${barW}%`,
-                        backgroundColor: idx === 0 ? "#FFB38A" : "#7EDFD0",
-                      }}
-                    />
-                  </div>
-                  <div className="text-sm font-bold text-[#3D3530] w-10 text-right">
-                    {thisWeek}개
-                    {isLeading && <span className="ml-0.5">👑</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-[#C4B5A8] mt-3 text-center">
-            이번 주 연습한 단어 수 기준
-          </p>
-        </BubbleCard>
-      )}
+
 
       {/* Recent sessions */}
       {recentSessions.length > 0 && (

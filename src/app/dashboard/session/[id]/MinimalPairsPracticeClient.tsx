@@ -144,7 +144,7 @@ export function MinimalPairsPracticeClient({ pairs, childName }: Props) {
       {/* ── 전체 진행바 ─────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-[#8B7E74]">{childName} 변별 훈련</span>
+          <span className="text-sm text-[#8B7E74]">발음 변별 훈련</span>
           <span className="text-sm font-semibold text-[#3D3530]">
             {pairIndex + 1} / {pairs.length} 쌍
           </span>

@@ -14,7 +14,9 @@ export default async function PracticePage() {
 
   if (children.length === 0) redirect("/onboarding");
 
-  const child = children[0];
+  const { getSelectedChildId } = await import("@/lib/child-cookie");
+  const savedId = await getSelectedChildId();
+  const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // ── 1단계: 최근 오답노트 단어 (최대 5개, 중복 제거) ────────────────────────
   const errorRecords = await prisma.errorRecord.findMany({

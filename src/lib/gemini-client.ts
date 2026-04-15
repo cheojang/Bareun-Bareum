@@ -33,7 +33,9 @@ export async function getGeminiFeedback(
   errorType: string,
   errorCategory: string,
   child: any,
-  isUnknownPattern = false
+  isUnknownPattern = false,
+  localParentHint = "",
+  localDescription = ""
 ) {
   try {
     const ai = getGenAI();
@@ -52,8 +54,8 @@ export async function getGeminiFeedback(
       );
     }
 
-    // 모델 선택 (gemini-2.0-flash 권장)
-    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // 모델 선택 (gemini-2.5-flash 권장)
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // 시스템 프롬프트 (언어치료학적 전문성)
     const systemPrompt = `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)이자 풀스택 개발자입니다.
@@ -76,6 +78,11 @@ export async function getGeminiFeedback(
       ? `\n⚠️ 참고: 이 발음은 일반적인 조음 오류 패턴 데이터베이스에 등록되지 않은 경우입니다. 최선을 다해 분석해주되, 분석이 불확실하다면 8번 신뢰도를 낮게 주세요.`
       : '';
 
+    // 로컬 분석 힌트 (있을 때만 포함)
+    const localHintSection = (localParentHint || localDescription)
+      ? `\n【로컬 분석 힌트】\n${localDescription ? `- 음운학적 설명: ${localDescription}` : ""}\n${localParentHint ? `- 부모 힌트: ${localParentHint}` : ""}`
+      : "";
+
     // 사용자 프롬프트 (JSON 응답 요청)
     const userPrompt = `다음 조음 오류를 분석해주세요:${unknownPatternNote}
 
@@ -84,7 +91,7 @@ export async function getGeminiFeedback(
 - 아이 발음: ${childPronunciation}
 - 오류 카테고리: ${errorCategory}
 - 판정된 패턴: ${errorType}
-- 아이 나이: ${childAge}세
+- 아이 나이: ${childAge}세${localHintSection}
 
 【응답 형식】
 아래의 JSON 형식으로 정확히 응답해주세요. (Markdown 코드 블록 없이 순수 JSON만 출력):
@@ -112,11 +119,24 @@ export async function getGeminiFeedback(
       systemInstruction: systemPrompt
     });
 
-    const responseText = result.response.text();
+    const rawText = result.response.text();
+    console.log('[Gemini RAW]', JSON.stringify(rawText.slice(0, 200)));
 
-    // JSON 응답 파싱
+    // 마크다운 코드 블록 제거 (```json ... ``` 또는 ``` ... ```)
+    const responseText = rawText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+    console.log('[Gemini CLEANED]', JSON.stringify(responseText.slice(0, 200)));
+
+    // JSON 응답 파싱 (이중 인코딩 대응)
     try {
-      const parsed = JSON.parse(responseText);
+      let parsed = JSON.parse(responseText);
+      // Gemini가 JSON을 문자열로 한 번 더 감쌀 때 (e.g. "\"{ ... }\"")
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+      console.log('[Gemini PARSED] rootCause:', parsed.rootCause?.slice(0, 50));
 
       // 필수 필드 검증
       if (!parsed.rootCause || !parsed.trainingStep1) {
@@ -249,7 +269,7 @@ ${phonemeList}
 
 이 약점들을 종합하여 부모에게 도움이 될 만한 조언을 3~4문장으로 해주세요.`;
 
-    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
 
     return result.response.text();
