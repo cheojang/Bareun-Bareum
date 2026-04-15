@@ -182,7 +182,7 @@ export function AnswerNoteClient({ childId, childName }: Props) {
   const categoryStyle = CATEGORY_STYLE[localResult?.errorCategory ?? "미판정"] || DEFAULT_STYLE;
 
   return (
-    <div className="px-5 pt-6 pb-8 max-w-lg mx-auto space-y-5">
+    <div className="px-5 pt-6 pb-8 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5">
 
       {/* 헤더 */}
       <div>

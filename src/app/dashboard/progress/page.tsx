@@ -136,7 +136,7 @@ export default async function ProgressPage() {
   const mascotEmojis = ["🥚", "🐣", "🐥", "🐤", "🦅"];
 
   return (
-    <div className="px-5 pt-6 max-w-lg mx-auto space-y-5 pb-8">
+    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
       <h2 className="text-2xl font-black text-[#3D3530]">성장 기록 📈</h2>
 
       {/* Mascot + Stats */}

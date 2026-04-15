@@ -22,7 +22,7 @@ export default async function BookmarksPage() {
 
   if (!child) {
     return (
-      <div className="px-5 pt-6 max-w-lg mx-auto">
+      <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto">
         <p className="text-[#8B7E74]">아이 정보가 없어요.</p>
       </div>
     );
@@ -64,7 +64,7 @@ export default async function BookmarksPage() {
   const isEmpty = savedWords.length === 0 && recentErrors.length === 0 && reviewItems.length === 0;
 
   return (
-    <div className="px-5 pt-6 max-w-lg mx-auto space-y-5 pb-8">
+    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
 
       {/* 헤더 */}
       <div>
