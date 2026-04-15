@@ -220,7 +220,7 @@ export default async function DashboardHome() {
         <p className="text-lg font-black text-[#3D3530] mb-3">오늘도 연습해볼까요? 🎯</p>
         <Link href="/dashboard/session/new">
           <BubbleButton variant="peach" size="lg" className="w-full">
-            발음 연습 시작!
+            오늘의 코스 시작
           </BubbleButton>
         </Link>
       </BubbleCard>
@@ -347,14 +347,7 @@ export default async function DashboardHome() {
         )}
       </BubbleCard>
 
-      {/* Child play mode button */}
-      <BubbleCard color="mint" className="text-center">
-        <p className="font-bold text-[#3D3530] mb-2">🎮 아이에게 넘겨줄까요?</p>
-        <p className="text-sm text-[#8B7E74] mb-3">아이 전용 놀이 화면으로 전환해요</p>
-        <Link href="/dashboard/practice">
-          <BubbleButton variant="mint" className="w-full">아이 연습 시작!</BubbleButton>
-        </Link>
-      </BubbleCard>
+
     </div>
   );
 }

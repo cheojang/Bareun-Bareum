@@ -33,17 +33,8 @@ export async function POST(request: NextRequest) {
     if (!errorRecord) return NextResponse.json({ error: "기록을 찾을 수 없습니다" }, { status: 404 });
     if (errorRecord.child.userId !== session.user.id) return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
 
-    // 이미 Gemini 결과가 있으면 재사용
-    if (errorRecord.geminiFeedback) {
-      const fb = errorRecord.geminiFeedback;
-      return NextResponse.json({
-        success: true,
-        rootCause: fb.rootCause,
-        trainingSteps: [fb.trainingStep1, fb.trainingStep2, fb.trainingStep3, fb.trainingStep4],
-        recommendedWords: JSON.parse(fb.recommendedWords),
-        parentMessage: fb.parentMessage,
-      });
-    }
+    // (기존 기록 재사용 로직 삭제됨 - 항상 새로운 프롬프트로 고품질 분석 수행)
+
 
     // 로컬 분석 힌트 추출
     let parentHint = "";
@@ -71,10 +62,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (!geminiResult || !geminiResult.success) {
-      return NextResponse.json({ error: "AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+      const errorMsg = (geminiResult as any)?.errorMessage || "AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.";
+      return NextResponse.json({ error: errorMsg }, { status: 500 });
     }
 
-    // DB 저장
+    // 기존 결과가 있다면 먼저 삭제 (최신 결과로 덮어쓰기 위해)
+    await prisma.geminiFeedback.deleteMany({
+      where: { errorRecordId }
+    });
+
+    // DB 저장 (새로운 고품질 답변 저장)
     const saved = await prisma.geminiFeedback.create({
       data: {
         errorRecordId,

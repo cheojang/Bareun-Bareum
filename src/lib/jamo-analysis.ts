@@ -110,11 +110,11 @@ function getDetailedSubstitutionPattern(
 
   // 같은 조음 위치, 예사소리 → 경음
   if (t.place === h.place && !t.tense && h.tense && !h.aspirated) {
-    return { name: '경음화', description: `${target}을 더 강하게 ${heard}로 발음하고 있어요.` };
+    return { name: '경음화', description: '' };
   }
   // 같은 조음 위치, 예사소리 → 기음
   if (t.place === h.place && !t.aspirated && h.aspirated) {
-    return { name: '기음화', description: `${target}을 숨을 내뿜는 ${heard}로 발음하고 있어요.` };
+    return { name: '기음화', description: '' };
   }
   // 연구개음 → 치조음 (ㄱ→ㄷ 등)
   if (t.place === '연구개음' && h.place === '치조음') {
@@ -214,8 +214,8 @@ const ERROR_PATTERNS: Record<string, Record<string, ErrorPattern>> = {
     'ㄷ': {
       name: '마찰음의 파열음화',
       category: '대치',
-      description: '시원한 바람 소리(ㅅ)를 내지 못하고, 혀로 꽉 막아버리는 파열음(ㄷ)으로 바꾸고 있어요.',
-      parentHint: '바람이 숨어버렸어요! 혀가 꽉 닫혀서 강한 소리가 나고 있어요.'
+      description: '',
+      parentHint: ''
     },
     'ㄲ': {
       name: '마찰음의 경음화',

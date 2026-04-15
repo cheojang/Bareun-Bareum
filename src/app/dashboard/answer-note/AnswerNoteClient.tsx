@@ -109,7 +109,8 @@ export function AnswerNoteClient({ childId, childName }: Props) {
       });
 
       if (!geminiRes.ok) {
-        setGeminiError("AI 처방전을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+        const err = await geminiRes.json().catch(() => null);
+        setGeminiError(err?.error || "AI 처방전을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
       } else {
         const gemini: GeminiResult = await geminiRes.json();
         setGeminiResult(gemini);
@@ -231,13 +232,7 @@ export function AnswerNoteClient({ childId, childName }: Props) {
               </div>
             </div>
 
-            {localResult.localAnalysis.parentHint && (
-              <div className="bg-white/60 rounded-xl px-4 py-2.5">
-                <p className="text-sm font-semibold text-[#3D3530]">
-                  💬 {localResult.localAnalysis.parentHint}
-                </p>
-              </div>
-            )}
+            {/* 로컬 힌트 노출 섹션 삭제 (AI 분석으로 대체됨) */}
           </BubbleCard>
 
           {/* ── Gemini 처방전 (별도 로딩) ── */}
@@ -275,11 +270,7 @@ export function AnswerNoteClient({ childId, childName }: Props) {
               {/* 원인 카드 */}
               <BubbleCard color="lavender">
                 <p className="text-sm font-bold text-[#3D3530] mb-2">💡 왜 이런 발음이 나올까요?</p>
-                {localResult.localAnalysis.description && (
-                  <p className="text-xs text-[#8B7E74] mb-2 leading-relaxed">
-                    {localResult.localAnalysis.description}
-                  </p>
-                )}
+                {/* 로컬 고정 텍스트 삭제됨 - AI 실시간 원인 분석만 노출 */}
                 <p className="text-sm text-[#5B4E9B] leading-relaxed">{geminiResult.rootCause}</p>
               </BubbleCard>
 

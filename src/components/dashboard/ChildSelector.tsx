@@ -48,7 +48,7 @@ export function ChildSelector({ children, selectedId }: Props) {
   return (
     <div ref={ref} className="relative flex items-center gap-1.5">
       {/* "아이 :" 라벨 */}
-      <span className="text-[11px] font-semibold text-[#C4B5A8] whitespace-nowrap">
+      <span className="text-sm font-black text-[#A89A90] whitespace-nowrap">
         아이 :
       </span>
 
@@ -58,7 +58,7 @@ export function ChildSelector({ children, selectedId }: Props) {
         className="flex items-center gap-1.5 bg-[#FFF5EE] hover:bg-[#FFE4D8] transition-colors rounded-full px-3 py-1.5 border border-[#FFD4B8]"
       >
         <span className="text-base leading-none">{emoji}</span>
-        <span className="text-sm font-black text-[#3D3530] max-w-[60px] truncate">
+        <span className="text-base font-black text-[#3D3530] max-w-[70px] truncate">
           {selected?.name ?? "선택"}
         </span>
         <span className="text-[#C4B5A8] text-xs">{open ? "▲" : "▼"}</span>

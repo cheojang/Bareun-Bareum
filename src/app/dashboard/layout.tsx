@@ -37,7 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           {/* Brand name */}
           <Link href="/dashboard" className="flex-1">
-            <p className="text-lg font-black text-[#3D3530] leading-none">바른발음</p>
+            <p className="text-2xl font-black text-[#3D3530] leading-none">바른발음</p>
             <p className="text-[10px] text-[#C4B5A8] font-semibold tracking-wide leading-none mt-0.5">
               발음 홈케어
             </p>
@@ -68,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex items-center justify-around px-2 py-3">
             <NavItem href="/dashboard" icon="🏠" label="홈" />
             <NavItem href="/dashboard/answer-note" icon="📝" label="오답노트" />
-            <NavItem href="/dashboard/practice" icon="🎮" label="아이연습" />
+            <NavItem href="/dashboard/practice" icon="🎯" label="반복연습" />
             <NavItem href="/dashboard/bookmarks" icon="⭐" label="저장" />
             <NavItem href="/dashboard/settings" icon="⚙️" label="설정" />
           </div>
