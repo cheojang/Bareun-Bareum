@@ -44,6 +44,43 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
 };
 const DEFAULT_STYLE = { bg: "bg-[#F5F5F5]", text: "text-[#8B7E74]" };
 
+// ─── 입력값 검증 ───────────────────────────────────────────────────────────────
+
+/**
+ * 한글 단어 유효성 검사
+ * @returns null(유효) or 에러 메시지 문자열
+ */
+function validateKoreanWord(text: string): string | null {
+  const trimmed = text.trim();
+
+  // 1. 빈 입력 / 공백만
+  if (!trimmed) return "단어를 입력해주세요.";
+
+  // 2. 숫자 포함
+  if (/[0-9]/.test(text)) {
+    return "숫자는 입력할 수 없어요. '사과', '기차'처럼 한글 단어를 입력해주세요.";
+  }
+
+  // 3. 영어 포함
+  if (/[a-zA-Z]/.test(text)) {
+    return "영어는 입력할 수 없어요. 한글로 입력해주세요.";
+  }
+
+  // 4. 한글·공백 외 문자 (특수문자, 한자, 일본어 등)
+  // 허용: 완성형 한글(가-힣), 자음(ㄱ-ㅎ), 모음(ㅏ-ㅣ), 공백
+  if (/[^\uAC00-\uD7A3\u3131-\u3163\s]/.test(text)) {
+    return "특수문자나 외국어는 입력할 수 없어요. 한글 단어만 입력해주세요.";
+  }
+
+  // 5. 자음·모음 단독 사용 (예: ㄱ차, ㄴ, ㅏ나)
+  // 완전한 한글 음절(가-힣) 없이 낱자만 있거나, 낱자가 혼용된 경우
+  if (/[\u3131-\u3163]/.test(trimmed)) {
+    return "완전하지 않은 한글이에요. 예) 'ㄱ차' → '기차'로 입력해주세요.";
+  }
+
+  return null; // 유효
+}
+
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 
 export function AnswerNoteClient({ childId, childName }: Props) {
@@ -61,12 +98,20 @@ export function AnswerNoteClient({ childId, childName }: Props) {
   const [geminiError, setGeminiError] = useState("");
 
   const [error, setError] = useState("");
+  const [targetWordError, setTargetWordError] = useState("");
+  const [pronunciationError, setPronunciationError] = useState("");
 
   async function handleAnalyze() {
-    if (!targetWord.trim() || !childPronunciation.trim()) {
-      setError("목표 단어와 아이 발음을 모두 입력해주세요!");
-      return;
-    }
+    // 각 필드 독립 검증
+    const targetErr = validateKoreanWord(targetWord);
+    const pronunciationErr = validateKoreanWord(childPronunciation);
+
+    setTargetWordError(targetErr ?? "");
+    setPronunciationError(pronunciationErr ?? "");
+    setError("");
+
+    if (targetErr || pronunciationErr) return;
+
     if (targetWord.trim() === childPronunciation.trim()) {
       setError("목표 단어와 아이 발음이 같아요. 오류가 있는 발음을 입력해주세요!");
       return;
@@ -130,6 +175,8 @@ export function AnswerNoteClient({ childId, childName }: Props) {
     setGeminiResult(null);
     setGeminiError("");
     setError("");
+    setTargetWordError("");
+    setPronunciationError("");
   }
 
   const categoryStyle = CATEGORY_STYLE[localResult?.errorCategory ?? "미판정"] || DEFAULT_STYLE;
@@ -153,23 +200,35 @@ export function AnswerNoteClient({ childId, childName }: Props) {
             <input
               type="text"
               value={targetWord}
-              onChange={(e) => setTargetWord(e.target.value)}
+              onChange={(e) => { setTargetWord(e.target.value); setTargetWordError(""); }}
               placeholder="예) 사과"
               disabled={localLoading}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-[#F0E8E0] text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+              className={`w-full px-4 py-3 rounded-2xl border-2 ${targetWordError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
+            {targetWordError && (
+              <p className="text-xs text-[#EF4444] mt-1.5 ml-1 flex items-start gap-1">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>{targetWordError}</span>
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-bold text-[#3D3530] mb-2">🎤 {childName}의 발음</label>
             <input
               type="text"
               value={childPronunciation}
-              onChange={(e) => setChildPronunciation(e.target.value)}
+              onChange={(e) => { setChildPronunciation(e.target.value); setPronunciationError(""); }}
               placeholder="예) 따과"
               disabled={localLoading}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-[#F0E8E0] text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+              className={`w-full px-4 py-3 rounded-2xl border-2 ${pronunciationError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
+            {pronunciationError && (
+              <p className="text-xs text-[#EF4444] mt-1.5 ml-1 flex items-start gap-1">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>{pronunciationError}</span>
+              </p>
+            )}
           </div>
 
           {error && (

@@ -7,9 +7,4 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  migrate: {
-    adapter: async (env) => {
-      return new PrismaPg({ connectionString: env["DATABASE_URL"]! });
-    },
-  },
 });
