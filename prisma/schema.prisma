@@ -209,6 +209,32 @@ model ReviewSchedule {
   @@index([childId, nextReviewAt])
 }
 
+// Announcement: 운영자 공지사항 / 업데이트 알림
+model Announcement {
+  id          String             @id @default(cuid())
+  title       String
+  content     String             @db.Text
+  type        String             @default("notice") // "notice" | "update" | "event"
+  isPublished Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  reads       AnnouncementRead[]
+
+  @@index([isPublished, createdAt])
+}
+
+// AnnouncementRead: 공지사항 읽음 추적
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcementId String
+  userId         String
+  readAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+}
+
 // SavedWord: 저장된 단어 (아이연습 완료 후 저장)
 model SavedWord {
   id                    String            @id @default(cuid())

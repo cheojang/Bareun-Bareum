@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getSelectedChildId } from "@/lib/child-cookie";
 import { ChildSelector } from "@/components/dashboard/ChildSelector";
 import { SidebarNavItems, BottomNavItems } from "@/components/dashboard/DashboardNav";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
 
 export default async function DashboardLayout({
   children,
@@ -24,6 +25,14 @@ export default async function DashboardLayout({
   const savedId = await getSelectedChildId();
   const validId =
     childList.find((c) => c.id === savedId)?.id ?? childList[0]?.id ?? "";
+
+  // 안읽은 공지 수 (서버에서 계산 → 초기 배지에 활용)
+  const unreadCount = await prisma.announcement.count({
+    where: {
+      isPublished: true,
+      reads: { none: { userId: session.user.id! } },
+    },
+  });
 
   return (
     <div
@@ -52,6 +61,7 @@ export default async function DashboardLayout({
           {childList.length > 0 && (
             <ChildSelector children={childList} selectedId={validId} />
           )}
+          <NotificationBell initialUnreadCount={unreadCount} />
         </div>
       </header>
 
@@ -101,7 +111,7 @@ export default async function DashboardLayout({
 
           {/* 데스크탑 상단 바 (md 이상, 우측 상단 아이 선택기) */}
           <div
-            className="hidden md:flex items-center justify-end px-6 py-3 sticky top-0 z-30"
+            className="hidden md:flex items-center justify-end gap-2 px-6 py-3 sticky top-0 z-30"
             style={{
               background: "rgba(253,250,245,0.88)",
               backdropFilter: "blur(16px)",
@@ -111,6 +121,7 @@ export default async function DashboardLayout({
             {childList.length > 0 && (
               <ChildSelector children={childList} selectedId={validId} />
             )}
+            <NotificationBell initialUnreadCount={unreadCount} />
           </div>
 
           {/* 페이지 콘텐츠 */}
