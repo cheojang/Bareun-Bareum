@@ -19,6 +19,11 @@ export function TermsAgreementModal({
 
   const canAgree = agreedTerms && agreedPrivacy;
 
+  const handleAgreeAll = () => {
+    setAgreedTerms(true);
+    setAgreedPrivacy(true);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -41,6 +46,19 @@ export function TermsAgreementModal({
             바른발음은 가정 학습 보조 도구이며, 의료 서비스가 아닙니다.
             발음에 우려가 있으면 반드시 언어재활사와 상담하세요.
           </p>
+        </div>
+
+        {/* 전체 동의 */}
+        <div className="mb-4 pb-4 border-b-2 border-[#FFB38A]/30">
+          <label className="flex items-center gap-3 cursor-pointer bg-[#FFF5EE] hover:bg-[#FFE8D6] p-3 rounded-xl transition-colors">
+            <input
+              type="checkbox"
+              checked={canAgree}
+              onChange={(e) => { setAgreedTerms(e.target.checked); setAgreedPrivacy(e.target.checked); }}
+              className="w-5 h-5 rounded accent-[#FFB38A] flex-shrink-0"
+            />
+            <p className="text-sm font-bold text-[#3D3530]">아래 약관에 모두 동의합니다</p>
+          </label>
         </div>
 
         {/* 체크박스 1 */}

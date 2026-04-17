@@ -268,15 +268,15 @@ export default async function DashboardHome() {
             <div className="flex items-center justify-between mb-3">
               <p className="font-bold text-[#3D3530]">🔍 약점 음소 분석</p>
               <Link href="/dashboard/answer-note">
-                <span className="text-xs text-[#FFB38A] font-semibold">오답 추가 →</span>
+                <span className="text-xs text-[#FFB38A] font-semibold">발음 분석 추가 →</span>
               </Link>
             </div>
 
             {totalErrorRecords === 0 ? (
               <div className="text-center py-4">
                 <p className="text-3xl mb-2">📝</p>
-                <p className="text-sm font-semibold text-[#3D3530]">아직 오답 기록이 없어요</p>
-                <p className="text-xs text-[#8B7E74] mt-1">오답 노트에서 발음을 입력하면 약점을 분석해드려요</p>
+                <p className="text-sm font-semibold text-[#3D3530]">아직 발음 분석 기록이 없어요</p>
+                <p className="text-xs text-[#8B7E74] mt-1">발음 분석에서 발음을 입력하면 약점을 분석해드려요</p>
               </div>
             ) : totalErrorRecords < 10 ? (
               <div className="py-4 px-1">

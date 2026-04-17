@@ -58,7 +58,7 @@ export default async function ProgressPage() {
       ? Math.round((correctCount / recentRecords.length) * 100)
       : 0;
 
-  // ── 오답노트 기반 약점 음소 (WeakPhoneme) ─────────────────────────────────
+  // ── 발음 분석 기반 약점 음소 (WeakPhoneme) ─────────────────────────────────
   const weakPhonemes = await prisma.weakPhoneme.findMany({
     where: { childId: child.id },
     orderBy: { errorCount: "desc" },
@@ -158,7 +158,7 @@ export default async function ProgressPage() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard value={child.totalWords} label="총 연습 단어" emoji="📝" color="#FFB38A" />
         <StatCard value={child.streakDays} label="연속 출석" emoji="🔥" color="#FCA5A5" />
-        <StatCard value={totalErrorRecords} label="오답노트 기록" emoji="🗒️" color="#C4B5FD" />
+        <StatCard value={totalErrorRecords} label="발음 분석 기록" emoji="📝" color="#C4B5FD" />
         <StatCard value={savedWordsCount} label="복습 저장" emoji="📌" color="#7EDFD0" />
       </div>
 
@@ -243,18 +243,18 @@ export default async function ProgressPage() {
         )}
       </BubbleCard>
 
-      {/* ── 오답노트 기반 약점 음소 분석 ────────────────────────────── */}
+      {/* ── 발음 분석 기반 약점 음소 분석 ────────────────────────────── */}
       <BubbleCard>
         <div className="flex items-center justify-between mb-4">
           <p className="font-bold text-[#3D3530]">🎯 약점 음소 분석</p>
-          <span className="text-xs text-[#8B7E74]">오답노트 {totalErrorRecords}개 기준</span>
+          <span className="text-xs text-[#8B7E74]">발음 분석 {totalErrorRecords}개 기준</span>
         </div>
 
         {weakPhonemes.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-sm text-[#8B7E74]">
               {totalErrorRecords < 10
-                ? `오답노트 ${totalErrorRecords}/10개 — 10개 이상 입력하면 분석이 시작돼요`
+                ? `발음 분석 ${totalErrorRecords}/10개 — 10개 이상 입력하면 분석이 시작돼요`
                 : "약점 분석 준비 중이에요"}
             </p>
             {totalErrorRecords < 10 && (

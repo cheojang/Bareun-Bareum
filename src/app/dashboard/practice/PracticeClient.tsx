@@ -237,11 +237,11 @@ export function PracticeClient({
         <div className="text-7xl mb-5 animate-float">📝</div>
         <h2 className="text-2xl font-black text-[#3D3530] mb-2">연습 단어가 없어요</h2>
         <p className="text-[#8B7E74] mb-6 leading-relaxed">
-          오답노트에서 발음을 먼저 입력하면<br />
+          발음 분석에서 발음을 먼저 입력하면<br />
           AI가 단계별 연습을 만들어드려요!
         </p>
         <Link href="/dashboard/answer-note">
-          <BubbleButton variant="peach" size="lg">오답노트 작성하기 →</BubbleButton>
+          <BubbleButton variant="peach" size="lg">발음 분석 작성하기 →</BubbleButton>
         </Link>
       </div>
     );

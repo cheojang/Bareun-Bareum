@@ -87,7 +87,7 @@ async function main() {
   console.log(`\n🚀  음소 템플릿 시드 시작 — 총 ${PHONEME_COMBINATIONS.length}개\n`);
 
   const genai = getGenAI();
-  const model = genai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  const model = genai.getGenerativeModel({ model: "gemini-flash-latest" });
 
   // 이미 존재하는 조합 조회
   const existing = await prisma.phonemeTemplate.findMany({

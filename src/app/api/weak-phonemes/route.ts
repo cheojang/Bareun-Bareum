@@ -73,7 +73,7 @@ function getDataQuality(totalRecords: number): {
   if (totalRecords === 0) {
     return {
       recordCount: totalRecords,
-      message: '아직 오답 기록이 없어요. 오답 노트를 사용해보세요!',
+      message: '아직 발음 분석 기록이 없어요. 발음 분석을 사용해보세요!',
       confidence: 'none',
     };
   }
@@ -93,7 +93,7 @@ function getDataQuality(totalRecords: number): {
   }
   return {
     recordCount: totalRecords,
-    message: `${totalRecords}개 오답을 분석한 신뢰도 높은 결과예요!`,
+    message: `${totalRecords}개 발음 분석을 실시한 신뢰도 높은 결과예요!`,
     confidence: 'high',
   };
 }

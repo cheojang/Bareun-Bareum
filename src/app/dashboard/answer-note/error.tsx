@@ -23,7 +23,7 @@ export default function AnswerNoteError({
     <div className="px-5 pt-6 pb-8 max-w-lg mx-auto space-y-5 animate-in fade-in duration-300">
       {/* 헤더 */}
       <div>
-        <h1 className="text-2xl font-black text-[#3D3530]">📝 오답 노트</h1>
+        <h1 className="text-2xl font-black text-[#3D3530]">📝 발음 분석</h1>
         <p className="text-sm text-[#8B7E74] mt-1">발음 분석 도구</p>
       </div>
 

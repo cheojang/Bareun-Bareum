@@ -304,7 +304,7 @@ export function MinimalPairsPracticeClient({ pairs, childName }: Props) {
 
           {pairCorrect < totalTrialCount * 0.5 && (
             <div className="mb-4 px-4 py-3 bg-[#FFF5EE] rounded-2xl text-sm text-[#8B7E74] text-left">
-              💡 이 소리 구별이 아직 어려워요. 오답 노트에 기록해두고 반복 연습해보세요.
+              💡 이 소리 구별이 아직 어려워요. 발음 분석에 기록해두고 반복 연습해보세요.
             </div>
           )}
           {pairCorrect >= totalTrialCount * 0.8 && (

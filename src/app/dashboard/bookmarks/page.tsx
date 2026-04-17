@@ -46,7 +46,7 @@ export default async function BookmarksPage() {
     orderBy: { nextReviewAt: "asc" },
   });
 
-  // ── 오답노트 최근 기록 (빠른 복습용) ─────────────────────────────────────────
+  // ── 발음 분석 최근 기록 (빠른 복습용) ─────────────────────────────────────────
   const recentErrors = await prisma.errorRecord.findMany({
     where: { childId: child.id },
     orderBy: { createdAt: "desc" },
@@ -123,7 +123,7 @@ export default async function BookmarksPage() {
                 </Link>
               </div>
               <div className="space-y-2.5">
-                {savedWords.map((sw: { id: string; word: string; targetPhoneme: string; difficulty: string; savedAt: Date }) => {
+                {savedWords.map((sw: any) => {
                   const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
                   return (
                     <BubbleCard key={sw.id} padding="sm">
@@ -156,17 +156,17 @@ export default async function BookmarksPage() {
             </section>
           )}
 
-          {/* ── 최근 오답노트 (빠른 참고) ───────────────────────────────── */}
+          {/* ── 최근 발음 분석 (빠른 참고) ───────────────────────────────── */}
           {recentErrors.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-3">
-                <p className="font-bold text-[#3D3530]">최근 오답노트</p>
+                <p className="font-bold text-[#3D3530]">최근 발음 분석</p>
                 <Link href="/dashboard/answer-note">
-                  <span className="text-xs text-[#FFB38A] font-semibold">오답 추가 →</span>
+                  <span className="text-xs text-[#FFB38A] font-semibold">발음 분석 추가 →</span>
                 </Link>
               </div>
               <div className="space-y-2.5">
-                {recentErrors.map((rec: { id: string; targetWord: string; childPronunciation: string; errorPattern: string; errorCategory: string; createdAt: Date }) => (
+                {recentErrors.map((rec: any) => (
                   <BubbleCard key={rec.id} padding="sm">
                     <div className="flex items-center gap-3">
                       {/* 목표 → 오답 */}
@@ -201,7 +201,7 @@ export default async function BookmarksPage() {
           <BubbleCard color="peach" className="text-center">
             <p className="font-bold text-[#3D3530] mb-1">저장한 단어로 연습할까요?</p>
             <p className="text-xs text-[#8B7E74] mb-3">
-              오답노트 단어 + AI 추천 단어 3단계 훈련
+              발음 분석 단어 + AI 추천 단어 3단계 훈련
             </p>
             <Link href="/dashboard/practice">
               <span className="inline-block px-6 py-3 bg-white rounded-full text-sm font-black text-[#FFB38A] shadow-sm">

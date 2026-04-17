@@ -152,3 +152,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "오답 분석 중 오류가 발생했습니다" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/error-analysis
+ * 오답 기록 삭제
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+    }
+
+    const { errorRecordId } = await request.json();
+    if (!errorRecordId) {
+      return NextResponse.json({ error: "id 필수" }, { status: 400 });
+    }
+
+    const record = await prisma.errorRecord.findUnique({
+      where: { id: errorRecordId },
+      include: { child: true }
+    });
+
+    if (!record) return NextResponse.json({ error: "기록을 찾을 수 없습니다" }, { status: 404 });
+    if (record.child.userId !== session.user.id) return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 });
+
+    await prisma.errorRecord.delete({ where: { id: errorRecordId } });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting record:", err);
+    return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
+  }
+}

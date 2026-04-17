@@ -19,10 +19,42 @@ export default async function AnswerNotePage() {
   const savedId = await getSelectedChildId();
   const targetChild = children.find((c) => c.id === savedId) ?? children[0];
 
+  // ── 기존 발음 분석 기록 조회 (최신순 최대 50개) ──────────────────────────
+  const pastRecords = await prisma.errorRecord.findMany({
+    where: { childId: targetChild.id },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: {
+      id: true,
+      targetWord: true,
+      childPronunciation: true,
+      errorPattern: true,
+      errorCategory: true,
+      createdAt: true,
+      localAnalysis: {
+        select: {
+          confidence: true,
+        },
+      },
+      geminiFeedback: {
+        select: {
+          rootCause: true,
+          trainingStep1: true,
+          trainingStep2: true,
+          trainingStep3: true,
+          trainingStep4: true,
+          recommendedWords: true,
+          parentMessage: true,
+        },
+      },
+    },
+  });
+
   return (
     <AnswerNoteClient
       childId={targetChild.id}
       childName={targetChild.name}
+      pastRecords={pastRecords}
     />
   );
 }
