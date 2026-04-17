@@ -209,6 +209,28 @@ model ReviewSchedule {
   @@index([childId, nextReviewAt])
 }
 
+// PhonemeTemplate: 음소 × 위치 × 오류유형별 미리 생성된 언어치료 훈련 처방전
+model PhonemeTemplate {
+  id               String   @id @default(cuid())
+  phoneme          String   // "ㄹ", "ㅅ", "ㅈ" 등
+  position         String   // "초성", "종성", "어중"
+  errorType        String   // "탈락", "경음화", "비음화동화" 등
+  errorCategory    String   // "탈락", "대치", "동화", "첨가"
+  exampleTarget    String   // 예시 목표 단어 "가방"
+  exampleChild     String   // 예시 아이 발음 "가바"
+  parentHint       String   // 부모 한 줄 힌트
+  rootCause        String   @db.Text  // 상세 원인 설명 (~300자)
+  trainingStep1    String   @db.Text  // 1단계: 조음 감각
+  trainingStep2    String   @db.Text  // 2단계: 소리 느끼기
+  trainingStep3    String   @db.Text  // 3단계: 연결하기
+  trainingStep4    String   @db.Text  // 4단계: 일상 적용
+  recommendedWords String   // JSON array: ["단어1", "단어2", ...]
+  generatedAt      DateTime @default(now())
+
+  @@unique([phoneme, position, errorType])
+  @@index([phoneme, errorType])
+}
+
 // Announcement: 운영자 공지사항 / 업데이트 알림
 model Announcement {
   id          String             @id @default(cuid())
