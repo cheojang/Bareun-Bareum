@@ -1,0 +1,1 @@
+const { GoogleGenerativeAI } = require('@google/generative-ai'); const dotenv = require('dotenv'); dotenv.config({path: '.env.local'}); const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); genAI.getGenerativeModel({model: 'gemini-flash-latest'}).generateContent('hello').then(r=>console.log(r.response.text())).catch(console.error);

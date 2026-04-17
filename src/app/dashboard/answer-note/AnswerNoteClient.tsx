@@ -681,7 +681,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
 
       {/* ── 누적 분석 기록 ──────────────────────────────────────────────────── */}
       {records.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center gap-2">
             <p className="font-bold text-[#3D3530]">📋 분석 기록</p>
             <span className="text-xs text-[#8B7E74] bg-[#F5F3FF] px-2 py-0.5 rounded-full">
@@ -695,14 +695,37 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
               <span className="text-sm">📊</span> 종합 분석하기
             </button>
           </div>
-          {records.map((record) => (
-            <RecordCard 
-              key={record.id} 
-              record={record} 
-              childName={childName} 
-              onDelete={handleDeleteClick}
-            />
-          ))}
+          
+          <div className="space-y-3">
+            {records.map((record, index) => {
+              const curDateObj = new Date(record.createdAt);
+              const curDateStr = `${curDateObj.getMonth() + 1}월 ${curDateObj.getDate()}일`;
+              
+              const prevDateObj = index > 0 ? new Date(records[index-1].createdAt) : null;
+              const prevDateStr = prevDateObj ? `${prevDateObj.getMonth() + 1}월 ${prevDateObj.getDate()}일` : null;
+              
+              const isNewDay = curDateStr !== prevDateStr;
+
+              return (
+                <div key={record.id} className="space-y-2">
+                  {isNewDay && (
+                    <div className="flex items-center gap-3 pt-4 pb-1">
+                      <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                      <span className="text-[11px] font-black text-[#C4B5A8] tracking-wider">
+                        {curDateStr}
+                      </span>
+                      <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                    </div>
+                  )}
+                  <RecordCard 
+                    record={record} 
+                    childName={childName} 
+                    onDelete={handleDeleteClick}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
