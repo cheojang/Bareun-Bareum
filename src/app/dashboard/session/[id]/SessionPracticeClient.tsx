@@ -8,6 +8,7 @@ import { PastelBadge } from "@/components/ui/PastelBadge";
 import { WordImage } from "@/components/ui/WordImage";
 import { AnalysisResult } from "@/types/analysis";
 import { PhonemeError } from "@/types/phonetics";
+import { validateKoreanWord } from "@/lib/korean-input-validation";
 import { getWordByText } from "@/lib/word-database";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 
@@ -199,6 +200,7 @@ export function SessionPracticeClient({
   const [done, setDone] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [inputError, setInputError] = useState("");
 
   // ── Sound effect animation ──────────────────────────────────────────────
   const [showSoundEffect, setShowSoundEffect] = useState(true);
@@ -236,6 +238,11 @@ export function SessionPracticeClient({
 
   async function analyze() {
     if (!heardWord.trim() || allFilled) return;
+
+    const err = validateKoreanWord(heardWord);
+    if (err) { setInputError(err); return; }
+    setInputError("");
+
     setLoading(true);
 
     try {
@@ -462,11 +469,16 @@ export function SessionPracticeClient({
           <input
             type="text"
             value={heardWord}
-            onChange={(e) => setHeardWord(e.target.value)}
+            onChange={(e) => { setHeardWord(e.target.value); setInputError(""); }}
             onKeyDown={(e) => e.key === "Enter" && analyze()}
             placeholder={`예: ${currentWord}`}
             className="w-full rounded-[16px] border-2 border-[#F0E8E0] bg-[#FDFAF5] px-4 py-3 text-[#3D3530] text-lg font-semibold placeholder-[#C4B5A8] focus:border-[#FFB38A] focus:outline-none mb-3"
           />
+          {inputError && (
+            <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl px-4 py-3 mb-3">
+              <p className="text-sm text-[#EF4444] font-bold text-center whitespace-pre-line">🚨 {inputError}</p>
+            </div>
+          )}
           <BubbleButton
             onClick={analyze}
             disabled={loading || !heardWord.trim()}

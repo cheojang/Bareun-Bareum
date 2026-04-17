@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+import { validateKoreanWord } from "@/lib/korean-input-validation";
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -63,10 +64,12 @@ export function AnswerNoteClient({ childId, childName }: Props) {
   const [error, setError] = useState("");
 
   async function handleAnalyze() {
-    if (!targetWord.trim() || !childPronunciation.trim()) {
-      setError("목표 단어와 아이 발음을 모두 입력해주세요!");
-      return;
-    }
+    const targetErr = validateKoreanWord(targetWord);
+    if (targetErr) { setError(`목표 단어: ${targetErr}`); return; }
+
+    const childErr = validateKoreanWord(childPronunciation);
+    if (childErr) { setError(`아이 발음: ${childErr}`); return; }
+
     if (targetWord.trim() === childPronunciation.trim()) {
       setError("목표 단어와 아이 발음이 같아요. 오류가 있는 발음을 입력해주세요!");
       return;

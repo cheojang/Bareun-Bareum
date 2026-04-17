@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { analyzeError } from '@/lib/jamo-analysis';
 import { auth } from '@/lib/auth';
+import { validateKoreanWord } from '@/lib/korean-input-validation';
 
 // ─── WeakPhoneme 자동 집계 ────────────────────────────────────────────────────
 
@@ -72,6 +73,12 @@ export async function POST(request: NextRequest) {
     if (!childId || !targetWord || !childPronunciation) {
       return NextResponse.json({ error: "childId, targetWord, childPronunciation 필수" }, { status: 400 });
     }
+
+    const targetErr = validateKoreanWord(targetWord);
+    if (targetErr) return NextResponse.json({ error: `목표 단어: ${targetErr}` }, { status: 400 });
+
+    const childErr = validateKoreanWord(childPronunciation);
+    if (childErr) return NextResponse.json({ error: `아이 발음: ${childErr}` }, { status: 400 });
 
     const child = await prisma.child.findUnique({ where: { id: childId } });
     if (!child) return NextResponse.json({ error: "해당 아이를 찾을 수 없습니다" }, { status: 404 });

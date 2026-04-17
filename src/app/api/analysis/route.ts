@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { compareWords } from "@/lib/korean-phonetics";
 import { buildArticulationGuides } from "@/lib/articulation-analysis";
 import { generateGuidance } from "@/lib/gemini-ai";
+import { validateKoreanWord } from "@/lib/korean-input-validation";
 
 // 🌍 KST(한국 시간) 기준 자정 타임스탬프 구하기
 function getKSTMidnight(date: Date | string | number) {
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
   if (!targetWord || !heardWord || !childId || !sessionId) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  const heardErr = validateKoreanWord(heardWord);
+  if (heardErr) return NextResponse.json({ error: heardErr }, { status: 400 });
 
   // Verify session belongs to user + fetch child in one query
   const practiceSession = await prisma.practiceSession.findFirst({
