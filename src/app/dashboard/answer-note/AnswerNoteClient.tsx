@@ -62,13 +62,19 @@ export function AnswerNoteClient({ childId, childName }: Props) {
   const [geminiError, setGeminiError] = useState("");
 
   const [error, setError] = useState("");
+  const [targetWordError, setTargetWordError] = useState("");
+  const [pronunciationError, setPronunciationError] = useState("");
 
   async function handleAnalyze() {
+    // 각 필드 독립 검증
     const targetErr = validateKoreanWord(targetWord);
-    if (targetErr) { setError(`목표 단어: ${targetErr}`); return; }
+    const pronunciationErr = validateKoreanWord(childPronunciation);
 
-    const childErr = validateKoreanWord(childPronunciation);
-    if (childErr) { setError(`아이 발음: ${childErr}`); return; }
+    setTargetWordError(targetErr ?? "");
+    setPronunciationError(pronunciationErr ?? "");
+    setError("");
+
+    if (targetErr || pronunciationErr) return;
 
     if (targetWord.trim() === childPronunciation.trim()) {
       setError("목표 단어와 아이 발음이 같아요. 오류가 있는 발음을 입력해주세요!");
@@ -133,12 +139,14 @@ export function AnswerNoteClient({ childId, childName }: Props) {
     setGeminiResult(null);
     setGeminiError("");
     setError("");
+    setTargetWordError("");
+    setPronunciationError("");
   }
 
   const categoryStyle = CATEGORY_STYLE[localResult?.errorCategory ?? "미판정"] || DEFAULT_STYLE;
 
   return (
-    <div className="px-5 pt-6 pb-8 max-w-lg mx-auto space-y-5">
+    <div className="px-5 pt-6 pb-8 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5">
 
       {/* 헤더 */}
       <div>
@@ -156,23 +164,35 @@ export function AnswerNoteClient({ childId, childName }: Props) {
             <input
               type="text"
               value={targetWord}
-              onChange={(e) => setTargetWord(e.target.value)}
+              onChange={(e) => { setTargetWord(e.target.value); setTargetWordError(""); }}
               placeholder="예) 사과"
               disabled={localLoading}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-[#F0E8E0] text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+              className={`w-full px-4 py-3 rounded-2xl border-2 ${targetWordError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
+            {targetWordError && (
+              <p className="text-xs text-[#EF4444] mt-1.5 ml-1 flex items-start gap-1">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>{targetWordError}</span>
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-bold text-[#3D3530] mb-2">🎤 {childName}의 발음</label>
             <input
               type="text"
               value={childPronunciation}
-              onChange={(e) => setChildPronunciation(e.target.value)}
+              onChange={(e) => { setChildPronunciation(e.target.value); setPronunciationError(""); }}
               placeholder="예) 따과"
               disabled={localLoading}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-[#F0E8E0] text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+              className={`w-full px-4 py-3 rounded-2xl border-2 ${pronunciationError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
+            {pronunciationError && (
+              <p className="text-xs text-[#EF4444] mt-1.5 ml-1 flex items-start gap-1">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>{pronunciationError}</span>
+              </p>
+            )}
           </div>
 
           {error && (
