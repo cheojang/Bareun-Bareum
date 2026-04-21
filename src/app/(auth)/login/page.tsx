@@ -109,29 +109,54 @@ export default function LoginPage() {
 
         {/* 개발용 빠른 로그인 */}
         {process.env.NODE_ENV === "development" && (
-          <div className="mt-5 pt-4 border-t border-[#F0E8E0] space-y-2">
-            <p className="text-[10px] text-center text-[#C4B5A8]">개발 모드 빠른 로그인</p>
-            <button
-              onClick={() => signIn("dev", { email: "dev@test.com", callbackUrl: "/dashboard" })}
-              className="w-full rounded-xl bg-[#F0E8E0] text-[#8B7E74] font-bold py-2.5 text-sm hover:bg-[#E8DDD5] transition-colors"
-            >
-              👪 부모 계정
-            </button>
-            <button
-              onClick={() => signIn("dev", { email: "therapist@test.com", callbackUrl: "/therapist/children" })}
-              className="w-full rounded-xl bg-[#E8F5E9] text-[#388E3C] font-bold py-2.5 text-sm hover:bg-[#DCEDC8] transition-colors"
-            >
-              🩺 치료사 계정
-            </button>
-            <button
-              onClick={() => signIn("dev", { email: "admin@test.com", callbackUrl: "/center" })}
-              className="w-full rounded-xl bg-[#E3F2FD] text-[#1565C0] font-bold py-2.5 text-sm hover:bg-[#BBDEFB] transition-colors"
-            >
-              🏥 센터 어드민 계정
-            </button>
-          </div>
+          <DevLoginButtons />
         )}
       </BubbleCard>
     </main>
+  );
+}
+
+function DevLoginButtons() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  async function devLogin(email: string, dest: string) {
+    setLoading(email);
+    setError("");
+    const res = await signIn("dev", { email, redirect: false });
+    if (res?.error) {
+      setError(res.error);
+      setLoading(null);
+      return;
+    }
+    window.location.href = dest;
+  }
+
+  return (
+    <div className="mt-5 pt-4 border-t border-[#F0E8E0] space-y-2">
+      <p className="text-[10px] text-center text-[#C4B5A8] font-semibold">개발 모드 빠른 로그인</p>
+      <button
+        onClick={() => devLogin("dev@test.com", "/dashboard")}
+        disabled={!!loading}
+        className="w-full rounded-xl bg-[#F0E8E0] hover:bg-[#E8DDD5] text-[#8B7E74] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
+      >
+        {loading === "dev@test.com" ? "로그인 중..." : "👪 부모 계정"}
+      </button>
+      <button
+        onClick={() => devLogin("therapist@test.com", "/therapist/children")}
+        disabled={!!loading}
+        className="w-full rounded-xl bg-[#E8F5E9] hover:bg-[#D8EFD9] text-[#388E3C] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
+      >
+        {loading === "therapist@test.com" ? "로그인 중..." : "🩺 치료사 계정"}
+      </button>
+      <button
+        onClick={() => devLogin("admin@test.com", "/center")}
+        disabled={!!loading}
+        className="w-full rounded-xl bg-[#E3F2FD] hover:bg-[#D3E8F5] text-[#1565C0] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
+      >
+        {loading === "admin@test.com" ? "로그인 중..." : "🏥 센터 어드민 계정"}
+      </button>
+      {error && <p className="text-xs text-red-500 text-center mt-1">{error}</p>}
+    </div>
   );
 }

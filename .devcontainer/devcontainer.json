@@ -1,0 +1,12 @@
+{
+  "name": "SORI Dev",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "postStartCommand": "npm run dev"
+}
