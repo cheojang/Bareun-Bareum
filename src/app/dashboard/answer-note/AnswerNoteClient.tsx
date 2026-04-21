@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
@@ -687,13 +688,12 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
             <span className="text-xs text-[#8B7E74] bg-[#F5F3FF] px-2 py-0.5 rounded-full">
               총 {records.length}개
             </span>
-            <button
-              type="button"
-              onClick={() => alert("종합 분석 기능은 준비 중입니다! 🤖")}
+            <Link
+              href={`/dashboard/answer-note/comprehensive?childId=${childId}`}
               className="ml-auto text-xs font-black bg-[#7EDFD0] text-white px-4 py-2.5 rounded-2xl hover:bg-[#68C9BC] transition-all shadow-md shadow-[#7EDFD0]/20 active:scale-95 flex items-center gap-2"
             >
               <span className="text-sm">📊</span> 종합 분석하기
-            </button>
+            </Link>
           </div>
           
           <div className="space-y-3">

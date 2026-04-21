@@ -85,7 +85,7 @@ export default async function BookmarksPage() {
           </p>
           <Link href="/dashboard/practice">
             <span className="inline-block px-5 py-2.5 bg-[#FFB38A] text-white rounded-full text-sm font-bold">
-              아이연습 시작하기 →
+              반복연습 시작하기 →
             </span>
           </Link>
         </BubbleCard>
@@ -106,6 +106,47 @@ export default async function BookmarksPage() {
               }))}
               childName={child.name}
             />
+          )}
+
+          {/* ── 최근 발음 분석 (빠른 참고) ───────────────────────────────── */}
+          {recentErrors.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-bold text-[#3D3530]">최근 발음 분석</p>
+                <Link href="/dashboard/answer-note">
+                  <span className="text-xs text-[#FFB38A] font-semibold">발음 분석 추가 →</span>
+                </Link>
+              </div>
+              <div className="space-y-2.5">
+                {recentErrors.map((rec: any) => (
+                  <BubbleCard key={rec.id} padding="sm">
+                    <div className="flex items-center gap-3">
+                      {/* 목표 → 오답 */}
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-xl font-black text-[#3D3530]">
+                          {rec.targetWord}
+                        </span>
+                        <span className="text-[#C4B5A8] text-sm">→</span>
+                        <span className="text-xl font-bold text-[#FCA5A5]">
+                          {rec.childPronunciation}
+                        </span>
+                      </div>
+
+                      {/* 오류 패턴 */}
+                      <PastelBadge color="pink">{rec.errorPattern}</PastelBadge>
+
+                      {/* 날짜 */}
+                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
+                        {new Date(rec.createdAt).toLocaleDateString("ko-KR", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </BubbleCard>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* ── 복습 단어 목록 ───────────────────────────────────────────── */}
@@ -129,17 +170,12 @@ export default async function BookmarksPage() {
                     <BubbleCard key={sw.id} padding="sm">
                       <div className="flex items-center gap-3">
                         {/* 단어 */}
-                        <span className="text-2xl font-black text-[#3D3530] min-w-[4rem]">
+                        <span className="text-xl font-black text-[#3D3530] flex-1">
                           {sw.word}
                         </span>
 
-                        {/* 오류 패턴 배지 */}
-                        <div className="flex-1 flex flex-wrap gap-1.5">
-                          <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
-                          {sw.targetPhoneme && sw.targetPhoneme !== "연습" && (
-                            <PastelBadge color="lavender">{sw.targetPhoneme}</PastelBadge>
-                          )}
-                        </div>
+                        {/* 난이도 배지 */}
+                        <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
 
                         {/* 저장일 */}
                         <p className="text-xs text-[#C4B5A8] flex-shrink-0">
@@ -156,47 +192,6 @@ export default async function BookmarksPage() {
             </section>
           )}
 
-          {/* ── 최근 발음 분석 (빠른 참고) ───────────────────────────────── */}
-          {recentErrors.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-bold text-[#3D3530]">최근 발음 분석</p>
-                <Link href="/dashboard/answer-note">
-                  <span className="text-xs text-[#FFB38A] font-semibold">발음 분석 추가 →</span>
-                </Link>
-              </div>
-              <div className="space-y-2.5">
-                {recentErrors.map((rec: any) => (
-                  <BubbleCard key={rec.id} padding="sm">
-                    <div className="flex items-center gap-3">
-                      {/* 목표 → 오답 */}
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="text-lg font-black text-[#3D3530]">
-                          {rec.targetWord}
-                        </span>
-                        <span className="text-[#C4B5A8] text-sm">→</span>
-                        <span className="text-lg font-bold text-[#FCA5A5]">
-                          {rec.childPronunciation}
-                        </span>
-                      </div>
-
-                      {/* 오류 패턴 */}
-                      <PastelBadge color="pink">{rec.errorPattern}</PastelBadge>
-
-                      {/* 날짜 */}
-                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                        {new Date(rec.createdAt).toLocaleDateString("ko-KR", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </BubbleCard>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* 아이연습 CTA */}
           <BubbleCard color="peach" className="text-center">
             <p className="font-bold text-[#3D3530] mb-1">저장한 단어로 연습할까요?</p>
@@ -205,7 +200,7 @@ export default async function BookmarksPage() {
             </p>
             <Link href="/dashboard/practice">
               <span className="inline-block px-6 py-3 bg-white rounded-full text-sm font-black text-[#FFB38A] shadow-sm">
-                아이연습 시작하기 🎮
+                반복연습 시작하기 🎮
               </span>
             </Link>
           </BubbleCard>
