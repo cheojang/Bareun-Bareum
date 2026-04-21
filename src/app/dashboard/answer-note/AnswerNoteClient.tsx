@@ -116,16 +116,16 @@ function parsePartialJson(jsonString: string): any {
   };
 }
 
-// ─── 누적 기록 카드 컴포넌트 ──────────────────────────────────────────────────
+// ─── 누적 기록 행 컴포넌트 (단일 카드 내 행으로 표시) ─────────────────────────
 
-function RecordCard({ 
-  record, 
-  childName, 
-  onDelete 
-}: { 
-  record: PastRecord; 
-  childName: string; 
+function RecordRow({
+  record,
+  onDelete,
+  isLast,
+}: {
+  record: PastRecord;
   onDelete: (id: string, e: React.MouseEvent) => void;
+  isLast: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const categoryStyle = CATEGORY_STYLE[record.errorCategory] ?? DEFAULT_STYLE;
@@ -138,95 +138,90 @@ function RecordCard({
     recWords = gemini?.recommendedWords ? JSON.parse(gemini.recommendedWords) : [];
   } catch {}
 
-  const dateStr = new Date(record.createdAt).toLocaleDateString("ko-KR", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   return (
-    <BubbleCard padding="sm" className={`${categoryStyle.bg} border border-[#F0E8E0] relative group`}>
-      {/* 헤더 요약 */}
+    <div className={!isLast ? "border-b border-[#F5F0EB]" : ""}>
+      {/* 요약 행 */}
       <div
-        className="flex items-center gap-2 cursor-pointer pr-6"
+        className="flex items-center gap-2 py-3 px-1 cursor-pointer hover:bg-[#FAFAF8] rounded-xl transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
         {/* 단어 비교 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-base font-black text-[#3D3530] truncate">{record.targetWord}</span>
-          <span className="text-[#C4B5A8] text-xs">→</span>
+          <span className="text-[#C4B5A8] text-xs flex-shrink-0">→</span>
           <span className="text-base font-bold text-[#FCA5A5] truncate">{record.childPronunciation}</span>
         </div>
-        
-        {/* 에러 패턴 */}
-        <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-white/70 ${categoryStyle.text} flex-shrink-0`}>
+
+        {/* 오류 패턴 배지 */}
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0E8E0] ${categoryStyle.text} flex-shrink-0 hidden sm:inline`}>
           {record.errorPattern}
         </span>
-
-        {/* Gemini 완료 여부 */}
-        <span className="text-xs flex-shrink-0">
-          {gemini ? "✅" : "⏳"}
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0E8E0] ${categoryStyle.text} flex-shrink-0 sm:hidden`}>
+          {record.errorPattern.length > 6 ? record.errorPattern.slice(0, 6) + "…" : record.errorPattern}
         </span>
 
-        {/* 삭제 버튼 (휴지통 아이콘) */}
+        {/* AI 완료 여부 */}
+        <span className="text-xs flex-shrink-0">{gemini ? "✅" : "⏳"}</span>
+
+        {/* 삭제 버튼 */}
         <button
           onClick={(e) => onDelete(record.id, e)}
-          className="absolute right-3 top-3.5 text-[#C4B5A8] hover:text-[#EF4444] transition-colors p-1"
+          className="text-[#D9CFC9] hover:text-[#EF4444] transition-colors p-1 flex-shrink-0"
           title="삭제하기"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
         </button>
+
+        {/* 펼치기 화살표 */}
+        <span className={`text-[#C4B5A8] text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>▾</span>
       </div>
 
-      {/* 상세 내용 (펼친 경우) */}
-      {expanded && gemini && (
-        <div className="mt-3 space-y-3 border-t border-[#F0E8E0] pt-3">
-          {/* 원인 */}
-          <div>
-            <p className="text-[11px] font-bold text-[#8B7E74] mb-1">💡 왜 이런 발음이 나올까요?</p>
-            <p className="text-xs text-[#5B4E9B] leading-relaxed">{gemini.rootCause}</p>
-          </div>
-          {/* 4단계 처방전 */}
-          <div>
-            <p className="text-[11px] font-bold text-[#8B7E74] mb-2">📚 선생님의 처방전</p>
-            <div className="space-y-1.5">
-              {steps.filter(Boolean).map((step, i) => {
-                const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
-                return (
-                  <div key={i} className="flex gap-2">
-                    <span className={`w-4 h-4 rounded-full ${meta.color} text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                      {i + 1}
-                    </span>
-                    <p className="text-xs text-[#3D3530] leading-relaxed">{step}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          {/* 추천 단어 */}
-          {recWords.length > 0 && (
-            <div>
-              <p className="text-[11px] font-bold text-[#8B7E74] mb-2">🌟 유사 패턴 연습 단어</p>
-              <div className="flex flex-wrap gap-1.5">
-                {recWords.map((word, i) => (
-                  <span key={i} className="px-2.5 py-0.5 bg-white/70 rounded-full text-[11px] font-bold text-[#3D3530] border border-[#7EDFD0]/40">
-                    {word}
-                  </span>
-                ))}
+      {/* 펼친 상세 내용 */}
+      {expanded && (
+        <div className="mx-1 mb-3 rounded-2xl bg-[#FAFAF8] px-4 py-3 space-y-3">
+          {gemini ? (
+            <>
+              <div>
+                <p className="text-[11px] font-bold text-[#8B7E74] mb-1">💡 왜 이런 발음이 나올까요?</p>
+                <p className="text-xs text-[#5B4E9B] leading-relaxed">{gemini.rootCause}</p>
               </div>
-            </div>
+              <div>
+                <p className="text-[11px] font-bold text-[#8B7E74] mb-2">📚 선생님의 처방전</p>
+                <div className="space-y-1.5">
+                  {steps.filter(Boolean).map((step, i) => {
+                    const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
+                    return (
+                      <div key={i} className="flex gap-2">
+                        <span className={`w-4 h-4 rounded-full ${meta.color} text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                          {i + 1}
+                        </span>
+                        <p className="text-xs text-[#3D3530] leading-relaxed">{step}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {recWords.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold text-[#8B7E74] mb-2">🌟 유사 패턴 연습 단어</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recWords.map((word, i) => (
+                      <span key={i} className="px-2.5 py-0.5 bg-white rounded-full text-[11px] font-bold text-[#3D3530] border border-[#7EDFD0]/40">
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-[#8B7E74]">⏳ AI 분석 결과가 아직 없어요. 새로 입력하면 다시 분석할 수 있어요.</p>
           )}
         </div>
       )}
-
-      {/* Gemini 분석이 없는 경우 (캐시 미적중) */}
-      {expanded && !gemini && (
-        <div className="mt-3 pt-3 border-t border-[#F0E8E0]">
-          <p className="text-xs text-[#8B7E74]">⏳ AI 분석 결과가 아직 없어요. 새로 입력하면 다시 분석할 수 있어요.</p>
-        </div>
-      )}
-    </BubbleCard>
+    </div>
   );
 }
 
@@ -696,20 +691,20 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
             </Link>
           </div>
           
-          <div className="space-y-3">
+          <BubbleCard padding="sm">
             {records.map((record, index) => {
               const curDateObj = new Date(record.createdAt);
               const curDateStr = `${curDateObj.getMonth() + 1}월 ${curDateObj.getDate()}일`;
-              
-              const prevDateObj = index > 0 ? new Date(records[index-1].createdAt) : null;
+
+              const prevDateObj = index > 0 ? new Date(records[index - 1].createdAt) : null;
               const prevDateStr = prevDateObj ? `${prevDateObj.getMonth() + 1}월 ${prevDateObj.getDate()}일` : null;
-              
+
               const isNewDay = curDateStr !== prevDateStr;
 
               return (
-                <div key={record.id} className="space-y-2">
+                <div key={record.id}>
                   {isNewDay && (
-                    <div className="flex items-center gap-3 pt-4 pb-1">
+                    <div className="flex items-center gap-3 py-2">
                       <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
                       <span className="text-[11px] font-black text-[#C4B5A8] tracking-wider">
                         {curDateStr}
@@ -717,15 +712,15 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
                       <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
                     </div>
                   )}
-                  <RecordCard 
-                    record={record} 
-                    childName={childName} 
+                  <RecordRow
+                    record={record}
                     onDelete={handleDeleteClick}
+                    isLast={index === records.length - 1}
                   />
                 </div>
               );
             })}
-          </div>
+          </BubbleCard>
         </div>
       )}
 

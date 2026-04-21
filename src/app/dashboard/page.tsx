@@ -264,6 +264,7 @@ export default async function DashboardHome() {
           )}
 
           {/* ── 약점 음소 분석 카드 ── */}
+          <div className="pt-3">
           <BubbleCard>
             <div className="flex items-center justify-between mb-3">
               <p className="font-bold text-[#3D3530]">🔍 약점 음소 분석</p>
@@ -352,6 +353,7 @@ export default async function DashboardHome() {
               </div>
             )}
           </BubbleCard>
+          </div>
 
         </div>
       </div>

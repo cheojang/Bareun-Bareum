@@ -28,21 +28,21 @@ const CATEGORY_META: Record<string, {
     parentLabel: "소리 생략",
     example: "예: '기린'을 '이린'처럼 말해요",
     tip: "발음하기 어려운 소리를 아예 빼고 말해요. 혀나 입술 조절이 아직 발달 중이에요.",
-    barColor: "#FCD34D",
+    barColor: "#FFB38A",
   },
   동화: {
     label: "주변 소리를 따라가요",
     parentLabel: "소리 퍼짐",
     example: "예: '밥먹어'를 '맘먹어'처럼 말해요",
     tip: "앞뒤 소리가 서로 영향을 주어 같은 소리가 반복돼요. 말의 흐름을 조절하는 과정이에요.",
-    barColor: "#C4B5FD",
+    barColor: "#FFB38A",
   },
   첨가: {
     label: "없는 소리를 끼워요",
     parentLabel: "소리 추가",
     example: "예: '그림'을 '그으림'처럼 말해요",
     tip: "단어 사이에 없는 소리가 들어가요. 소리를 연결하는 방법을 아직 익히는 중이에요.",
-    barColor: "#7EDFD0",
+    barColor: "#FFB38A",
   },
 };
 
@@ -58,28 +58,28 @@ const LEVEL_META: Record<string, {
     label: "집중 연습 필요",
     sublabel: "오류율 30% 이상 — 전문 상담도 권장해요",
     color: "pink",
-    bgColor: "#FEE2E2",
+    bgColor: "#FAFAF8",
     barColor: "#FCA5A5",
   },
   꾸준한연습필요: {
     label: "꾸준한 연습 필요",
     sublabel: "오류율 20~30% — 매일 조금씩 연습하면 좋아져요",
     color: "yellow",
-    bgColor: "#FEF3C7",
+    bgColor: "#FAFAF8",
     barColor: "#FCD34D",
   },
   관찰중: {
     label: "발달 중",
     sublabel: "오류율 10~20% — 정상 발달 범위 내에서 지켜봐요",
     color: "mint",
-    bgColor: "#DCFCE7",
+    bgColor: "#FAFAF8",
     barColor: "#86EFAC",
   },
   정상범위: {
     label: "잘 하고 있어요",
     sublabel: "오류율 10% 미만 — 또래 수준에서 잘 내는 소리예요",
     color: "lavender",
-    bgColor: "#F3F0FF",
+    bgColor: "#FAFAF8",
     barColor: "#7EDFD0",
   },
 };
@@ -149,11 +149,11 @@ function buildPrescriptionContext(
 
   if (urgentPhonemes.length > 0) {
     lines.push(
-      `특히 /${urgentPhonemes.map((p) => p.phoneme).join("/, /")}/ 소리에서 집중 연습이 필요해요.`
+      `특히 ${urgentPhonemes.map((p) => p.phoneme).join(", ")} 소리에서 집중 연습이 필요해요.`
     );
   } else if (practicePhonemes.length > 0) {
     lines.push(
-      `/${practicePhonemes.map((p) => p.phoneme).join("/, /")}/ 소리를 꾸준히 연습하면 큰 효과를 기대할 수 있어요.`
+      `${practicePhonemes.map((p) => p.phoneme).join(", ")} 소리를 꾸준히 연습하면 큰 효과를 기대할 수 있어요.`
     );
   }
 
@@ -366,7 +366,7 @@ export default async function ComprehensivePage({
                   <div className="flex flex-wrap gap-2">
                     {group.map((w) => (
                       <div key={w.phoneme} className="bg-white/80 rounded-xl px-3 py-2 shadow-sm">
-                        <p className="text-base font-black text-[#3D3530] leading-none mb-1">/{w.phoneme}/</p>
+                        <p className="text-base font-black text-[#3D3530] leading-none mb-1">{w.phoneme}</p>
                         {PHONEME_AGE[w.phoneme] && (
                           <p className="text-[9px] text-[#8B7E74] font-semibold leading-none">
                             습득 {PHONEME_AGE[w.phoneme]}
@@ -419,7 +419,7 @@ export default async function ComprehensivePage({
                       <span className="w-6 h-6 rounded-full bg-[#7C6BA0] text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
                         {idx + 1}
                       </span>
-                      <PastelBadge color="peach">/{t.phoneme}/ 소리</PastelBadge>
+                      <PastelBadge color="peach">{t.phoneme} 소리</PastelBadge>
                     </div>
                     {/* 이 소리가 왜 어려운지 */}
                     {how && (
