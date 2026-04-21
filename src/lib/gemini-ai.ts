@@ -72,7 +72,7 @@ ${errorDescriptions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 }`;
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: SYSTEM_INSTRUCTION
     });
 
@@ -127,7 +127,7 @@ export async function generateWordRecommendationContext(errorPatterns: string[])
     const prompt = `아이가 자주 어려워하는 발음: ${errorPatterns.join(', ')}
 이 발음들을 연습하기 좋은 짧은 응원 메시지를 한 문장으로 써주세요.`;
 
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
 
     return result.response.text() || '';
@@ -164,7 +164,7 @@ export async function generateSessionBriefing(topErrorPhonemes: string[]): Promi
         : `아이의 발음 연습 세션을 시작하기 전에 부모에게 격려와 연습 팁을 2문장으로 주세요.`;
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: BRIEFING_SYSTEM_INSTRUCTION
     });
 
