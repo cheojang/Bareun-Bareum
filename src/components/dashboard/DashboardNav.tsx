@@ -11,6 +11,12 @@ const NAV_ITEMS = [
   { href: "/dashboard/settings", icon: "⚙️", label: "설정" },
 ];
 
+const B2B_NAV_ITEMS = [
+  { href: "/dashboard/homework", icon: "📋", label: "숙제" },
+  { href: "/dashboard/therapy-notes", icon: "📓", label: "치료 일지" },
+  { href: "/dashboard/messages", icon: "💬", label: "메시지" },
+];
+
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname.startsWith(href);
@@ -20,28 +26,36 @@ function isActive(pathname: string, href: string) {
 export function SidebarNavItems() {
   const pathname = usePathname();
 
+  const renderItem = (item: { href: string; icon: string; label: string }) => {
+    const active = isActive(pathname, item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-colors font-semibold ${
+          active
+            ? "bg-[#FFF5EE] text-[#FFB38A]"
+            : "text-[#3D3530] hover:bg-[#FFF5EE]"
+        }`}
+      >
+        <span className="text-xl w-7 text-center">{item.icon}</span>
+        <span className="text-sm">{item.label}</span>
+        {active && (
+          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#FFB38A]" />
+        )}
+      </Link>
+    );
+  };
+
   return (
     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      {NAV_ITEMS.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-colors font-semibold ${
-              active
-                ? "bg-[#FFF5EE] text-[#FFB38A]"
-                : "text-[#3D3530] hover:bg-[#FFF5EE]"
-            }`}
-          >
-            <span className="text-xl w-7 text-center">{item.icon}</span>
-            <span className="text-sm">{item.label}</span>
-            {active && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#FFB38A]" />
-            )}
-          </Link>
-        );
-      })}
+      {NAV_ITEMS.map(renderItem)}
+      <div className="pt-3 border-t border-[#F0E8E0] mt-3 space-y-1">
+        <p className="text-[10px] font-bold text-[#C4B5A8] px-4 pb-1 uppercase tracking-wide">
+          치료사 연계
+        </p>
+        {B2B_NAV_ITEMS.map(renderItem)}
+      </div>
     </nav>
   );
 }

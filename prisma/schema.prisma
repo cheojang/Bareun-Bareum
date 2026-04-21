@@ -7,18 +7,21 @@ datasource db {
 }
 
 model User {
-  id              String            @id @default(cuid())
-  name            String?
-  email           String            @unique
-  emailVerified   DateTime?
-  image           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  accounts        Account[]
-  sessions        Session[]
-  children        Child[]
-  subscription    Subscription?
-  practiceHistory PracticeSession[]
+  id               String            @id @default(cuid())
+  name             String?
+  email            String            @unique
+  emailVerified    DateTime?
+  image            String?
+  role             String            @default("parent") // "parent" | "therapist" | "center_admin"
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  accounts         Account[]
+  sessions         Session[]
+  children         Child[]
+  subscription     Subscription?
+  practiceHistory  PracticeSession[]
+  therapistProfile Therapist?
+  sentMessages     Message[]         @relation("MessageParent")
 }
 
 model Child {
@@ -39,6 +42,10 @@ model Child {
   weakPhonemes          WeakPhoneme[]     @relation("ChildWeakPhonemes")
   reviewSchedules       ReviewSchedule[]
   savedWords            SavedWord[]
+  centerMappings        CenterChild[]
+  therapistMappings     TherapistChild[]
+  homeworks             Homework[]
+  therapyNotes          TherapyNote[]
 }
 
 model PracticeSession {
@@ -269,4 +276,120 @@ model SavedWord {
 
   @@unique([childId, word])
   @@index([childId])
+}
+
+// ================== B2B 언어치료센터 연계 모델 ==================
+
+// Center: 언어치료센터 / 언어상담소
+model Center {
+  id          String        @id @default(cuid())
+  name        String
+  phone       String?
+  address     String?
+  plan        String        @default("basic") // "basic" | "pro"
+  inviteCode  String        @unique @default(cuid()) // 부모 연결용 초대코드
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  therapists  Therapist[]
+  children    CenterChild[]
+
+  @@index([inviteCode])
+}
+
+// Therapist: 치료사 프로필 (User와 1:1)
+model Therapist {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  centerId  String
+  center    Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name      String
+  license   String?          // 언어재활사 자격증 번호
+  phone     String?
+  createdAt DateTime         @default(now())
+  children  TherapistChild[]
+  homeworks Homework[]
+  notes     TherapyNote[]
+  messages  Message[]        @relation("MessageTherapist")
+
+  @@index([centerId])
+}
+
+// CenterChild: 센터 ↔ 아이 연결 (부모가 초대코드로 등록)
+model CenterChild {
+  centerId   String
+  childId    String
+  enrolledAt DateTime @default(now())
+  center     Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([centerId, childId])
+  @@index([centerId])
+}
+
+// TherapistChild: 치료사 ↔ 아이 담당 배정
+model TherapistChild {
+  therapistId String
+  childId     String
+  assignedAt  DateTime  @default(now())
+  therapist   Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([therapistId, childId])
+  @@index([therapistId])
+}
+
+// Homework: 치료사가 아이에게 배정한 숙제
+model Homework {
+  id            String      @id @default(cuid())
+  therapistId   String
+  childId       String
+  targetWords   String      // JSON: ["사과","수박","소방차"]
+  targetPhoneme String?     // "ㅅ"
+  description   String?     // 메모
+  dueDate       DateTime
+  status        String      @default("pending") // "pending" | "done"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  therapist     Therapist   @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  child         Child       @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, dueDate])
+  @@index([therapistId])
+}
+
+// TherapyNote: 회기별 치료 일지
+model TherapyNote {
+  id                String    @id @default(cuid())
+  therapistId       String
+  childId           String
+  sessionDate       DateTime
+  targetPhonemes    String    // JSON: ["ㅅ","ㄹ"]
+  performance       Int       // 0~100 수행도
+  memo              String    @db.Text
+  isVisibleToParent Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  therapist         Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  child             Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, sessionDate])
+  @@index([therapistId])
+}
+
+// Message: 부모 ↔ 치료사 1:1 메시지
+model Message {
+  id          String    @id @default(cuid())
+  therapistId String
+  parentId    String
+  childId     String
+  content     String    @db.Text
+  senderRole  String    // "therapist" | "parent"
+  isRead      Boolean   @default(false)
+  sentAt      DateTime  @default(now())
+  therapist   Therapist @relation("MessageTherapist", fields: [therapistId], references: [id], onDelete: Cascade)
+  parent      User      @relation("MessageParent", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([therapistId, parentId, sentAt])
+  @@index([parentId])
 }

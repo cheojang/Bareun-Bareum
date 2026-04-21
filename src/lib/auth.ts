@@ -17,9 +17,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    session({ session, user }) {
+    async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        // role 필드를 DB에서 조회하여 세션에 포함
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
+        session.user.role = dbUser?.role ?? "parent";
       }
       return session;
     },
