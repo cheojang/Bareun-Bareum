@@ -1,12 +1,62 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Kakao from "next-auth/providers/kakao";
+import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
+const devProvider =
+  process.env.NODE_ENV === "development"
+    ? [
+        Credentials({
+          id: "dev",
+          name: "개발자 로그인",
+          credentials: { email: { label: "Email", type: "text" } },
+          async authorize(credentials) {
+            const email = (credentials?.email as string) ?? "dev@test.com";
+
+            // 역할 결정
+            let role = "parent";
+            let name = "개발자(부모)";
+            if (email === "therapist@test.com") { role = "therapist"; name = "개발자(치료사)"; }
+            if (email === "admin@test.com") { role = "center_admin"; name = "개발자(센터어드민)"; }
+
+            // DB에 없으면 자동 생성
+            let user = await prisma.user.findUnique({ where: { email } });
+            if (!user) {
+              user = await prisma.user.create({ data: { email, name, role } });
+            }
+
+            // 치료사/센터어드민이면 Therapist 프로필 자동 생성
+            if ((role === "therapist" || role === "center_admin") && user) {
+              const existing = await prisma.therapist.findUnique({ where: { userId: user.id } });
+              if (!existing) {
+                // 개발용 센터 자동 생성
+                let devCenter = await prisma.center.findFirst({ where: { name: "[개발용] 테스트 센터" } });
+                if (!devCenter) {
+                  devCenter = await prisma.center.create({
+                    data: { name: "[개발용] 테스트 센터", inviteCode: "DEVTEST" },
+                  });
+                }
+                await prisma.therapist.create({
+                  data: { userId: user.id, centerId: devCenter.id, name },
+                });
+                // role 업데이트
+                await prisma.user.update({ where: { id: user.id }, data: { role } });
+              }
+            }
+
+            return { id: user.id, email: user.email, name: user.name };
+          },
+        }),
+      ]
+    : [];
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  session: { strategy: process.env.NODE_ENV === "development" ? "jwt" : "database" },
   providers: [
+    ...devProvider,
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
@@ -17,12 +67,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-        // role 필드를 DB에서 조회하여 세션에 포함
+    async jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    async session({ session, user, token }) {
+      const userId = user?.id ?? (token?.id as string);
+      if (session.user && userId) {
+        session.user.id = userId;
         const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
+          where: { id: userId },
           select: { role: true },
         });
         session.user.role = dbUser?.role ?? "parent";

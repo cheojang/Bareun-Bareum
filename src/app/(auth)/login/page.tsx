@@ -106,6 +106,31 @@ export default function LoginPage() {
         {!canLogin && (
           <p className="text-xs text-center text-[#C4B5A8] mt-3">약관에 동의하면 로그인 버튼이 활성화돼요</p>
         )}
+
+        {/* 개발용 빠른 로그인 */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-5 pt-4 border-t border-[#F0E8E0] space-y-2">
+            <p className="text-[10px] text-center text-[#C4B5A8]">개발 모드 빠른 로그인</p>
+            <button
+              onClick={() => signIn("dev", { email: "dev@test.com", callbackUrl: "/dashboard" })}
+              className="w-full rounded-xl bg-[#F0E8E0] text-[#8B7E74] font-bold py-2.5 text-sm hover:bg-[#E8DDD5] transition-colors"
+            >
+              👪 부모 계정
+            </button>
+            <button
+              onClick={() => signIn("dev", { email: "therapist@test.com", callbackUrl: "/therapist/children" })}
+              className="w-full rounded-xl bg-[#E8F5E9] text-[#388E3C] font-bold py-2.5 text-sm hover:bg-[#DCEDC8] transition-colors"
+            >
+              🩺 치료사 계정
+            </button>
+            <button
+              onClick={() => signIn("dev", { email: "admin@test.com", callbackUrl: "/center" })}
+              className="w-full rounded-xl bg-[#E3F2FD] text-[#1565C0] font-bold py-2.5 text-sm hover:bg-[#BBDEFB] transition-colors"
+            >
+              🏥 센터 어드민 계정
+            </button>
+          </div>
+        )}
       </BubbleCard>
     </main>
   );
