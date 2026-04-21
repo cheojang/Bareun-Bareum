@@ -51,7 +51,7 @@ export async function getGeminiFeedback(
     }
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.0-flash-lite',
+      model: 'gemini-2.0-flash',
       systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
 친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
@@ -135,7 +135,7 @@ export async function getGeminiFeedbackStream(
   }
 
   const model = ai.getGenerativeModel({
-    model: 'gemini-2.0-flash-lite',
+    model: 'gemini-2.0-flash',
     systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
 친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
