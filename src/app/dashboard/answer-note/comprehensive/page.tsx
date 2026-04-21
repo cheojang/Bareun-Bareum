@@ -116,20 +116,6 @@ const PHONEME_AGE: Record<string, string> = {
   "ㄹ": "5~6세", "ㅆ": "5~6세", "ㅉ": "5~6세",
 };
 
-// ─── 발음 건강 점수 계산 ────────────────────────────────────────────────────────
-function calcHealthScore(weakPhonemes: { weaknessLevel: string }[]): number {
-  const D: Record<string, number> = {
-    집중교정필요: 20, 꾸준한연습필요: 10, 관찰중: 4, 정상범위: 0,
-  };
-  return Math.max(0, 100 - weakPhonemes.reduce((s, w) => s + (D[w.weaknessLevel] ?? 0), 0));
-}
-
-function scoreMessage(score: number): { text: string; sub: string; color: string } {
-  if (score >= 80) return { text: "아주 잘하고 있어요! 🎉",    sub: "대부분의 소리를 또래 수준으로 잘 내고 있어요", color: "#7EDFD0" };
-  if (score >= 60) return { text: "조금만 더 연습해요 💪",      sub: "꾸준히 연습하면 충분히 좋아질 수 있어요",     color: "#FCD34D" };
-  return              { text: "집중 연습이 필요해요 🔥",        sub: "여러 소리에서 어려움이 보여요. 전문 상담을 고려해 보세요", color: "#FCA5A5" };
-}
-
 // ─── 처방전 합성 (서버 사이드) ──────────────────────────────────────────────────
 function buildPrescriptionContext(
   childName: string,
@@ -216,10 +202,6 @@ export default async function ComprehensivePage({
     );
   }
 
-  // ── 발음 건강 점수 ────────────────────────────────────────────────────────────
-  const healthScore = calcHealthScore(weakPhonemes);
-  const { text: scoreText, sub: scoreSub, color: scoreColor } = scoreMessage(healthScore);
-
   // ── 오류 유형 분포 계산 ───────────────────────────────────────────────────────
   const rawCategories = [
     { key: "대치", count: daechi },
@@ -291,24 +273,27 @@ export default async function ComprehensivePage({
         <p className="text-sm text-[#8B7E74] mt-1">{child.name} · {totalCount}개 기록 기준 · {today}</p>
       </div>
 
-      {/* ── 섹션 1: 발음 건강 점수 ── */}
+      {/* ── 섹션 1: 발음 분석 요약 ── */}
       <BubbleCard>
-        <p className="font-bold text-[#3D3530] mb-4">💪 발음 건강 점수</p>
-        <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full border-4 flex items-center justify-center flex-shrink-0" style={{ borderColor: scoreColor }}>
-            <span className="text-2xl font-black text-[#3D3530]">{healthScore}</span>
+        <p className="font-bold text-[#3D3530] mb-4">📊 발음 분석 요약</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-[#FFF5EE] rounded-2xl p-3 text-center">
+            <p className="text-2xl font-black text-[#FFB38A]">{weakPhonemes.length}</p>
+            <p className="text-[11px] font-semibold text-[#3D3530] mt-1">분석한 소리</p>
+            <p className="text-[10px] text-[#8B7E74]">종류</p>
           </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#3D3530] text-sm mb-1">{scoreText}</p>
-            <p className="text-xs text-[#8B7E74] leading-relaxed">{scoreSub}</p>
+          <div className="bg-[#FEF2F2] rounded-2xl p-3 text-center">
+            <p className="text-2xl font-black text-[#FCA5A5]">{grouped["집중교정필요"].length}</p>
+            <p className="text-[11px] font-semibold text-[#3D3530] mt-1">집중 연습</p>
+            <p className="text-[10px] text-[#8B7E74]">필요한 소리</p>
+          </div>
+          <div className="bg-[#F0FDFB] rounded-2xl p-3 text-center">
+            <p className="text-2xl font-black text-[#7EDFD0]">{grouped["관찰중"].length + grouped["정상범위"].length}</p>
+            <p className="text-[11px] font-semibold text-[#3D3530] mt-1">잘 따라오는</p>
+            <p className="text-[10px] text-[#8B7E74]">소리</p>
           </div>
         </div>
-        <div className="h-3 bg-[#F0E8E0] rounded-full mt-4 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${healthScore}%`, backgroundColor: scoreColor }} />
-        </div>
-        <div className="flex justify-between text-[10px] text-[#C4B5A8] mt-1 px-0.5">
-          <span>집중 연습 필요</span><span>보통</span><span>잘 하고 있어요</span>
-        </div>
+        <p className="text-[11px] text-[#8B7E74] mt-3 text-center">총 {totalCount}개 기록 기준</p>
       </BubbleCard>
 
       {/* ── 섹션 2: 오류 유형 분석 ── */}
