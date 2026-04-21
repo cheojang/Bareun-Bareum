@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 /**
  * 소리새 (Sori-sae) — 바른발음 마스코트
  * 몽글몽글 파랑새: round, fluffy, pastel blue bird
@@ -33,6 +35,7 @@ export function SoriMascot({
   animated = true,
   className = "",
 }: Props) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const height = Math.round(size * ASPECT[variant]);
   const animClass = animated ? "bird-animated" : "";
 
@@ -89,29 +92,29 @@ export function SoriMascot({
           `}</style>
 
           {/* Soft radial gradient for body */}
-          <radialGradient id="bodyGrad" cx="40%" cy="35%" r="65%">
+          <radialGradient id={`bodyGrad-${uid}`} cx="40%" cy="35%" r="65%">
             <stop offset="0%" stopColor="#D5EEFB" />
             <stop offset="100%" stopColor="#8DC8EC" />
           </radialGradient>
-          <radialGradient id="headGrad" cx="38%" cy="32%" r="62%">
+          <radialGradient id={`headGrad-${uid}`} cx="38%" cy="32%" r="62%">
             <stop offset="0%" stopColor="#E4F4FD" />
             <stop offset="100%" stopColor="#A2D3F0" />
           </radialGradient>
-          <radialGradient id="wingGrad" cx="30%" cy="30%" r="70%">
+          <radialGradient id={`wingGrad-${uid}`} cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor="#B8E0F7" />
             <stop offset="100%" stopColor="#6EB8E2" />
           </radialGradient>
-          <radialGradient id="irisL" cx="35%" cy="30%" r="70%">
+          <radialGradient id={`irisL-${uid}`} cx="35%" cy="30%" r="70%">
             <stop offset="0%" stopColor="#2A5FA8" />
             <stop offset="100%" stopColor="#0D2D5C" />
           </radialGradient>
-          <radialGradient id="irisR" cx="35%" cy="30%" r="70%">
+          <radialGradient id={`irisR-${uid}`} cx="35%" cy="30%" r="70%">
             <stop offset="0%" stopColor="#2A5FA8" />
             <stop offset="100%" stopColor="#0D2D5C" />
           </radialGradient>
 
           {/* Drop shadow filter */}
-          <filter id="softShadow" x="-20%" y="-10%" width="140%" height="140%">
+          <filter id={`softShadow-${uid}`} x="-20%" y="-10%" width="140%" height="140%">
             <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#7AACCC" floodOpacity="0.22" />
           </filter>
         </defs>
@@ -127,7 +130,7 @@ export function SoriMascot({
           {/* ── Left wing (behind body) ───────────────────────────── */}
           {variant === "full" && (
             <g className="wing-l">
-              <ellipse cx="20" cy="95" rx="24" ry="15" fill="url(#wingGrad)"
+              <ellipse cx="20" cy="95" rx="24" ry="15" fill={`url(#wingGrad-${uid})`}
                 transform="rotate(-22 20 95)" />
               {/* Wing tip highlight */}
               <ellipse cx="14" cy="99" rx="11" ry="7" fill="#C8E8F8" opacity="0.55"
@@ -143,7 +146,7 @@ export function SoriMascot({
           {/* ── Right wing (behind body) ──────────────────────────── */}
           {variant === "full" && (
             <g className="wing-r">
-              <ellipse cx="100" cy="95" rx="24" ry="15" fill="url(#wingGrad)"
+              <ellipse cx="100" cy="95" rx="24" ry="15" fill={`url(#wingGrad-${uid})`}
                 transform="rotate(22 100 95)" />
               <ellipse cx="106" cy="99" rx="11" ry="7" fill="#C8E8F8" opacity="0.55"
                 transform="rotate(22 106 99)" />
@@ -158,7 +161,7 @@ export function SoriMascot({
           {variant === "full" && (
             <>
               <ellipse cx="60" cy="102" rx="40" ry="34"
-                fill="url(#bodyGrad)" filter="url(#softShadow)" />
+                fill={`url(#bodyGrad-${uid})`} filter={`url(#softShadow-${uid})`} />
               {/* Belly (soft white area) */}
               <ellipse cx="60" cy="110" rx="26" ry="21" fill="#EEF8FE" opacity="0.65" />
             </>
@@ -166,8 +169,8 @@ export function SoriMascot({
 
           {/* ── Head ──────────────────────────────────────────────── */}
           <circle cx="60" cy="52" r="40"
-            fill="url(#headGrad)"
-            filter={variant === "logo" ? "url(#softShadow)" : undefined}
+            fill={`url(#headGrad-${uid})`}
+            filter={variant === "logo" ? `url(#softShadow-${uid})` : undefined}
           />
 
           {/* Head gloss highlight */}
@@ -195,7 +198,7 @@ export function SoriMascot({
             {/* Sclera (white) */}
             <circle cx="43" cy="49" r="13.5" fill="white" />
             {/* Iris */}
-            <circle cx="45" cy="50" r="9.5" fill="url(#irisL)" />
+            <circle cx="45" cy="50" r="9.5" fill={`url(#irisL-${uid})`} />
             {/* Main highlight (big) */}
             <circle cx="40" cy="46" r="4" fill="white" />
             {/* Secondary highlight */}
@@ -205,7 +208,7 @@ export function SoriMascot({
           {/* ── Right eye ─────────────────────────────────────────── */}
           <g className="bird-eye-r">
             <circle cx="77" cy="49" r="13.5" fill="white" />
-            <circle cx="79" cy="50" r="9.5" fill="url(#irisR)" />
+            <circle cx="79" cy="50" r="9.5" fill={`url(#irisR-${uid})`} />
             <circle cx="74" cy="46" r="4" fill="white" />
             <circle cx="83" cy="53" r="2" fill="white" opacity="0.5" />
           </g>

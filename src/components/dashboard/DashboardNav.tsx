@@ -14,7 +14,6 @@ const NAV_ITEMS = [
 const B2B_NAV_ITEMS = [
   { href: "/dashboard/homework", icon: "📋", label: "숙제" },
   { href: "/dashboard/therapy-notes", icon: "📓", label: "치료 일지" },
-  { href: "/dashboard/messages", icon: "💬", label: "메시지" },
 ];
 
 function isActive(pathname: string, href: string) {

@@ -170,7 +170,6 @@ export default function CenterDashboardPage() {
           { href: "/therapist/children", icon: "👦", label: "아이 배정" },
           { href: "/therapist/homework", icon: "📋", label: "숙제 배정" },
           { href: "/therapist/notes", icon: "📓", label: "치료 일지" },
-          { href: "/therapist/messages", icon: "💬", label: "메시지" },
         ].map((item) => (
           <Link key={item.href} href={item.href}
             className="rounded-2xl p-4 text-center hover:bg-[#FFF5EE] transition-colors"

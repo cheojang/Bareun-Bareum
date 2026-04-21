@@ -50,23 +50,22 @@ export async function getGeminiFeedback(
       console.error("Age calculation error:", ageErr);
     }
 
-    const model = ai.getGenerativeModel({ model: 'gemini-flash-latest' });
-
-    const systemPrompt = `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
+    const model = ai.getGenerativeModel({
+      model: 'gemini-2.0-flash-lite',
+      systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
-친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`;
+친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
+    });
 
-    const userPrompt = `
-오류 정보:
+    const userPrompt = `오류 정보:
 - 목표 단어: ${targetWord}
 - 아이 발음: ${childPronunciation}
 - 오류 패턴: ${errorType} (${errorCategory})
 - 아이 나이: ${childAge}세
-※ 주의: 분석 답변 시작 시 'X세 아동에게는~'과 같은 나이 언급 멘트는 절대로 하지 말고 바로 원인 분석부터 시작하세요.
 
-아래 JSON 형식으로 응답하세요:
+JSON으로 응답하세요:
 {
-  "patternName": "오류 패턴 이름 (아주 간결하게. 예: 치조음화, 파열음화, 생략, 조음점 오류 등)",
+  "patternName": "오류 패턴 이름 (간결하게)",
   "rootCause": "상세 원인 분석",
   "trainingStep1": "1단계 조음 감각 깨우기",
   "trainingStep2": "2단계 소리 느끼기",
@@ -79,7 +78,7 @@ export async function getGeminiFeedback(
 
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      systemInstruction: systemPrompt
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
     const responseText = result.response.text().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
@@ -135,23 +134,22 @@ export async function getGeminiFeedbackStream(
     console.error("Age calculation error (stream):", ageErr);
   }
 
-  const model = ai.getGenerativeModel({ model: 'gemini-flash-latest' });
-
-  const systemPrompt = `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
+  const model = ai.getGenerativeModel({
+    model: 'gemini-2.0-flash-lite',
+    systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
-친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`;
+친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
+  });
 
-  const userPrompt = `
-오류 정보:
+  const userPrompt = `오류 정보:
 - 목표 단어: ${targetWord}
 - 아이 발음: ${childPronunciation}
 - 오류 패턴: ${errorType} (${errorCategory})
 - 아이 나이: ${childAge}세
-※ 주의: 분석 답변 시작 시 'X세 아동에게는~'과 같은 나이 언급 멘트는 절대로 하지 말고 바로 원인 분석부터 시작하세요.
 
-아래 JSON 형식으로 응답하세요:
+JSON으로 응답하세요:
 {
-  "patternName": "오류 패턴 이름 (아주 간결하게. 예: 치조음화, 파열음화, 생략, 조음점 오류 등)",
+  "patternName": "오류 패턴 이름 (간결하게)",
   "rootCause": "상세 원인 분석",
   "trainingStep1": "1단계 조음 감각 깨우기",
   "trainingStep2": "2단계 소리 느끼기",
@@ -164,7 +162,7 @@ export async function getGeminiFeedbackStream(
 
   return await model.generateContentStream({
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-    systemInstruction: systemPrompt
+    generationConfig: { responseMimeType: 'application/json' },
   });
 }
 

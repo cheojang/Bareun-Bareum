@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { compareWords } from "@/lib/korean-phonetics";
 import { buildArticulationGuides } from "@/lib/articulation-analysis";
-import { generateGuidance } from "@/lib/gemini-ai";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
 
 // 🌍 KST(한국 시간) 기준 자정 타임스탬프 구하기
@@ -49,9 +48,6 @@ export async function POST(req: NextRequest) {
   // Build articulation guides for each error phoneme
   const articulationGuides = buildArticulationGuides(errors);
 
-  // Generate AI guidance via Gemini Flash
-  const guidanceText = await generateGuidance(targetWord, heardWord, errors);
-
   // 🧠 메모리 계산: 연속 학습일 (KST 기준)
   const now = new Date();
   const lastPractice = child.lastPractice;
@@ -91,7 +87,6 @@ export async function POST(req: NextRequest) {
         targetWord: targetWord.trim(),
         heardWord: heardWord.trim(),
         errorPhonemes: JSON.parse(JSON.stringify(errors)),
-        guidanceText: JSON.stringify(guidanceText),
         isCorrect,
       },
     }),
@@ -112,7 +107,6 @@ export async function POST(req: NextRequest) {
     heardWord,
     isCorrect,
     errors,
-    guidanceText,
     articulationGuides,
     newMascotLevel, // 클라이언트 UI 애니메이션용
   });

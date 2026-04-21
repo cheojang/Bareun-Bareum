@@ -197,6 +197,8 @@ export function SessionPracticeClient({
   const [heardWord, setHeardWord] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [guidanceText, setGuidanceText] = useState<string | null>(null);
+  const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -224,6 +226,8 @@ export function SessionPracticeClient({
     hasCorrectRef.current = false;
     setHeardWord("");
     setResult(null);
+    setGuidanceText(null);
+    setGuidanceLoading(false);
     setIsBookmarked(false);
     setShowSoundEffect(true);
   }, [currentIndex]);
@@ -244,6 +248,7 @@ export function SessionPracticeClient({
     setInputError("");
 
     setLoading(true);
+    setGuidanceText(null);
 
     try {
       const res = await fetch("/api/analysis", {
@@ -268,6 +273,16 @@ export function SessionPracticeClient({
         if (data.isCorrect) {
           setCorrectCount((c) => c + 1);
           hasCorrectRef.current = true;
+        }
+
+        // AI 처방전은 별도 요청으로 비동기 로딩 (UI 블로킹 없음)
+        if (data.wordRecordId) {
+          setGuidanceLoading(true);
+          fetch(`/api/analysis/${data.wordRecordId}/guidance`)
+            .then((r) => r.json())
+            .then((g) => { if (g.guidanceText) setGuidanceText(g.guidanceText); })
+            .catch(() => {})
+            .finally(() => setGuidanceLoading(false));
         }
       }
     } finally {
@@ -532,9 +547,20 @@ export function SessionPracticeClient({
           <BubbleCard color="lavender">
             <div className="flex items-start gap-3">
               <span className="text-2xl">🧠</span>
-              <div>
-                <p className="font-semibold text-[#3D3530] mb-1 text-sm">AI 선생님 가이드</p>
-                <p className="text-sm text-[#3D3530] leading-relaxed">{result.guidanceText}</p>
+              <div className="flex-1">
+                <p className="font-semibold text-[#3D3530] mb-1 text-sm">AI 선생님 처방전</p>
+                {guidanceLoading ? (
+                  <div className="space-y-2 mt-1">
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-full" />
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-4/5" />
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-3/5" />
+                    <p className="text-[10px] text-[#8B7E74] mt-1">처방전 작성 중...</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">
+                    {guidanceText ?? ""}
+                  </p>
+                )}
               </div>
             </div>
           </BubbleCard>
@@ -591,9 +617,20 @@ export function SessionPracticeClient({
           <BubbleCard color="lavender">
             <div className="flex items-start gap-3">
               <span className="text-2xl">🧠</span>
-              <div>
-                <p className="font-semibold text-[#3D3530] mb-1 text-sm">AI 선생님 가이드</p>
-                <p className="text-sm text-[#3D3530] leading-relaxed">{result.guidanceText}</p>
+              <div className="flex-1">
+                <p className="font-semibold text-[#3D3530] mb-1 text-sm">AI 선생님 처방전</p>
+                {guidanceLoading ? (
+                  <div className="space-y-2 mt-1">
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-full" />
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-4/5" />
+                    <div className="h-3 bg-[#D8CCFF] rounded-full animate-pulse w-3/5" />
+                    <p className="text-[10px] text-[#8B7E74] mt-1">처방전 작성 중...</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">
+                    {guidanceText ?? ""}
+                  </p>
+                )}
               </div>
             </div>
           </BubbleCard>

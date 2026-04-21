@@ -72,7 +72,7 @@ ${errorDescriptions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 }`;
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-lite',
       systemInstruction: SYSTEM_INSTRUCTION
     });
 

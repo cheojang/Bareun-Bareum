@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
-import { getGeminiFeedback, getGeminiFeedbackStream } from '@/lib/gemini-client';
+import { getGeminiFeedback } from '@/lib/gemini-client';
 import { auth } from '@/lib/auth';
 
 /**
@@ -160,34 +160,26 @@ export async function POST(request: NextRequest) {
       let recWords: string[] = [];
       try { recWords = JSON.parse(cached.recommendedWords); } catch {}
 
-      const cachedJson = JSON.stringify({
-        patternName: errorRecord.errorPattern,
-        rootCause: cached.rootCause,
-        trainingStep1: cached.trainingStep1,
-        trainingStep2: cached.trainingStep2,
-        trainingStep3: cached.trainingStep3,
-        trainingStep4: cached.trainingStep4,
+      return NextResponse.json({
+        patternName:      errorRecord.errorPattern,
+        rootCause:        cached.rootCause,
+        trainingStep1:    cached.trainingStep1,
+        trainingStep2:    cached.trainingStep2,
+        trainingStep3:    cached.trainingStep3,
+        trainingStep4:    cached.trainingStep4,
         recommendedWords: recWords,
-        parentMessage: cached.parentMessage,
+        parentMessage:    cached.parentMessage,
         geminiConfidence: 5,
-        fromCache: true,
-      });
-
-      return new Response(cachedJson, {
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-transform",
-          "X-From-Cache": "true",
-        },
+        fromCache:        true,
       });
     }
 
     // ─── 2순위: Gemini API 신규 호출 ─────────────────────────────────────────
     console.log("[Gemini] 신규 API 호출:", errorRecord.targetWord);
 
-    let resultStream;
+    let parsed;
     try {
-      resultStream = await getGeminiFeedbackStream(
+      parsed = await getGeminiFeedback(
         errorRecord.targetWord,
         errorRecord.childPronunciation,
         errorRecord.errorType,
@@ -197,102 +189,80 @@ export async function POST(request: NextRequest) {
         parentHint,
         description
       );
-    } catch (streamInitErr: any) {
-      console.error("[Debug] Gemini 스트림 초기화 실패:", streamInitErr.message);
-      // 429: API 일일 요청 한도 초과
-      if (streamInitErr.message?.includes('429') || streamInitErr.message?.includes('quota')) {
-        return NextResponse.json({ 
+    } catch (geminiErr: any) {
+      console.error("[Gemini] API 호출 실패:", geminiErr.message);
+      if (geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')) {
+        return NextResponse.json({
           error: "AI 분석 일일 한도에 도달했습니다. 내일 다시 시도해 주세요.",
           isQuotaError: true
         }, { status: 429 });
       }
-      throw streamInitErr;
+      throw geminiErr;
     }
 
-    console.log("[Debug] Gemini 스트림 초기화 성공");
+    if (!parsed || !parsed.rootCause) {
+      return NextResponse.json({ error: "AI 분석 결과를 받지 못했습니다." }, { status: 500 });
+    }
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        let fullText = "";
-        try {
-          for await (const chunk of resultStream.stream) {
-            const chunkText = chunk.text();
-            fullText += chunkText;
-            controller.enqueue(new TextEncoder().encode(chunkText));
-          }
-        } catch (e: any) {
-          console.error("Gemini Stream Error:", e);
-          controller.enqueue(new TextEncoder().encode(JSON.stringify({ error: e.message })));
-          controller.close();
-          return;
-        }
-
-        // 스트림 완료 후 DB 저장 로직 수행
-        try {
-          let str = fullText.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-          let parsed = JSON.parse(str);
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-
-          let updatedPatternName = errorRecord.errorPattern;
-          if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
-            updatedPatternName = errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName);
-            await prisma.errorRecord.update({
-              where: { id: errorRecordId },
-              data: { errorPattern: updatedPatternName }
-            });
-          }
-
-          await prisma.geminiFeedback.deleteMany({ where: { errorRecordId } });
-          const saved = await prisma.geminiFeedback.create({
-            data: {
-              errorRecordId,
-              rootCause:       parsed.rootCause,
-              trainingStep1:   parsed.trainingStep1,
-              trainingStep2:   parsed.trainingStep2,
-              trainingStep3:   parsed.trainingStep3,
-              trainingStep4:   parsed.trainingStep4,
-              recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-              parentMessage:   parsed.parentMessage ?? "",
-            },
+    // ─── DB 저장 (비동기, 응답 지연 없음) ────────────────────────────────────
+    (async () => {
+      try {
+        if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
+          await prisma.errorRecord.update({
+            where: { id: errorRecordId },
+            data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
           });
-
-          if (phoneme && phoneme !== "(없음)") {
-             await prisma.phonemeTemplate.upsert({
-               where: {
-                 phoneme_position_errorType: { phoneme, position, errorType: errorRecord.errorType },
-               },
-               create: {
-                 phoneme,
-                 position,
-                 errorType:     errorRecord.errorType,
-                 errorCategory: errorRecord.errorCategory,
-                 exampleTarget: errorRecord.targetWord,
-                 exampleChild:  errorRecord.childPronunciation,
-                 parentHint:    parsed.parentMessage ?? "",
-                 rootCause:     parsed.rootCause,
-                 trainingStep1: parsed.trainingStep1,
-                 trainingStep2: parsed.trainingStep2,
-                 trainingStep3: parsed.trainingStep3,
-                 trainingStep4: parsed.trainingStep4,
-                 recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-               },
-               update: {},
-             }).catch(() => { /* 중복 무시 */ });
-          }
-        } catch (saveError) {
-          console.error("DB Save Error:", saveError);
         }
 
-        controller.close();
-      }
-    });
+        await prisma.geminiFeedback.deleteMany({ where: { errorRecordId } });
+        await prisma.geminiFeedback.create({
+          data: {
+            errorRecordId,
+            rootCause:        parsed.rootCause,
+            trainingStep1:    parsed.trainingStep1,
+            trainingStep2:    parsed.trainingStep2,
+            trainingStep3:    parsed.trainingStep3,
+            trainingStep4:    parsed.trainingStep4,
+            recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+            parentMessage:    parsed.parentMessage ?? "",
+          },
+        });
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive'
+        if (phoneme && phoneme !== "(없음)") {
+          await prisma.phonemeTemplate.upsert({
+            where: { phoneme_position_errorType: { phoneme, position, errorType: errorRecord.errorType } },
+            create: {
+              phoneme, position,
+              errorType:        errorRecord.errorType,
+              errorCategory:    errorRecord.errorCategory,
+              exampleTarget:    errorRecord.targetWord,
+              exampleChild:     errorRecord.childPronunciation,
+              parentHint:       parsed.parentMessage ?? "",
+              rootCause:        parsed.rootCause,
+              trainingStep1:    parsed.trainingStep1,
+              trainingStep2:    parsed.trainingStep2,
+              trainingStep3:    parsed.trainingStep3,
+              trainingStep4:    parsed.trainingStep4,
+              recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+            },
+            update: {},
+          }).catch(() => {});
+        }
+      } catch (saveError) {
+        console.error("DB Save Error:", saveError);
       }
+    })();
+
+    return NextResponse.json({
+      patternName:      parsed.patternName,
+      rootCause:        parsed.rootCause,
+      trainingStep1:    parsed.trainingStep1,
+      trainingStep2:    parsed.trainingStep2,
+      trainingStep3:    parsed.trainingStep3,
+      trainingStep4:    parsed.trainingStep4,
+      recommendedWords: parsed.recommendedWords ?? [],
+      parentMessage:    parsed.parentMessage ?? "",
+      geminiConfidence: parsed.geminiConfidence ?? 5,
     });
 
   } catch (error: any) {

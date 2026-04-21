@@ -472,23 +472,16 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
         return;
       }
 
-      let finalGemini: GeminiResult | null = null;
-
-      if (geminiRes.body) {
-        const reader = geminiRes.body.getReader();
-        const decoder = new TextDecoder();
-        let fullText = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          fullText += decoder.decode(value, { stream: true });
-          const partial = parsePartialJson(fullText);
-          setGeminiResult(partial as GeminiResult);
-          finalGemini = partial as GeminiResult;
-        }
-        setGeminiLoading(false);
-      }
+      const raw = await geminiRes.json();
+      const finalGemini: GeminiResult = {
+        patternName:      raw.patternName,
+        rootCause:        raw.rootCause,
+        trainingSteps:    [raw.trainingStep1, raw.trainingStep2, raw.trainingStep3, raw.trainingStep4].filter(Boolean),
+        recommendedWords: Array.isArray(raw.recommendedWords) ? raw.recommendedWords : [],
+        parentMessage:    raw.parentMessage,
+      };
+      setGeminiResult(finalGemini);
+      setGeminiLoading(false);
 
       // ── 완료 후 누적 기록 맨 앞에 추가 ─────────────────────────────────────
       const newRecord: PastRecord = {

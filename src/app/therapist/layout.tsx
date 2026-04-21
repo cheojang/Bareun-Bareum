@@ -27,7 +27,6 @@ export default async function TherapistLayout({
     { href: "/therapist/children", icon: "👦", label: "담당 아이" },
     { href: "/therapist/homework", icon: "📋", label: "숙제 배정" },
     { href: "/therapist/notes", icon: "📓", label: "치료 일지" },
-    { href: "/therapist/messages", icon: "💬", label: "메시지" },
   ];
 
   return (
