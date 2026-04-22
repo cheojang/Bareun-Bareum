@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { PastelBadge } from "@/components/ui/PastelBadge";
-import { MissionCard } from "@/components/dashboard/MissionCard";
+import { DailyMissionsCard } from "@/components/dashboard/DailyMissionsCard";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 
 // ─── 약점 레벨 색상 ────────────────────────────────────────────────────────────
@@ -14,27 +14,6 @@ const WEAKNESS_COLOR: Record<string, { bar: string; badge: string; text: string 
   관찰중:       { bar: "#86EFAC", badge: "bg-[#DCFCE7]", text: "text-[#16A34A]" },
   정상범위:     { bar: "#7EDFD0", badge: "bg-[#F0FAF8]", text: "text-[#0D9488]" },
 };
-
-// ─── Daily mission generator ───────────────────────────────────────────────
-const MISSION_PHONEMES = ["ㄹ", "ㅅ", "ㅈ", "ㄱ", "ㄴ", "ㅂ", "ㅁ"];
-const MISSION_TEXTS: Record<string, string> = {
-  "ㄹ": "ㄹ 소리가 들어간 단어 3번 성공하기",
-  "ㅅ": "ㅅ 소리 정확하게 3번 발음하기",
-  "ㅈ": "ㅈ 소리 단어로 3번 도전하기",
-  "ㄱ": "ㄱ 소리 단어 3번 완성하기",
-  "ㄴ": "ㄴ 소리 연습 3번 성공하기",
-  "ㅂ": "ㅂ 소리 단어 3번 정확히 말하기",
-  "ㅁ": "ㅁ 소리 3번 도전 완료하기",
-};
-
-function getDailyMissionPhoneme(childId: string, topErrorPhoneme?: string): string {
-  if (topErrorPhoneme) return topErrorPhoneme;
-  // Deterministic daily rotation based on date
-  const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  return MISSION_PHONEMES[dayOfYear % MISSION_PHONEMES.length];
-}
 
 export default async function DashboardHome() {
   const session = await auth();
@@ -73,25 +52,6 @@ export default async function DashboardHome() {
   }
 
   const child = children.find((c) => c.id === savedId) ?? children[0];
-
-  // Fetch top error phoneme for daily mission
-  const recentErrors = await prisma.wordRecord.findMany({
-    where: { session: { childId: child.id }, isCorrect: false },
-    orderBy: { practicedAt: "desc" },
-    take: 20,
-    select: { errorPhonemes: true },
-  });
-
-  const errorMap: Record<string, number> = {};
-  for (const r of recentErrors) {
-    const errors = (r.errorPhonemes as { targetPhoneme: string }[]) ?? [];
-    for (const e of errors) {
-      errorMap[e.targetPhoneme] = (errorMap[e.targetPhoneme] ?? 0) + 1;
-    }
-  }
-  const topErrorPhoneme = Object.entries(errorMap).sort(([, a], [, b]) => b - a)[0]?.[0];
-  const missionPhoneme = getDailyMissionPhoneme(child.id, topErrorPhoneme);
-  const missionText = MISSION_TEXTS[missionPhoneme] ?? `'${missionPhoneme}' 소리 3번 성공하기`;
 
   // ── 오늘 복습 개수 (SM-2) ────────────────────────────────────────────────────
   const todayEnd = new Date();
@@ -164,12 +124,8 @@ export default async function DashboardHome() {
             <StatMini value={child.streakDays} label="연속" emoji="🔥" />
           </div>
 
-          {/* ── Daily mission card ── */}
-          <MissionCard
-            phoneme={missionPhoneme}
-            missionText={missionText}
-            targetCount={3}
-          />
+          {/* ── Daily missions (복습 + 약점 훈련 + 새 도전 3개 자동 큐레이션) ── */}
+          <DailyMissionsCard childId={child.id} />
 
           {/* Start session CTA */}
           <BubbleCard color="peach" className="text-center">
