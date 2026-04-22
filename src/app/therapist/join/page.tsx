@@ -34,11 +34,11 @@ export default function TherapistJoinPage() {
 
     if (res.ok) {
       setSuccess(
-        `${data.centerName}에 ${data.isAdmin ? "센터 관리자" : "치료사"}로 등록됐습니다!`
+        `${data.centerName}에 ${data.isOwner ? "상담소장" : "상담사"}로 등록됐습니다!`
       );
       // 세션 갱신을 위해 리로드 후 이동
       setTimeout(() => {
-        window.location.href = data.isAdmin ? "/center" : "/therapist/children";
+        window.location.href = data.isOwner ? "/center" : "/therapist/children";
       }, 1500);
     } else {
       setError(data.error ?? "오류가 발생했습니다");

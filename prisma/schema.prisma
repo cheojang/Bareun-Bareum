@@ -12,7 +12,7 @@ model User {
   email            String            @unique
   emailVerified    DateTime?
   image            String?
-  role             String            @default("parent") // "parent" | "therapist" | "center_admin"
+  role             String            @default("parent") // "parent" | "therapist"
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   accounts         Account[]
@@ -296,7 +296,8 @@ model Center {
   @@index([inviteCode])
 }
 
-// Therapist: 치료사 프로필 (User와 1:1)
+// Therapist: 치료사 프로필 (User와 1:1, Center 소속)
+// role: 센터 내 역할 — "owner"(상담소장, 센터 설정 권한) | "staff"(일반 상담사)
 model Therapist {
   id        String           @id @default(cuid())
   userId    String           @unique
@@ -304,6 +305,7 @@ model Therapist {
   centerId  String
   center    Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
   name      String
+  role      String           @default("staff") // "owner" | "staff"
   license   String?          // 언어재활사 자격증 번호
   phone     String?
   createdAt DateTime         @default(now())

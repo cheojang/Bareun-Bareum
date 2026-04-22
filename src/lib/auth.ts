@@ -15,20 +15,26 @@ const devProvider =
           async authorize(credentials) {
             const email = (credentials?.email as string) ?? "dev@test.com";
 
-            // 역할 결정
-            let role = "parent";
+            // 역할 결정: User.role = "parent" | "therapist"
+            //           admin@test.com은 therapist + Therapist.role=owner 로 처리
+            let userRole: "parent" | "therapist" = "parent";
+            let therapistRole: "owner" | "staff" | null = null;
             let name = "개발자(부모)";
-            if (email === "therapist@test.com") { role = "therapist"; name = "개발자(치료사)"; }
-            if (email === "admin@test.com") { role = "center_admin"; name = "개발자(센터어드민)"; }
+            if (email === "therapist@test.com") {
+              userRole = "therapist"; therapistRole = "staff"; name = "개발자(상담사)";
+            }
+            if (email === "admin@test.com") {
+              userRole = "therapist"; therapistRole = "owner"; name = "개발자(상담소장)";
+            }
 
             // DB에 없으면 자동 생성
             let user = await prisma.user.findUnique({ where: { email } });
             if (!user) {
-              user = await prisma.user.create({ data: { email, name, role } });
+              user = await prisma.user.create({ data: { email, name, role: userRole } });
             }
 
-            // 치료사/센터어드민이면 Therapist 프로필 자동 생성
-            if ((role === "therapist" || role === "center_admin") && user) {
+            // therapist 계정이면 Therapist 프로필 자동 생성
+            if (therapistRole && user) {
               const existing = await prisma.therapist.findUnique({ where: { userId: user.id } });
               if (!existing) {
                 // 개발용 센터 자동 생성
@@ -39,10 +45,14 @@ const devProvider =
                   });
                 }
                 await prisma.therapist.create({
-                  data: { userId: user.id, centerId: devCenter.id, name },
+                  data: {
+                    userId: user.id,
+                    centerId: devCenter.id,
+                    name,
+                    role: therapistRole,
+                  },
                 });
-                // role 업데이트
-                await prisma.user.update({ where: { id: user.id }, data: { role } });
+                await prisma.user.update({ where: { id: user.id }, data: { role: userRole } });
               }
             }
 

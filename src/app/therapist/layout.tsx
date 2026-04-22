@@ -12,9 +12,7 @@ export default async function TherapistLayout({
   if (!session?.user?.id) redirect("/login");
 
   const role = (session.user as { role?: string }).role;
-  if (!role || !["therapist", "center_admin"].includes(role)) {
-    redirect("/dashboard");
-  }
+  if (role !== "therapist") redirect("/dashboard");
 
   const therapist = await prisma.therapist.findUnique({
     where: { userId: session.user.id },
@@ -22,8 +20,9 @@ export default async function TherapistLayout({
   });
   if (!therapist) redirect("/dashboard");
 
+  const isOwner = therapist.role === "owner";
   const NAV = [
-    ...(role === "center_admin" ? [{ href: "/center", icon: "🏥", label: "센터 현황" }] : []),
+    ...(isOwner ? [{ href: "/center", icon: "🏥", label: "상담소 관리" }] : []),
     { href: "/therapist/children", icon: "👦", label: "담당 아이" },
     { href: "/therapist/homework", icon: "📋", label: "숙제 배정" },
     { href: "/therapist/notes", icon: "📓", label: "치료 일지" },
@@ -44,7 +43,7 @@ export default async function TherapistLayout({
         <div className="flex-1">
           <p className="font-black text-[#3D3530] text-base leading-none">{therapist.name}</p>
           <p className="text-[10px] text-[#C4B5A8] font-semibold leading-none mt-0.5">
-            {therapist.center.name}
+            {therapist.center.name} · {isOwner ? "상담소장" : "상담사"}
           </p>
         </div>
         <Link

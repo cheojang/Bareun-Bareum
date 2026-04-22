@@ -34,23 +34,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "이미 치료사로 등록되어 있습니다" }, { status: 409 });
   }
 
-  // 해당 센터의 첫 번째 치료사면 center_admin 역할 부여
+  // 해당 센터의 첫 번째 치료사면 owner, 아니면 staff
   const therapistCount = await prisma.therapist.count({
     where: { centerId: center.id },
   });
-  const role = therapistCount === 0 ? "center_admin" : "therapist";
+  const centerRole: "owner" | "staff" = therapistCount === 0 ? "owner" : "staff";
 
-  // 트랜잭션: Therapist 생성 + User.role 업데이트
+  // 트랜잭션: User.role=therapist 고정, Therapist 생성(+ role)
   const therapist = await prisma.$transaction(async (tx) => {
     await tx.user.update({
       where: { id: session.user.id },
-      data: { role },
+      data: { role: "therapist" },
     });
     return tx.therapist.create({
       data: {
         userId: session.user.id!,
         centerId: center.id,
         name: name.trim(),
+        role: centerRole,
         license: license?.trim() || null,
         phone: phone?.trim() || null,
       },
@@ -59,8 +60,8 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     therapist,
-    role,
+    role: centerRole,
     centerName: center.name,
-    isAdmin: role === "center_admin",
+    isOwner: centerRole === "owner",
   });
 }

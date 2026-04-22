@@ -8,13 +8,16 @@ export default async function CenterLayout({ children }: { children: React.React
   if (!session?.user?.id) redirect("/login");
 
   const role = (session.user as { role?: string }).role;
-  if (role !== "center_admin") redirect("/dashboard");
+  if (role !== "therapist") redirect("/dashboard");
 
   const therapist = await prisma.therapist.findUnique({
     where: { userId: session.user.id },
     include: { center: { select: { name: true, inviteCode: true } } },
   });
   if (!therapist) redirect("/therapist/join");
+
+  // 상담소 설정 화면은 owner만 접근 가능
+  if (therapist.role !== "owner") redirect("/therapist/children");
 
   const NAV = [
     { href: "/center", icon: "🏥", label: "센터 현황" },
@@ -37,7 +40,7 @@ export default async function CenterLayout({ children }: { children: React.React
         <div className="flex-1">
           <p className="font-black text-[#3D3530] text-base leading-none">{therapist.center.name}</p>
           <p className="text-[10px] text-[#C4B5A8] font-semibold leading-none mt-0.5">
-            센터 관리자 · {therapist.name}
+            상담소장 · {therapist.name}
           </p>
         </div>
         <Link href="/dashboard"
