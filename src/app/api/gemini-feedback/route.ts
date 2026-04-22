@@ -207,10 +207,11 @@ export async function POST(request: NextRequest) {
     // ─── DB 저장 (비동기, 응답 지연 없음) ────────────────────────────────────
     (async () => {
       try {
-        if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
+        const patternName = 'patternName' in parsed ? parsed.patternName : undefined;
+        if (patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
           await prisma.errorRecord.update({
             where: { id: errorRecordId },
-            data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
+            data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", patternName) }
           });
         }
 
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest) {
     })();
 
     return NextResponse.json({
-      patternName:      parsed.patternName,
+      patternName:      'patternName' in parsed ? parsed.patternName : undefined,
       rootCause:        parsed.rootCause,
       trainingStep1:    parsed.trainingStep1,
       trainingStep2:    parsed.trainingStep2,
@@ -266,14 +267,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    const fs = require('fs');
-    const logMsg = `\n[${new Date().toISOString()}] Error: ${error.message}\nStack: ${error.stack}\n`;
-    fs.appendFileSync('gemini_error_debug.log', logMsg);
-    
     console.error("Critical Error in /api/gemini-feedback:", error);
-    return NextResponse.json({ 
-      error: "AI 분석 중 오류가 발생했습니다", 
-      details: error.message 
-    }, { status: 500 });
+    return NextResponse.json({ error: "AI 분석 중 오류가 발생했습니다" }, { status: 500 });
   }
 }

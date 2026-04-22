@@ -5,15 +5,16 @@ import { generateGuidance } from "@/lib/gemini-ai";
 import { PhonemeError } from "@/types/phonetics";
 
 // ── 1단계 캐시: 서버 메모리 (프로세스 재시작 전까지 유지) ──────────────────
-// 키: 오류 패턴 문자열 (예: "ㄹ>ㄷ:cho:substitution|ㅅ>ㄷ:cho:substitution")
+// 키: userId + 오류 패턴 문자열 (사용자 간 격리)
 const memoryCache = new Map<string, string>();
 
-function buildCacheKey(errors: PhonemeError[]): string {
-  if (errors.length === 0) return "__correct__";
-  return errors
+function buildCacheKey(userId: string, errors: PhonemeError[]): string {
+  if (errors.length === 0) return `${userId}:__correct__`;
+  const pattern = errors
     .map((e) => `${e.targetPhoneme}>${e.heardPhoneme}:${e.position}:${e.errorType}`)
     .sort()
     .join("|");
+  return `${userId}:${pattern}`;
 }
 
 export async function GET(
@@ -26,9 +27,10 @@ export async function GET(
   }
 
   const { id } = await params;
+  const userId = session.user.id;
 
   const wordRecord = await prisma.wordRecord.findFirst({
-    where: { id, session: { userId: session.user.id } },
+    where: { id, session: { userId } },
   });
   if (!wordRecord) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -39,13 +41,12 @@ export async function GET(
     return NextResponse.json({ guidanceText: wordRecord.guidanceText });
   }
 
-  const errors = (wordRecord.errorPhonemes as PhonemeError[]) ?? [];
-  const cacheKey = buildCacheKey(errors);
+  const errors = (wordRecord.errorPhonemes as unknown as PhonemeError[]) ?? [];
+  const cacheKey = buildCacheKey(userId, errors);
 
   // ── 1단계: 메모리 캐시 확인 (0ms) ─────────────────────────────────────────
   const cached = memoryCache.get(cacheKey);
   if (cached) {
-    // 이 레코드에도 저장해두기 (다음에 직접 조회 시 즉시 반환)
     prisma.wordRecord.update({ where: { id }, data: { guidanceText: cached } }).catch(() => {});
     return NextResponse.json({ guidanceText: cached });
   }
@@ -57,16 +58,14 @@ export async function GET(
       where: {
         id: { not: id },
         guidanceText: { not: null },
-        session: { userId: session.user.id },
+        session: { userId },
       },
       orderBy: { practicedAt: "desc" },
     });
 
     if (existing?.guidanceText) {
-      // DB에 저장된 오류 패턴 확인
-      const existingErrors = (existing.errorPhonemes as PhonemeError[]) ?? [];
-      const existingKey = buildCacheKey(existingErrors);
-      // 첫 번째 오류의 음소 + 오류 유형이 같으면 재사용
+      const existingErrors = (existing.errorPhonemes as unknown as PhonemeError[]) ?? [];
+      const existingKey = buildCacheKey(userId, existingErrors);
       const existingPrimary = existingErrors[0];
       if (
         existingKey === cacheKey ||
@@ -96,10 +95,7 @@ export async function GET(
     .filter(Boolean)
     .join("\n\n");
 
-  // 캐시에 저장
   memoryCache.set(cacheKey, guidanceText);
-
-  // DB에도 저장 (비동기, 응답 지연 없음)
   prisma.wordRecord.update({ where: { id }, data: { guidanceText } }).catch(() => {});
 
   return NextResponse.json({ guidanceText });

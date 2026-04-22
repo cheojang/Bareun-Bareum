@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-
-function isAdmin(email?: string | null) {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
-  return email ? adminEmails.includes(email) : false;
-}
+import { isAdmin } from "@/lib/admin-auth";
 
 /**
  * GET /api/admin/centers

@@ -3,11 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
-  .split(",")
-  .map((e) => e.trim())
-  .filter(Boolean);
+import { isAdmin } from "@/lib/admin-auth";
 
 function getGenAI() {
   const key = process.env.GEMINI_API_KEY;
@@ -44,7 +40,7 @@ function buildPrompt(combo: TemplateCombination) {
  */
 export async function GET(_: NextRequest) {
   const session = await auth();
-  if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+  if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -66,7 +62,7 @@ export async function GET(_: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+    if (!isAdmin(session?.user?.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -74,7 +70,7 @@ export async function POST(request: NextRequest) {
     const limit: number = Math.min(Number(body.limit) || 20, 50);
 
     const genai = getGenAI();
-    const model = genai.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // 이미 완료된 조합 조회
     const existing = await prisma.phonemeTemplate.findMany({

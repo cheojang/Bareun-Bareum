@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
-  .split(",")
-  .map((e) => e.trim())
-  .filter(Boolean);
+import { isAdmin } from "@/lib/admin-auth";
 
 /**
  * GET /api/announcements
@@ -52,10 +48,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (
-      !session?.user?.email ||
-      !ADMIN_EMAILS.includes(session.user.email)
-    ) {
+    if (!isAdmin(session?.user?.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -24,14 +24,21 @@ export async function POST(req: NextRequest) {
     const { orderId, status } = data;
 
     if (status === "CANCELED" || status === "ABORTED") {
-      // Find subscription by orderId convention (userId prefix)
-      const userId = orderId.split("_")[0];
-      if (userId) {
-        await prisma.subscription.updateMany({
-          where: { userId },
-          data: { status: "cancelled", plan: "free" },
-        });
+      const parts = typeof orderId === "string" ? orderId.split("_") : [];
+      const userId = parts.length >= 2 ? parts[0] : null;
+      if (!userId) {
+        console.warn("[Webhook] orderId 형식 불일치:", orderId);
+        return NextResponse.json({ received: true });
       }
+      const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (!userExists) {
+        console.warn("[Webhook] orderId에서 추출한 userId가 존재하지 않음:", userId);
+        return NextResponse.json({ received: true });
+      }
+      await prisma.subscription.updateMany({
+        where: { userId },
+        data: { status: "cancelled", plan: "free" },
+      });
     }
   }
 
