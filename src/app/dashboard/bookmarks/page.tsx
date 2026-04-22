@@ -105,46 +105,37 @@ export default async function BookmarksPage() {
           {/* ── 최근 발음 분석 ────────────────────────────────────────────── */}
           {recentErrors.length > 0 && (
             <section>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <p className="font-bold text-[#3D3530]">최근 발음 분석</p>
                 <Link href="/dashboard/answer-note">
                   <span className="text-xs text-[#FFB38A] font-semibold">발음 분석 추가 →</span>
                 </Link>
               </div>
-              <div className="space-y-2.5">
-                {recentErrors.map((rec: any) => (
+              <BubbleCard padding="sm">
+                {recentErrors.map((rec: any, index: number) => (
                   <Link key={rec.id} href={`/dashboard/practice?errorRecordId=${rec.id}`}>
-                    <BubbleCard padding="sm" className="hover:opacity-95 transition cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-xl font-black text-[#3D3530]">
-                            {rec.targetWord}
-                          </span>
-                          <span className="text-[#C4B5A8] text-sm">→</span>
-                          <span className="text-xl font-bold text-[#FCA5A5]">
-                            {rec.childPronunciation}
-                          </span>
-                        </div>
-                        <PastelBadge color="pink">{rec.errorPattern}</PastelBadge>
-                        <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                          {new Date(rec.createdAt).toLocaleDateString("ko-KR", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                        <span className="text-[#C4B5A8] text-xs">▶</span>
+                    <div className={`flex items-center gap-2 py-3 px-1 hover:bg-[#FAFAF8] rounded-xl transition-colors cursor-pointer ${index < recentErrors.length - 1 ? "border-b border-[#F5F0EB]" : ""}`}>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-base font-black text-[#3D3530] truncate">{rec.targetWord}</span>
+                        <span className="text-[#C4B5A8] text-xs flex-shrink-0">→</span>
+                        <span className="text-base font-bold text-[#FCA5A5] truncate">{rec.childPronunciation}</span>
                       </div>
-                    </BubbleCard>
+                      <PastelBadge color="pink">{rec.errorPattern.length > 7 ? rec.errorPattern.slice(0, 7) + "…" : rec.errorPattern}</PastelBadge>
+                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
+                        {new Date(rec.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                      </p>
+                      <span className="text-[#C4B5A8] text-xs flex-shrink-0">▶</span>
+                    </div>
                   </Link>
                 ))}
-              </div>
+              </BubbleCard>
             </section>
           )}
 
           {/* ── 저장한 단어 목록 ─────────────────────────────────────────── */}
           {savedWords.length > 0 && (
             <section>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <p className="font-bold text-[#3D3530]">
                   저장한 단어
                   <span className="ml-2 text-sm font-normal text-[#8B7E74]">
@@ -158,27 +149,22 @@ export default async function BookmarksPage() {
                   </Link>
                 </div>
               </div>
-              <div className="space-y-2.5">
-                {savedWords.map((sw: any) => {
+              <BubbleCard padding="sm">
+                {savedWords.map((sw: any, index: number) => {
                   const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
                   return (
-                    <BubbleCard key={sw.id} padding="sm">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl font-black text-[#3D3530] flex-1">
-                          {sw.word}
-                        </span>
-                        <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
-                        <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                          {new Date(sw.savedAt).toLocaleDateString("ko-KR", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </BubbleCard>
+                    <div key={sw.id} className={`flex items-center gap-2 py-3 px-1 ${index < savedWords.length - 1 ? "border-b border-[#F5F0EB]" : ""}`}>
+                      <span className="text-base font-black text-[#3D3530] flex-1 truncate">
+                        {sw.word}
+                      </span>
+                      <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
+                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
+                        {new Date(sw.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
                   );
                 })}
-              </div>
+              </BubbleCard>
             </section>
           )}
 
