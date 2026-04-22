@@ -118,9 +118,8 @@ export default async function DashboardHome() {
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <StatMini value={child.totalWords} label="단어" emoji="📝" />
-            <StatMini value={child.totalMinutes} label="분" emoji="⏱️" />
             <StatMini value={child.streakDays} label="연속" emoji="🔥" />
           </div>
 
