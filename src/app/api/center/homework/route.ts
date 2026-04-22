@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getTherapistSession, canAccessChild } from "@/lib/therapist-auth";
 
 /**
- * GET /api/therapist/homework?childId=xxx
+ * GET /api/center/homework?childId=xxx
  * 특정 아이의 숙제 목록
  */
 export async function GET(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/therapist/homework
+ * POST /api/center/homework
  * 숙제 배정
  */
 export async function POST(request: NextRequest) {
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * PATCH /api/therapist/homework
+ * PATCH /api/center/homework
  * body: { homeworkId, status } — 상태 변경 (done/pending)
  */
 export async function PATCH(request: NextRequest) {
@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 /**
- * DELETE /api/therapist/homework
+ * DELETE /api/center/homework
  * body: { homeworkId }
  */
 export async function DELETE(request: NextRequest) {

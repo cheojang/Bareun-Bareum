@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getTherapistSession } from "@/lib/therapist-auth";
 
 /**
- * GET /api/therapist/children
+ * GET /api/center/children
  * 치료사의 담당 아이 목록 + 각자 취약 음소 요약
  */
 export async function GET() {
@@ -57,7 +57,7 @@ export async function GET() {
 }
 
 /**
- * POST /api/therapist/children
+ * POST /api/center/children
  * body: { childId } — 아이 담당 배정
  */
 export async function POST(request: Request) {
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * DELETE /api/therapist/children
+ * DELETE /api/center/children
  * body: { childId } — 담당 해제
  */
 export async function DELETE(request: Request) {

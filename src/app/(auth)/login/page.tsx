@@ -143,7 +143,7 @@ function DevLoginButtons() {
         {loading === "dev@test.com" ? "로그인 중..." : "👪 부모 계정"}
       </button>
       <button
-        onClick={() => devLogin("therapist@test.com", "/therapist/children")}
+        onClick={() => devLogin("therapist@test.com", "/center/children")}
         disabled={!!loading}
         className="w-full rounded-xl bg-[#E8F5E9] hover:bg-[#D8EFD9] text-[#388E3C] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
       >

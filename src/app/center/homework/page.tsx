@@ -30,7 +30,7 @@ export default function TherapistHomeworkPage() {
 
   // 담당 아이 목록 불러오기
   useEffect(() => {
-    fetch("/api/therapist/children")
+    fetch("/api/center/children")
       .then((r) => r.json())
       .then((data) => {
         const list = data.children as { id: string; name: string }[];
@@ -43,7 +43,7 @@ export default function TherapistHomeworkPage() {
   useEffect(() => {
     if (!selectedChildId) return;
     setLoading(true);
-    fetch(`/api/therapist/homework?childId=${selectedChildId}`)
+    fetch(`/api/center/homework?childId=${selectedChildId}`)
       .then((r) => r.json())
       .then((data) => { setHomeworks(data.homeworks ?? []); setLoading(false); });
   }, [selectedChildId]);
@@ -56,7 +56,7 @@ export default function TherapistHomeworkPage() {
     }
     setSubmitting(true);
     setMsg("");
-    const res = await fetch("/api/therapist/homework", {
+    const res = await fetch("/api/center/homework", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -72,7 +72,7 @@ export default function TherapistHomeworkPage() {
       setMsg("숙제 배정 완료!");
       setWords(""); setPhoneme(""); setDesc(""); setDueDate("");
       // 목록 새로고침
-      fetch(`/api/therapist/homework?childId=${selectedChildId}`)
+      fetch(`/api/center/homework?childId=${selectedChildId}`)
         .then((r) => r.json())
         .then((d) => setHomeworks(d.homeworks ?? []));
     } else {
@@ -83,7 +83,7 @@ export default function TherapistHomeworkPage() {
 
   async function deleteHomework(homeworkId: string) {
     if (!confirm("숙제를 삭제하시겠습니까?")) return;
-    await fetch("/api/therapist/homework", {
+    await fetch("/api/center/homework", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ homeworkId }),

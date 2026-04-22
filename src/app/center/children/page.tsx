@@ -31,7 +31,7 @@ export default function TherapistChildrenPage() {
   const [msg, setMsg] = useState("");
 
   async function load() {
-    const res = await fetch("/api/therapist/children");
+    const res = await fetch("/api/center/children");
     if (res.ok) {
       const data = await res.json();
       setChildren(data.children);
@@ -45,7 +45,7 @@ export default function TherapistChildrenPage() {
     if (!childIdInput.trim()) { setMsg("아이 ID를 입력해주세요"); return; }
     setAssigning(true);
     setMsg("");
-    const res = await fetch("/api/therapist/children", {
+    const res = await fetch("/api/center/children", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ childId: childIdInput.trim() }),
@@ -63,7 +63,7 @@ export default function TherapistChildrenPage() {
 
   async function unassign(childId: string, name: string) {
     if (!confirm(`${name} 담당을 해제하시겠습니까?`)) return;
-    await fetch("/api/therapist/children", {
+    await fetch("/api/center/children", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ childId }),

@@ -16,14 +16,13 @@ export default async function CenterLayout({ children }: { children: React.React
   });
   if (!therapist) redirect("/therapist/join");
 
-  // 상담소 설정 화면은 owner만 접근 가능
-  if (therapist.role !== "owner") redirect("/therapist/children");
+  const isOwner = therapist.role === "owner";
 
   const NAV = [
-    { href: "/center", icon: "🏥", label: "센터 현황" },
-    { href: "/therapist/children", icon: "👦", label: "담당 아이" },
-    { href: "/therapist/homework", icon: "📋", label: "숙제 배정" },
-    { href: "/therapist/notes", icon: "📓", label: "치료 일지" },
+    ...(isOwner ? [{ href: "/center", icon: "🏥", label: "상담소 현황" }] : []),
+    { href: "/center/children", icon: "👦", label: "담당 아이" },
+    { href: "/center/homework", icon: "📋", label: "숙제 배정" },
+    { href: "/center/notes", icon: "📓", label: "치료 일지" },
   ];
 
   return (
@@ -40,7 +39,7 @@ export default async function CenterLayout({ children }: { children: React.React
         <div className="flex-1">
           <p className="font-black text-[#3D3530] text-base leading-none">{therapist.center.name}</p>
           <p className="text-[10px] text-[#C4B5A8] font-semibold leading-none mt-0.5">
-            상담소장 · {therapist.name}
+            {isOwner ? "상담소장" : "상담사"} · {therapist.name}
           </p>
         </div>
         <Link href="/dashboard"
@@ -54,13 +53,15 @@ export default async function CenterLayout({ children }: { children: React.React
           className="hidden md:flex flex-col w-52 sticky top-[57px] h-[calc(100dvh-57px)] shrink-0"
           style={{ background: "rgba(253,250,245,0.95)", borderRight: "1.5px solid #F0E8E0" }}
         >
-          {/* 초대코드 표시 */}
-          <div className="px-4 py-3 border-b border-[#F0E8E0]">
-            <p className="text-[10px] font-bold text-[#C4B5A8] mb-1">센터 초대코드</p>
-            <p className="font-mono font-black text-[#FFB38A] text-sm tracking-wider">
-              {therapist.center.inviteCode}
-            </p>
-          </div>
+          {/* 초대코드 표시 — owner만 */}
+          {isOwner && (
+            <div className="px-4 py-3 border-b border-[#F0E8E0]">
+              <p className="text-[10px] font-bold text-[#C4B5A8] mb-1">상담소 초대코드</p>
+              <p className="font-mono font-black text-[#FFB38A] text-sm tracking-wider">
+                {therapist.center.inviteCode}
+              </p>
+            </div>
+          )}
           <nav className="flex-1 px-3 py-4 space-y-1">
             {NAV.map((item) => (
               <Link key={item.href} href={item.href}

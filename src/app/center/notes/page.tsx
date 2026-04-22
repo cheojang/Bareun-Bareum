@@ -32,7 +32,7 @@ export default function TherapistNotesPage() {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    fetch("/api/therapist/children")
+    fetch("/api/center/children")
       .then((r) => r.json())
       .then((data) => {
         const list = data.children as { id: string; name: string }[];
@@ -44,7 +44,7 @@ export default function TherapistNotesPage() {
   useEffect(() => {
     if (!selectedChildId) return;
     setLoading(true);
-    fetch(`/api/therapist/notes?childId=${selectedChildId}`)
+    fetch(`/api/center/notes?childId=${selectedChildId}`)
       .then((r) => r.json())
       .then((data) => { setNotes(data.notes ?? []); setLoading(false); });
   }, [selectedChildId]);
@@ -58,7 +58,7 @@ export default function TherapistNotesPage() {
     }
     setSubmitting(true);
     setMsg("");
-    const res = await fetch("/api/therapist/notes", {
+    const res = await fetch("/api/center/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -82,7 +82,7 @@ export default function TherapistNotesPage() {
   }
 
   async function toggleVisibility(noteId: string, current: boolean) {
-    await fetch("/api/therapist/notes", {
+    await fetch("/api/center/notes", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ noteId, isVisibleToParent: !current }),
@@ -92,7 +92,7 @@ export default function TherapistNotesPage() {
 
   async function deleteNote(noteId: string) {
     if (!confirm("일지를 삭제하시겠습니까?")) return;
-    await fetch("/api/therapist/notes", {
+    await fetch("/api/center/notes", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ noteId }),
