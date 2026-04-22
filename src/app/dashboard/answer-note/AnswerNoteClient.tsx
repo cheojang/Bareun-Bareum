@@ -53,6 +53,7 @@ interface Props {
   childId: string;
   childName: string;
   pastRecords: PastRecord[];
+  isGuest?: boolean;
 }
 
 // ─── 카테고리 색상 매핑 ────────────────────────────────────────────────────────
@@ -392,7 +393,7 @@ function CurrentAnalysisCard({
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 
-export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
+export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: Props) {
   // 누적 기록 상태 (새 분석 완료 시 맨 앞에 추가)
   const [records, setRecords] = useState<PastRecord[]>(pastRecords);
 
@@ -475,6 +476,12 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
       const local: LocalResult = await res.json();
       setLocalResult(local);
       setLocalLoading(false);
+
+      // ── 게스트: Gemini 처방전 건너뛰기 ────────────────────────────────────
+      if (isGuest || !local.errorRecordId) {
+        setGeminiLoading(false);
+        return;
+      }
 
       // ── 2단계: Gemini 처방전 ──────────────────────────────────────────────
       setGeminiLoading(true);

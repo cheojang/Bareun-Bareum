@@ -8,6 +8,21 @@ export default async function AnswerNotePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
+  const isGuest = session.user.id === "guest";
+
+  // ── 게스트: 아이 등록 없이 바로 분석 화면 ─────────────────────────────────
+  if (isGuest) {
+    return (
+      <AnswerNoteClient
+        childId="guest"
+        childName="우리 아이"
+        pastRecords={[]}
+        isGuest
+      />
+    );
+  }
+
+  // ── 회원: 기존 로직 ───────────────────────────────────────────────────────
   const children = await prisma.child.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "asc" },
@@ -19,7 +34,6 @@ export default async function AnswerNotePage() {
   const savedId = await getSelectedChildId();
   const targetChild = children.find((c) => c.id === savedId) ?? children[0];
 
-  // ── 기존 발음 분석 기록 조회 (최신순 최대 50개) ──────────────────────────
   const pastRecords = await prisma.errorRecord.findMany({
     where: { childId: targetChild.id },
     orderBy: { createdAt: "desc" },

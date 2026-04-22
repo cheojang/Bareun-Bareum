@@ -99,13 +99,33 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const child = await prisma.child.findUnique({ where: { id: childId } });
-    if (!child) return NextResponse.json({ error: "해당 아이를 찾을 수 없습니다" }, { status: 404 });
-    if (child.userId !== session.user.id) return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
-
     // 로컬 자모 분해 분석 (즉시)
     const localAnalysis = analyzeError(targetWord, childPronunciation);
     const localAnalysisTyped = localAnalysis as Record<string, unknown>;
+
+    // ── 게스트: 분석만 반환, DB 저장 안 함 ──────────────────────────────────
+    const isGuest = session.user.id === "guest";
+    if (isGuest) {
+      return NextResponse.json({
+        success: true,
+        isGuest: true,
+        errorRecordId: null,
+        errorCategory: (localAnalysisTyped.errorCategory as string) || "미판정",
+        errorPattern: (localAnalysisTyped.errorPattern as string) || "미판정",
+        localAnalysis: {
+          detectedPattern: localAnalysis.errorType,
+          confidence: (localAnalysisTyped.confidence as number) || 0,
+          requiresGemini: (localAnalysisTyped.requiresGemini as boolean) || false,
+          parentHint: (localAnalysisTyped.parentHint as string) || "",
+          description: (localAnalysisTyped.description as string) || "",
+        },
+      }, { status: 200 });
+    }
+
+    // ── 회원: DB 저장 ───────────────────────────────────────────────────────
+    const child = await prisma.child.findUnique({ where: { id: childId } });
+    if (!child) return NextResponse.json({ error: "해당 아이를 찾을 수 없습니다" }, { status: 404 });
+    if (child.userId !== session.user.id) return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
 
     // ErrorRecord + LocalAnalysis 저장
     const errorRecord = await prisma.errorRecord.create({

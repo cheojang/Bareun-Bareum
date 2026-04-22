@@ -49,6 +49,9 @@ export default function LandingPage() {
             </BubbleButton>
           </Link>
           <p className="text-xs text-[#C4B5A8] mt-3">가입 30초 · 카카오/구글 로그인</p>
+          <Link href="/login?guest=1" className="block mt-3 text-xs text-[#C4B5A8] hover:text-[#8B7E74] transition-colors">
+            가입 없이 체험하기 →
+          </Link>
         </div>
       </section>
 

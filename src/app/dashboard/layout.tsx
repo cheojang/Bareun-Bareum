@@ -16,23 +16,28 @@ export default async function DashboardLayout({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const childList = await prisma.child.findMany({
-    where: { userId: session.user.id! },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, mascotLevel: true },
-  });
+  const isGuest = session.user.id === "guest";
 
-  const savedId = await getSelectedChildId();
+  const childList = isGuest
+    ? []
+    : await prisma.child.findMany({
+        where: { userId: session.user.id! },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true, mascotLevel: true },
+      });
+
+  const savedId = isGuest ? "" : await getSelectedChildId();
   const validId =
     childList.find((c) => c.id === savedId)?.id ?? childList[0]?.id ?? "";
 
-  // 안읽은 공지 수 (서버에서 계산 → 초기 배지에 활용)
-  const unreadCount = await prisma.announcement.count({
-    where: {
-      isPublished: true,
-      reads: { none: { userId: session.user.id! } },
-    },
-  });
+  const unreadCount = isGuest
+    ? 0
+    : await prisma.announcement.count({
+        where: {
+          isPublished: true,
+          reads: { none: { userId: session.user.id! } },
+        },
+      });
 
   return (
     <div
@@ -123,6 +128,18 @@ export default async function DashboardLayout({
             )}
             <NotificationBell initialUnreadCount={unreadCount} />
           </div>
+
+          {/* 게스트 배너 */}
+          {isGuest && (
+            <div className="bg-[#FFF5EE] border-b border-[#FFE4D8] px-5 py-2.5 flex items-center justify-between">
+              <p className="text-xs text-[#8B7E74]">
+                <span className="font-bold text-[#FFB38A]">비회원 모드</span> — 기록이 저장되지 않아요
+              </p>
+              <Link href="/signup" className="text-xs font-bold text-[#FFB38A] hover:underline flex-shrink-0">
+                회원가입
+              </Link>
+            </div>
+          )}
 
           {/* 페이지 콘텐츠 */}
           <main className="flex-1 pb-28 md:pb-10">{children}</main>

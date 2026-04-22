@@ -63,6 +63,17 @@ const devProvider =
       ]
     : [];
 
+// ── 비회원 (게스트) 로그인 ──────────────────────────────────────────────────────
+const guestProvider = Credentials({
+  id: "guest",
+  name: "비회원",
+  credentials: {},
+  async authorize() {
+    // DB에 저장하지 않는 임시 세션 — JWT만 발급
+    return { id: "guest", email: "guest@temp", name: "비회원" };
+  },
+});
+
 // ── 이메일/비밀번호 로그인 ──────────────────────────────────────────────────────
 const credentialsProvider = Credentials({
   id: "credentials",
@@ -91,6 +102,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   providers: [
     ...devProvider,
+    guestProvider,
     credentialsProvider,
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -110,11 +122,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const userId = user?.id ?? (token?.id as string);
       if (session.user && userId) {
         session.user.id = userId;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { role: true },
-        });
-        session.user.role = dbUser?.role ?? "parent";
+        if (userId === "guest") {
+          session.user.isGuest = true;
+          session.user.role = "parent";
+        } else {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true },
+          });
+          session.user.role = dbUser?.role ?? "parent";
+        }
       }
       return session;
     },

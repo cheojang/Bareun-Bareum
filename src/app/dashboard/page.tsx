@@ -18,6 +18,33 @@ const WEAKNESS_COLOR: Record<string, { bar: string; badge: string; text: string 
 export default async function DashboardHome() {
   const session = await auth();
   const userId = session!.user!.id!;
+  const isGuest = userId === "guest";
+
+  // ── 게스트: 발음 분석으로 바로 안내 ───────────────────────────────────────
+  if (isGuest) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-dvh px-6 text-center">
+        <SoriMascot size={120} variant="full" animated />
+        <h2 className="text-2xl font-black text-[#3D3530] mt-4 mb-2">체험 모드에요!</h2>
+        <p className="text-sm text-[#8B7E74] mb-6 leading-relaxed">
+          발음 분석 기능을 바로 사용해볼 수 있어요.<br />
+          기록 저장은 회원가입 후 가능해요.
+        </p>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Link href="/dashboard/answer-note">
+            <BubbleButton variant="peach" size="lg" className="w-full">
+              🔍 발음 분석 체험하기
+            </BubbleButton>
+          </Link>
+          <Link href="/signup">
+            <BubbleButton variant="white" size="md" className="w-full">
+              회원가입하고 모든 기능 이용하기
+            </BubbleButton>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const children = await prisma.child.findMany({
     where: { userId },

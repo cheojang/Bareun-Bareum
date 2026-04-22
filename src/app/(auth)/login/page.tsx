@@ -184,14 +184,23 @@ export default function LoginPage() {
           <p className="text-xs text-center text-[#C4B5A8] mt-3">약관에 동의하면 로그인 버튼이 활성화돼요</p>
         )}
 
-        {/* 회원가입 링크 */}
-        <div className="mt-5 pt-4 border-t border-[#F0E8E0] text-center">
+        {/* 회원가입 + 비회원 */}
+        <div className="mt-5 pt-4 border-t border-[#F0E8E0] text-center space-y-3">
           <p className="text-xs text-[#8B7E74]">
             아직 계정이 없으신가요?{" "}
             <Link href="/signup" className="text-[#FFB38A] font-bold hover:underline">
               회원가입
             </Link>
           </p>
+          <button
+            onClick={async () => {
+              const res = await signIn("guest", { redirect: false });
+              if (!res?.error) window.location.href = "/dashboard/answer-note";
+            }}
+            className="w-full text-xs text-[#C4B5A8] hover:text-[#8B7E74] py-2 transition-colors"
+          >
+            비회원으로 체험하기 →
+          </button>
         </div>
 
         {/* 개발용 빠른 로그인 */}
