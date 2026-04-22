@@ -99,6 +99,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
     }
 
+    // Rate limit: 분당 10건 / 버스트 5건
+    const { geminiLimiter } = await import("@/lib/rate-limit");
+    if (!geminiLimiter.allow(session.user.id)) {
+      return NextResponse.json(
+        { error: "요청이 너무 많아요. 1분 뒤 다시 시도해 주세요." },
+        { status: 429 }
+      );
+    }
+
     const { errorRecordId } = await request.json();
     if (!errorRecordId) {
       return NextResponse.json({ error: "errorRecordId 필수" }, { status: 400 });

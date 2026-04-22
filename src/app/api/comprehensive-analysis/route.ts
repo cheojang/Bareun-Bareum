@@ -18,13 +18,14 @@ interface CategoryStatInput {
   pct: number;
 }
 
-// ── 메모리 캐시 (childId별 1시간 TTL) ───────────────────────────────────────
+// ── 메모리 캐시 (childId별 1시간 TTL, LRU 상한 200) ────────────────────────
 interface CacheEntry {
   text: string;
   signature: string;
   expiresAt: number;
 }
-const adviceCache = new Map<string, CacheEntry>();
+import { LRUCache } from "@/lib/lru-cache";
+const adviceCache = new LRUCache<string, CacheEntry>(200);
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간
 
 function buildSignature(
@@ -50,6 +51,15 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+    }
+
+    // Rate limit: 무거운 분석 — 시간당 5건 / 버스트 2건
+    const { heavyAnalysisLimiter } = await import("@/lib/rate-limit");
+    if (!heavyAnalysisLimiter.allow(session.user.id)) {
+      return NextResponse.json(
+        { error: "종합 분석은 시간당 몇 번만 가능해요. 잠시 후 다시 시도해 주세요." },
+        { status: 429 }
+      );
     }
 
     const { childId, childName, weakPhonemes, categoryStats } = (await request.json()) as {

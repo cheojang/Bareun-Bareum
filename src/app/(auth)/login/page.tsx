@@ -48,7 +48,7 @@ export default function LoginPage() {
             type="checkbox"
             checked={terms}
             onChange={(e) => setTerms(e.target.checked)}
-            className="w-4 h-4 accent-[#FFB38A] flex-shrink-0"
+            className="w-5 h-5 accent-[#FFB38A] flex-shrink-0"
           />
           <span className="text-sm text-[#3D3530] flex-1">이용약관 동의 <span className="text-[#FFB38A]">*</span></span>
           <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-xs text-[#FFB38A] hover:underline flex-shrink-0">보기</a>
@@ -60,7 +60,7 @@ export default function LoginPage() {
             type="checkbox"
             checked={privacy}
             onChange={(e) => setPrivacy(e.target.checked)}
-            className="w-4 h-4 accent-[#FFB38A] flex-shrink-0"
+            className="w-5 h-5 accent-[#FFB38A] flex-shrink-0"
           />
           <span className="text-sm text-[#3D3530] flex-1">개인정보 처리방침 동의 <span className="text-[#FFB38A]">*</span></span>
           <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-xs text-[#FFB38A] hover:underline flex-shrink-0">보기</a>

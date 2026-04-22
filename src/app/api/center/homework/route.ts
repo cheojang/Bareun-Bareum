@@ -48,6 +48,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 입력 검증: targetWords는 배열이어야 하고 각 항목은 짧은 문자열
+  if (!Array.isArray(targetWords) || targetWords.length > 50) {
+    return NextResponse.json(
+      { error: "targetWords는 최대 50개 배열이어야 합니다" },
+      { status: 400 }
+    );
+  }
+  const sanitizedWords = targetWords
+    .filter((w): w is string => typeof w === "string")
+    .map((w) => w.trim())
+    .filter((w) => w.length > 0 && w.length <= 50);
+  if (sanitizedWords.length === 0) {
+    return NextResponse.json(
+      { error: "유효한 단어가 없습니다" },
+      { status: 400 }
+    );
+  }
+
+  // 날짜 유효성
+  const due = new Date(dueDate);
+  if (isNaN(due.getTime())) {
+    return NextResponse.json({ error: "dueDate 형식이 올바르지 않습니다" }, { status: 400 });
+  }
+
   if (!(await canAccessChild(ts.therapistId, childId))) {
     return NextResponse.json({ error: "담당 아이가 아닙니다" }, { status: 403 });
   }
@@ -56,10 +80,10 @@ export async function POST(request: NextRequest) {
     data: {
       therapistId: ts.therapistId,
       childId,
-      targetWords: JSON.stringify(targetWords),
-      targetPhoneme: targetPhoneme ?? null,
-      description: description ?? null,
-      dueDate: new Date(dueDate),
+      targetWords: JSON.stringify(sanitizedWords),
+      targetPhoneme: typeof targetPhoneme === "string" ? targetPhoneme.slice(0, 20) : null,
+      description: typeof description === "string" ? description.slice(0, 500) : null,
+      dueDate: due,
     },
   });
 

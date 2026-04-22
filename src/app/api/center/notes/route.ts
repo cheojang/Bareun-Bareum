@@ -47,6 +47,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "필수 항목이 빠졌습니다" }, { status: 400 });
   }
 
+  // 입력 검증
+  if (!Array.isArray(targetPhonemes) || targetPhonemes.length > 30) {
+    return NextResponse.json({ error: "targetPhonemes는 최대 30개 배열이어야 합니다" }, { status: 400 });
+  }
+  const sanitizedPhonemes = targetPhonemes
+    .filter((p): p is string => typeof p === "string")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0 && p.length <= 10);
+  if (sanitizedPhonemes.length === 0) {
+    return NextResponse.json({ error: "유효한 음소가 없습니다" }, { status: 400 });
+  }
+
+  const sessDate = new Date(sessionDate);
+  if (isNaN(sessDate.getTime())) {
+    return NextResponse.json({ error: "sessionDate 형식이 올바르지 않습니다" }, { status: 400 });
+  }
+
+  const safeMemo = typeof memo === "string" ? memo.slice(0, 2000) : "";
+  if (!safeMemo) {
+    return NextResponse.json({ error: "memo는 문자열이어야 합니다" }, { status: 400 });
+  }
+
   if (!(await canAccessChild(ts.therapistId, childId))) {
     return NextResponse.json({ error: "담당 아이가 아닙니다" }, { status: 403 });
   }
@@ -55,10 +77,10 @@ export async function POST(request: NextRequest) {
     data: {
       therapistId: ts.therapistId,
       childId,
-      sessionDate: new Date(sessionDate),
-      targetPhonemes: JSON.stringify(targetPhonemes),
+      sessionDate: sessDate,
+      targetPhonemes: JSON.stringify(sanitizedPhonemes),
       performance: Math.min(100, Math.max(0, Number(performance))),
-      memo,
+      memo: safeMemo,
       isVisibleToParent: isVisibleToParent !== false,
     },
   });

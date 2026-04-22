@@ -71,7 +71,8 @@ export function BottomNavItems() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center gap-1 px-4 py-1 rounded-2xl transition-colors ${
+            aria-current={active ? "page" : undefined}
+            className={`flex flex-col items-center gap-1 px-4 py-1 rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB38A] focus-visible:ring-offset-2 ${
               active ? "bg-[#FFF5EE]" : "hover:bg-[#FFF5EE]"
             }`}
           >

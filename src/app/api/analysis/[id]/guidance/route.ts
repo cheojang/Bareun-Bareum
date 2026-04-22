@@ -3,10 +3,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateGuidance } from "@/lib/gemini-ai";
 import { PhonemeError } from "@/types/phonetics";
+import { LRUCache } from "@/lib/lru-cache";
 
 // ── 1단계 캐시: 서버 메모리 (프로세스 재시작 전까지 유지) ──────────────────
+// LRU로 500개 상한 — 메모리 무한 성장 방지
 // 키: userId + 오류 패턴 문자열 (사용자 간 격리)
-const memoryCache = new Map<string, string>();
+const memoryCache = new LRUCache<string, string>(500);
 
 function buildCacheKey(userId: string, errors: PhonemeError[]): string {
   if (errors.length === 0) return `${userId}:__correct__`;
