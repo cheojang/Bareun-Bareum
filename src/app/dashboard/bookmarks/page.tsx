@@ -113,60 +113,78 @@ export default async function BookmarksPage() {
               </div>
               <BubbleCard padding="sm">
                 {recentErrors.map((rec: any, index: number) => (
-                  <Link key={rec.id} href={`/dashboard/practice?errorRecordId=${rec.id}`}>
-                    <div className={`flex items-center gap-2 py-3 px-1 hover:bg-[#FAFAF8] rounded-xl transition-colors cursor-pointer ${index < recentErrors.length - 1 ? "border-b border-[#F5F0EB]" : ""}`}>
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-base font-black text-[#3D3530] truncate">{rec.targetWord}</span>
-                        <span className="text-[#C4B5A8] text-xs flex-shrink-0">→</span>
-                        <span className="text-base font-bold text-[#FCA5A5] truncate">{rec.childPronunciation}</span>
-                      </div>
-                      <PastelBadge color="pink">{rec.errorPattern.length > 7 ? rec.errorPattern.slice(0, 7) + "…" : rec.errorPattern}</PastelBadge>
-                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                        {new Date(rec.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                      </p>
-                      <span className="text-[#C4B5A8] text-xs flex-shrink-0">▶</span>
+                  <div
+                    key={rec.id}
+                    className={`flex items-center gap-2 py-3 px-1 ${index < recentErrors.length - 1 ? "border-b border-[#F5F0EB]" : ""}`}
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-base font-black text-[#3D3530] truncate">{rec.targetWord}</span>
+                      <span className="text-[#C4B5A8] text-xs flex-shrink-0">→</span>
+                      <span className="text-base font-bold text-[#FCA5A5] truncate">{rec.childPronunciation}</span>
                     </div>
-                  </Link>
+                    <PastelBadge color="pink">{rec.errorPattern.length > 7 ? rec.errorPattern.slice(0, 7) + "…" : rec.errorPattern}</PastelBadge>
+                  </div>
                 ))}
               </BubbleCard>
             </section>
           )}
 
           {/* ── 저장한 단어 목록 ─────────────────────────────────────────── */}
-          {savedWords.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-bold text-[#3D3530]">
-                  저장한 단어
-                  <span className="ml-2 text-sm font-normal text-[#8B7E74]">
-                    {savedWords.length}개
-                  </span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <ResetSavedWordsButton childId={child.id} />
-                  <Link href="/dashboard/practice">
-                    <span className="text-xs text-[#FFB38A] font-semibold">다시 연습하기 →</span>
-                  </Link>
+          {savedWords.length > 0 && (() => {
+            // 날짜별 그룹화
+            const groups: { dateLabel: string; words: typeof savedWords }[] = [];
+            for (const sw of savedWords) {
+              const label = new Date(sw.savedAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+              const last = groups[groups.length - 1];
+              if (last && last.dateLabel === label) {
+                last.words.push(sw);
+              } else {
+                groups.push({ dateLabel: label, words: [sw] });
+              }
+            }
+            return (
+              <section>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-bold text-[#3D3530]">
+                    저장한 단어
+                    <span className="ml-2 text-sm font-normal text-[#8B7E74]">{savedWords.length}개</span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <ResetSavedWordsButton childId={child.id} />
+                    <Link href="/dashboard/practice">
+                      <span className="text-xs text-[#FFB38A] font-semibold">다시 연습하기 →</span>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-              <BubbleCard padding="sm">
-                {savedWords.map((sw: any, index: number) => {
-                  const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
-                  return (
-                    <div key={sw.id} className={`flex items-center gap-2 py-3 px-1 ${index < savedWords.length - 1 ? "border-b border-[#F5F0EB]" : ""}`}>
-                      <span className="text-base font-black text-[#3D3530] flex-1 truncate">
-                        {sw.word}
-                      </span>
-                      <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
-                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                        {new Date(sw.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                      </p>
+                <BubbleCard padding="sm">
+                  {groups.map((group, gi) => (
+                    <div key={group.dateLabel}>
+                      {/* 날짜 구분선 */}
+                      <div className={`flex items-center gap-3 ${gi > 0 ? "mt-1" : ""} py-2`}>
+                        <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                        <span className="text-[11px] font-black text-[#C4B5A8] tracking-wider">{group.dateLabel}</span>
+                        <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                      </div>
+                      {/* 해당 날짜 단어들 */}
+                      {group.words.map((sw: any, wi: number) => {
+                        const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
+                        const isLast = gi === groups.length - 1 && wi === group.words.length - 1;
+                        return (
+                          <div
+                            key={sw.id}
+                            className={`flex items-center gap-2 py-2.5 px-1 ${!isLast ? "border-b border-[#F5F0EB]" : ""}`}
+                          >
+                            <span className="text-base font-black text-[#3D3530] flex-1 truncate">{sw.word}</span>
+                            <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </BubbleCard>
-            </section>
-          )}
+                  ))}
+                </BubbleCard>
+              </section>
+            );
+          })()}
 
           {/* 반복연습 CTA */}
           <BubbleCard color="peach" className="text-center">
