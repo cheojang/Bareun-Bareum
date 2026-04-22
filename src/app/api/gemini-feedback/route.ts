@@ -2,8 +2,22 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
-import { getGeminiFeedback } from '@/lib/gemini-client';
+import { getGeminiFeedbackStream } from '@/lib/gemini-client';
 import { auth } from '@/lib/auth';
+
+// ── 스트리밍 중 완성된 문자열 필드 추출 (안전하게 닫힌 것만) ──────────────
+// JSON 모드로 응답하므로 value 내부의 "는 반드시 \"로 escape됨
+// 따라서 ([^"\\]|\\.)*로 이스케이프 시퀀스까지 정확히 파싱
+const STRING_FIELD_REGEX =
+  /"(patternName|rootCause|trainingStep1|trainingStep2|trainingStep3|trainingStep4|parentMessage)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+
+function unescapeJsonString(raw: string): string {
+  try {
+    return JSON.parse(`"${raw}"`);
+  } catch {
+    return raw;
+  }
+}
 
 /**
  * errorType + affectedSyllable 정보로 position(초성/어중/종성/중성) 판별
@@ -174,12 +188,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ─── 2순위: Gemini API 신규 호출 ─────────────────────────────────────────
-    console.log("[Gemini] 신규 API 호출:", errorRecord.targetWord);
+    // ─── 2순위: Gemini API 신규 호출 (NDJSON 스트리밍) ───────────────────────
+    console.log("[Gemini] 신규 스트리밍 호출:", errorRecord.targetWord);
 
-    let parsed;
+    let streamResult;
     try {
-      parsed = await getGeminiFeedback(
+      streamResult = await getGeminiFeedbackStream(
         errorRecord.targetWord,
         errorRecord.childPronunciation,
         errorRecord.errorType,
@@ -190,80 +204,147 @@ export async function POST(request: NextRequest) {
         description
       );
     } catch (geminiErr: any) {
-      console.error("[Gemini] API 호출 실패:", geminiErr.message);
+      console.error("[Gemini] 스트림 시작 실패:", geminiErr.message);
       if (geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')) {
         return NextResponse.json({
           error: "AI 분석 일일 한도에 도달했습니다. 내일 다시 시도해 주세요.",
           isQuotaError: true
         }, { status: 429 });
       }
-      throw geminiErr;
+      return NextResponse.json({ error: "AI 분석 중 오류가 발생했습니다" }, { status: 500 });
     }
 
-    if (!parsed || !parsed.rootCause) {
-      return NextResponse.json({ error: "AI 분석 결과를 받지 못했습니다." }, { status: 500 });
-    }
+    const encoder = new TextEncoder();
+    const sentFields = new Set<string>();
+    let accumulated = "";
 
-    // ─── DB 저장 (비동기, 응답 지연 없음) ────────────────────────────────────
-    (async () => {
-      try {
-        const patternName = 'patternName' in parsed ? parsed.patternName : undefined;
-        if (patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
-          await prisma.errorRecord.update({
-            where: { id: errorRecordId },
-            data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", patternName) }
-          });
+    const stream = new ReadableStream({
+      async start(controller) {
+        const sendLine = (obj: unknown) => {
+          controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+        };
+
+        try {
+          // ── 스트림 청크 처리: 완성된 필드만 클라이언트에 전송 ──────────
+          for await (const chunk of streamResult.stream) {
+            const text = chunk.text();
+            if (!text) continue;
+            accumulated += text;
+
+            STRING_FIELD_REGEX.lastIndex = 0;
+            let m: RegExpExecArray | null;
+            while ((m = STRING_FIELD_REGEX.exec(accumulated)) !== null) {
+              const fieldName = m[1];
+              if (sentFields.has(fieldName)) continue;
+              sentFields.add(fieldName);
+              sendLine({
+                type: "field",
+                field: fieldName,
+                value: unescapeJsonString(m[2]),
+              });
+            }
+          }
+
+          // ── 스트림 완료 후 전체 JSON 파싱 ────────────────────────────
+          const cleaned = accumulated
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```$/, "")
+            .trim();
+
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(cleaned);
+            if (typeof parsed === "string") parsed = JSON.parse(parsed);
+          } catch (e) {
+            console.error("[Gemini] 최종 JSON 파싱 실패:", e);
+          }
+
+          if (parsed) {
+            // 배열 필드 전송
+            if (Array.isArray(parsed.recommendedWords)) {
+              sendLine({
+                type: "array",
+                field: "recommendedWords",
+                value: parsed.recommendedWords,
+              });
+            }
+
+            // ── DB 저장 (비동기, 응답 지연 없음) ──────────────────────
+            (async () => {
+              try {
+                if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
+                  await prisma.errorRecord.update({
+                    where: { id: errorRecordId },
+                    data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
+                  });
+                }
+                await prisma.geminiFeedback.deleteMany({ where: { errorRecordId } });
+                await prisma.geminiFeedback.create({
+                  data: {
+                    errorRecordId,
+                    rootCause:        parsed.rootCause ?? "",
+                    trainingStep1:    parsed.trainingStep1 ?? "",
+                    trainingStep2:    parsed.trainingStep2 ?? "",
+                    trainingStep3:    parsed.trainingStep3 ?? "",
+                    trainingStep4:    parsed.trainingStep4 ?? "",
+                    recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+                    parentMessage:    parsed.parentMessage ?? "",
+                  },
+                });
+
+                if (phoneme && phoneme !== "(없음)") {
+                  await prisma.phonemeTemplate.upsert({
+                    where: { phoneme_position_errorType: { phoneme, position, errorType: errorRecord.errorType } },
+                    create: {
+                      phoneme, position,
+                      errorType:        errorRecord.errorType,
+                      errorCategory:    errorRecord.errorCategory,
+                      exampleTarget:    errorRecord.targetWord,
+                      exampleChild:     errorRecord.childPronunciation,
+                      parentHint:       parsed.parentMessage ?? "",
+                      rootCause:        parsed.rootCause ?? "",
+                      trainingStep1:    parsed.trainingStep1 ?? "",
+                      trainingStep2:    parsed.trainingStep2 ?? "",
+                      trainingStep3:    parsed.trainingStep3 ?? "",
+                      trainingStep4:    parsed.trainingStep4 ?? "",
+                      recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+                    },
+                    update: {},
+                  }).catch(() => {});
+                }
+              } catch (saveError) {
+                console.error("DB Save Error:", saveError);
+              }
+            })();
+          } else {
+            sendLine({ type: "error", error: "응답을 해석하지 못했어요" });
+          }
+
+          sendLine({ type: "done" });
+          controller.close();
+        } catch (err: any) {
+          console.error("[Gemini] 스트림 처리 오류:", err);
+          const isQuota = err?.message?.includes('429') || err?.message?.includes('quota');
+          try {
+            sendLine({
+              type: "error",
+              error: isQuota
+                ? "오늘 AI 분석 한도를 모두 사용했어요"
+                : "AI 분석 중 오류가 발생했습니다",
+              isQuotaError: isQuota,
+            });
+          } catch {}
+          controller.close();
         }
+      },
+    });
 
-        await prisma.geminiFeedback.deleteMany({ where: { errorRecordId } });
-        await prisma.geminiFeedback.create({
-          data: {
-            errorRecordId,
-            rootCause:        parsed.rootCause,
-            trainingStep1:    parsed.trainingStep1,
-            trainingStep2:    parsed.trainingStep2,
-            trainingStep3:    parsed.trainingStep3,
-            trainingStep4:    parsed.trainingStep4,
-            recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-            parentMessage:    parsed.parentMessage ?? "",
-          },
-        });
-
-        if (phoneme && phoneme !== "(없음)") {
-          await prisma.phonemeTemplate.upsert({
-            where: { phoneme_position_errorType: { phoneme, position, errorType: errorRecord.errorType } },
-            create: {
-              phoneme, position,
-              errorType:        errorRecord.errorType,
-              errorCategory:    errorRecord.errorCategory,
-              exampleTarget:    errorRecord.targetWord,
-              exampleChild:     errorRecord.childPronunciation,
-              parentHint:       parsed.parentMessage ?? "",
-              rootCause:        parsed.rootCause,
-              trainingStep1:    parsed.trainingStep1,
-              trainingStep2:    parsed.trainingStep2,
-              trainingStep3:    parsed.trainingStep3,
-              trainingStep4:    parsed.trainingStep4,
-              recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-            },
-            update: {},
-          }).catch(() => {});
-        }
-      } catch (saveError) {
-        console.error("DB Save Error:", saveError);
-      }
-    })();
-
-    return NextResponse.json({
-      patternName:      'patternName' in parsed ? parsed.patternName : undefined,
-      rootCause:        parsed.rootCause,
-      trainingStep1:    parsed.trainingStep1,
-      trainingStep2:    parsed.trainingStep2,
-      trainingStep3:    parsed.trainingStep3,
-      trainingStep4:    parsed.trainingStep4,
-      recommendedWords: parsed.recommendedWords ?? [],
-      parentMessage:    parsed.parentMessage ?? "",
-      geminiConfidence: parsed.geminiConfidence ?? 5,
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
     });
 
   } catch (error: any) {

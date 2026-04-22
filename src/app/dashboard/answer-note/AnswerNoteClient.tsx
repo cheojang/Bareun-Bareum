@@ -287,14 +287,14 @@ function CurrentAnalysisCard({
         </div>
       </BubbleCard>
 
-      {/* Gemini 로딩 스켈레톤 */}
-      {geminiLoading && !geminiResult && (
+      {/* Gemini 로딩 스켈레톤 - 어떤 필드도 아직 안 왔을 때만 */}
+      {geminiLoading && !geminiResult?.rootCause && (geminiResult?.trainingSteps.length ?? 0) === 0 && (
         <BubbleCard color="lavender" className="py-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="text-2xl animate-spin">🤖</div>
             <div>
               <p className="font-bold text-[#3D3530] text-sm">AI 선생님이 처방전을 작성 중이에요</p>
-              <p className="text-xs text-[#8B7E74]">4단계 훈련법 + 추천 단어 생성 중...</p>
+              <p className="text-xs text-[#8B7E74]">원인 분석부터 순서대로 보여드릴게요...</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -315,54 +315,64 @@ function CurrentAnalysisCard({
         </BubbleCard>
       )}
 
-      {/* Gemini 결과 */}
-      {geminiResult && (
-        <>
-          {/* 원인 카드 */}
-          <BubbleCard color="lavender">
-            <p className="text-sm font-bold text-[#3D3530] mb-2">💡 왜 이런 발음이 나올까요?</p>
-            <p className="text-sm text-[#5B4E9B] leading-relaxed">{geminiResult.rootCause}</p>
-          </BubbleCard>
+      {/* 원인 카드 - rootCause가 있을 때 */}
+      {geminiResult?.rootCause && (
+        <BubbleCard color="lavender">
+          <p className="text-sm font-bold text-[#3D3530] mb-2">💡 왜 이런 발음이 나올까요?</p>
+          <p className="text-sm text-[#5B4E9B] leading-relaxed">{geminiResult.rootCause}</p>
+        </BubbleCard>
+      )}
 
-          {/* 4단계 훈련법 */}
-          <BubbleCard>
-            <p className="text-sm font-bold text-[#3D3530] mb-3">📚 선생님의 처방전</p>
-            <div className="space-y-4">
-              {geminiResult.trainingSteps.map((step, i) => {
-                const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
-                return (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                      <span className={`w-7 h-7 rounded-full ${meta.color} text-white text-xs font-black flex items-center justify-center`}>
-                        {i + 1}
-                      </span>
-                      {i < 3 && <div className="w-0.5 h-4 bg-[#F0E8E0]" />}
-                    </div>
-                    <div className="flex-1 pb-1">
-                      <span className={`text-xs font-bold ${meta.textColor} mb-1 block`}>{meta.label}</span>
-                      <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step}</p>
-                    </div>
+      {/* 4단계 훈련법 - 단계가 1개 이상 도착했거나 원인이 끝났고 다음을 기다리는 중일 때 */}
+      {geminiResult && (geminiResult.trainingSteps.length > 0 || (geminiResult.rootCause && geminiLoading)) && (
+        <BubbleCard>
+          <p className="text-sm font-bold text-[#3D3530] mb-3">📚 선생님의 처방전</p>
+          <div className="space-y-4">
+            {geminiResult.trainingSteps.map((step, i) => {
+              const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
+              return (
+                <div key={i} className="flex gap-3">
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <span className={`w-7 h-7 rounded-full ${meta.color} text-white text-xs font-black flex items-center justify-center`}>
+                      {i + 1}
+                    </span>
+                    {i < 3 && <div className="w-0.5 h-4 bg-[#F0E8E0]" />}
                   </div>
-                );
-              })}
-            </div>
-          </BubbleCard>
-
-          {/* 추천 단어 */}
-          {geminiResult.recommendedWords.length > 0 && (
-            <BubbleCard color="mint">
-              <p className="text-sm font-bold text-[#3D3530] mb-1">🌟 유사 패턴 연습 단어</p>
-              <p className="text-xs text-[#8B7E74] mb-3">이 발음도 비슷하게 틀릴 수 있어요 — 함께 연습해보세요!</p>
-              <div className="flex flex-wrap gap-2">
-                {geminiResult.recommendedWords.map((word, i) => (
-                  <span key={i} className="px-4 py-2 bg-white/70 rounded-full text-sm font-bold text-[#3D3530] border border-[#7EDFD0]/40">
-                    {word}
-                  </span>
-                ))}
+                  <div className="flex-1 pb-1">
+                    <span className={`text-xs font-bold ${meta.textColor} mb-1 block`}>{meta.label}</span>
+                    <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step}</p>
+                  </div>
+                </div>
+              );
+            })}
+            {/* 다음 단계 기다리는 중: 타이핑 커서 */}
+            {geminiLoading && geminiResult.trainingSteps.length < 4 && (
+              <div className="flex gap-3 items-center pl-10">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#B5A6E3] animate-bounce" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#B5A6E3] animate-bounce [animation-delay:0.15s]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#B5A6E3] animate-bounce [animation-delay:0.3s]" />
+                </div>
+                <span className="text-xs text-[#8B7E74]">다음 단계 작성 중...</span>
               </div>
-            </BubbleCard>
-          )}
-        </>
+            )}
+          </div>
+        </BubbleCard>
+      )}
+
+      {/* 추천 단어 */}
+      {geminiResult && geminiResult.recommendedWords.length > 0 && (
+        <BubbleCard color="mint">
+          <p className="text-sm font-bold text-[#3D3530] mb-1">🌟 유사 패턴 연습 단어</p>
+          <p className="text-xs text-[#8B7E74] mb-3">이 발음도 비슷하게 틀릴 수 있어요 — 함께 연습해보세요!</p>
+          <div className="flex flex-wrap gap-2">
+            {geminiResult.recommendedWords.map((word, i) => (
+              <span key={i} className="px-4 py-2 bg-white/70 rounded-full text-sm font-bold text-[#3D3530] border border-[#7EDFD0]/40">
+                {word}
+              </span>
+            ))}
+          </div>
+        </BubbleCard>
       )}
 
       {/* 아이와 연습하기 버튼 */}
@@ -472,16 +482,99 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
         return;
       }
 
-      const raw = await geminiRes.json();
-      const finalGemini: GeminiResult = {
-        patternName:      raw.patternName,
-        rootCause:        raw.rootCause,
-        trainingSteps:    [raw.trainingStep1, raw.trainingStep2, raw.trainingStep3, raw.trainingStep4].filter(Boolean),
-        recommendedWords: Array.isArray(raw.recommendedWords) ? raw.recommendedWords : [],
-        parentMessage:    raw.parentMessage,
+      const contentType = geminiRes.headers.get("Content-Type") ?? "";
+      const stepBuffer: (string | undefined)[] = [undefined, undefined, undefined, undefined];
+      let acc: GeminiResult = {
+        rootCause: "",
+        trainingSteps: [],
+        recommendedWords: [],
       };
-      setGeminiResult(finalGemini);
+      let streamError: { message: string; quota: boolean } | null = null;
+
+      // ── 캐시 HIT: JSON 즉시 반환 ────────────────────────────────────────
+      if (contentType.includes("application/json")) {
+        const raw = await geminiRes.json();
+        acc = {
+          patternName:      raw.patternName,
+          rootCause:        raw.rootCause ?? "",
+          trainingSteps:    [raw.trainingStep1, raw.trainingStep2, raw.trainingStep3, raw.trainingStep4].filter(Boolean),
+          recommendedWords: Array.isArray(raw.recommendedWords) ? raw.recommendedWords : [],
+          parentMessage:    raw.parentMessage,
+        };
+        setGeminiResult(acc);
+        setGeminiLoading(false);
+      }
+      // ── 캐시 MISS: NDJSON 스트림 파싱 ───────────────────────────────────
+      else if (geminiRes.body) {
+        const reader = geminiRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let firstFieldArrived = false;
+
+        const commitStepBuffer = () => {
+          acc = { ...acc, trainingSteps: stepBuffer.filter((s): s is string => !!s) };
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          // 줄 단위로 분리, 마지막 줄은 아직 미완성일 수 있으므로 버퍼에 남겨둠
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            let msg: any;
+            try { msg = JSON.parse(line); } catch { continue; }
+
+            if (msg.type === "error") {
+              streamError = {
+                message: msg.error ?? "AI 분석 중 오류가 발생했습니다",
+                quota: !!msg.isQuotaError,
+              };
+              continue;
+            }
+
+            if (msg.type === "field") {
+              if (!firstFieldArrived) {
+                firstFieldArrived = true;
+                setGeminiLoading(false);
+              }
+              if (msg.field === "rootCause") {
+                acc = { ...acc, rootCause: msg.value };
+              } else if (msg.field === "patternName") {
+                acc = { ...acc, patternName: msg.value };
+              } else if (msg.field === "parentMessage") {
+                acc = { ...acc, parentMessage: msg.value };
+              } else if (typeof msg.field === "string" && msg.field.startsWith("trainingStep")) {
+                const idx = Number(msg.field.slice("trainingStep".length)) - 1;
+                if (idx >= 0 && idx < 4) {
+                  stepBuffer[idx] = msg.value;
+                  commitStepBuffer();
+                }
+              }
+              setGeminiResult({ ...acc });
+            } else if (msg.type === "array" && msg.field === "recommendedWords") {
+              acc = { ...acc, recommendedWords: Array.isArray(msg.value) ? msg.value : [] };
+              setGeminiResult({ ...acc });
+            }
+          }
+        }
+      }
+
+      if (streamError) {
+        if (streamError.quota) {
+          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
+        } else {
+          setGeminiError(streamError.message);
+        }
+        setGeminiLoading(false);
+        return;
+      }
       setGeminiLoading(false);
+      const finalGemini: GeminiResult = acc;
 
       // ── 완료 후 누적 기록 맨 앞에 추가 ─────────────────────────────────────
       const newRecord: PastRecord = {
