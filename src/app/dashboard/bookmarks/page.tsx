@@ -44,6 +44,20 @@ export default async function BookmarksPage() {
       nextReviewAt: { lte: todayEnd },
     },
     orderBy: { nextReviewAt: "asc" },
+    include: {
+      errorRecord: {
+        select: {
+          geminiFeedback: {
+            select: {
+              trainingStep1: true,
+              trainingStep2: true,
+              trainingStep3: true,
+              trainingStep4: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   // ── 발음 분석 최근 기록 (빠른 복습용) ─────────────────────────────────────────
@@ -103,6 +117,10 @@ export default async function BookmarksPage() {
                 reviewCount: item.reviewCount,
                 interval: item.interval,
                 nextReviewAt: item.nextReviewAt.toISOString(),
+                trainingStep1: item.errorRecord?.geminiFeedback?.trainingStep1 ?? null,
+                trainingStep2: item.errorRecord?.geminiFeedback?.trainingStep2 ?? null,
+                trainingStep3: item.errorRecord?.geminiFeedback?.trainingStep3 ?? null,
+                trainingStep4: item.errorRecord?.geminiFeedback?.trainingStep4 ?? null,
               }))}
               childName={child.name}
             />
