@@ -724,7 +724,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
               type="text"
               value={targetWord}
               onChange={(e) => { setTargetWord(e.target.value); setTargetWordError(""); }}
-              placeholder="예) 사과, 합니다"
+              placeholder=""
               disabled={localLoading}
               className={`w-full px-4 py-3 rounded-2xl border-2 ${targetWordError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
@@ -742,7 +742,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
               type="text"
               value={childPronunciation}
               onChange={(e) => { setChildPronunciation(e.target.value); setPronunciationError(""); }}
-              placeholder="예) 따과, 하미다"
+              placeholder=""
               disabled={localLoading}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               className={`w-full px-4 py-3 rounded-2xl border-2 ${pronunciationError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
