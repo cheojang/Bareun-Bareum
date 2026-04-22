@@ -232,10 +232,10 @@ export function PracticeClient({
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
 
-  // 자동차 진행률: 현재 단계 내 진행 상황
-  const carProgress = items.length > 0
-    ? (currentIndex + (isSlotsFull ? 1 : 0)) / items.length
-    : 0;
+  // 자동차 진행률: 도트 하나씩 누를 때마다 조금씩 전진
+  const totalDots = items.length * MAX_DOTS;
+  const filledDots = currentIndex * MAX_DOTS + filledCount;
+  const carProgress = totalDots > 0 ? filledDots / totalDots : 0;
 
   // ── 단계 전환 ─────────────────────────────────────────────────────────────────
   const transitionToStage = useCallback(
