@@ -125,19 +125,20 @@ function CarTrack({ progress }: { progress: number }) {
         />
       </div>
       {/* 출발 */}
-      <div className="absolute bottom-1.5 left-1 text-sm">🏁</div>
-      {/* 목표 */}
-      <div className="absolute bottom-1.5 right-1 text-sm">⭐</div>
-      {/* 자동차 */}
+      <div className="absolute bottom-1.5 left-1 text-sm">🚦</div>
+      {/* 결승 */}
+      <div className="absolute bottom-1.5 right-1 text-sm">🏁</div>
+      {/* 자동차 — scaleX(-1)로 좌→우 방향 */}
       <div
         className="absolute bottom-3 text-2xl transition-all duration-700 ease-out"
         style={{
           left: `${leftPct}%`,
-          transform: "translateX(-50%)",
           filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.15))",
         }}
       >
-        🚗
+        <span style={{ display: "inline-block", transform: "translateX(-50%) scaleX(-1)" }}>
+          🚗
+        </span>
       </div>
     </div>
   );
