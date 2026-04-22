@@ -194,8 +194,6 @@ export function PracticeClient({
   const startStage: Stage = reviewItems.length > 0 ? "review" : 1;
 
   const [stage, setStage] = useState<Stage>(startStage);
-  const [showStageIntro, setShowStageIntro] = useState(false);
-  const [nextStage, setNextStage] = useState<Stage | null>(null);
 
   const makeItems = (s: Stage): PracticeItem[] => {
     if (s === "review") {
@@ -238,10 +236,12 @@ export function PracticeClient({
   const carProgress = totalDots > 0 ? filledDots / totalDots : 0;
 
   // ── 단계 전환 ─────────────────────────────────────────────────────────────────
+  // 인트로 오버레이 없이 즉시 전환 — 버튼 한 번 누르면 바로 다음 단계
   const transitionToStage = useCallback(
     async (target: Stage) => {
-      setNextStage(target);
-      setShowStageIntro(true);
+      // 즉시 인덱스와 단계 상태 전환 (동기적)
+      setCurrentIndex(0);
+      setStage(target);
 
       if (target === "review") {
         const rItems = makeItems("review");
@@ -256,6 +256,10 @@ export function PracticeClient({
         setItems(s2);
         setDotSlots(Array.from({ length: s2.length }, () => Array(MAX_DOTS).fill(null)));
       } else if (target === 3) {
+        // 3단계: 로딩 플레이스홀더 먼저 표시 → 비동기 fetch 후 교체
+        const placeholder: PracticeItem[] = [{ text: "문장 준비 중...", kind: "sentence" }];
+        setItems(placeholder);
+        setDotSlots([Array(MAX_DOTS).fill(null)]);
         setStage3Loading(true);
         const allWords = [...stage1Words.map((e) => e.word), ...stage2Words];
         try {
@@ -282,20 +286,10 @@ export function PracticeClient({
           setStage3Loading(false);
         }
       }
-
-      setCurrentIndex(0);
-      setStage(target);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [stage1Words, stage2Words, errorPattern, reviewItems]
   );
-
-  useEffect(() => {
-    if (showStageIntro) {
-      const timer = setTimeout(() => setShowStageIntro(false), 2200);
-      return () => clearTimeout(timer);
-    }
-  }, [showStageIntro]);
 
   // ── 도트 채우기 ───────────────────────────────────────────────────────────────
   const fillDot = useCallback(
@@ -444,32 +438,6 @@ export function PracticeClient({
     );
   }
 
-  // ── 단계 전환 인트로 ──────────────────────────────────────────────────────────
-  if (showStageIntro && nextStage) {
-    const meta = STAGE_META[nextStage as string];
-    return (
-      <div
-        className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
-        style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
-      >
-        <div className="text-6xl mb-5 animate-bounce-in">
-          {nextStage === "review" ? "🔔" : nextStage === 2 ? "🔤" : nextStage === 3 ? "💬" : "📝"}
-        </div>
-        <span
-          className="text-xs font-bold px-3 py-1 rounded-full mb-3"
-          style={{ backgroundColor: meta.bg, color: meta.color }}
-        >
-          {meta.label}
-        </span>
-        <h2 className="text-2xl font-black text-[#3D3530] mb-2">{meta.desc}</h2>
-        {nextStage === 3 && stage3Loading && (
-          <p className="text-sm text-[#8B7E74] mt-2 animate-pulse">
-            AI가 문장을 만들고 있어요...
-          </p>
-        )}
-      </div>
-    );
-  }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
   const meta = STAGE_META[stage as string];
@@ -608,6 +576,12 @@ export function PracticeClient({
                   <p className="text-3xl font-bold text-[#FCA5A5]">{currentItem.childPron}</p>
                 </div>
               </div>
+            ) : stage3Loading ? (
+              <div className="py-6">
+                <div className="text-5xl mb-3 animate-bounce">🤖</div>
+                <p className="text-base font-bold text-[#3D3530]">AI가 문장을 만들고 있어요</p>
+                <p className="text-xs text-[#8B7E74] mt-1 animate-pulse">잠시만 기다려주세요...</p>
+              </div>
             ) : (
               <p
                 className="font-black text-[#3D3530] tracking-wide leading-snug"
@@ -617,11 +591,13 @@ export function PracticeClient({
               </p>
             )}
 
-            <p className="text-sm text-[#8B7E74] mt-2">
-              {currentItem?.kind === "sentence"
-                ? "문장을 천천히 읽어봐요"
-                : "소리내어 읽으면 부모님이 판단해주세요"}
-            </p>
+            {!stage3Loading && (
+              <p className="text-sm text-[#8B7E74] mt-2">
+                {currentItem?.kind === "sentence"
+                  ? "문장을 천천히 읽어봐요"
+                  : "소리내어 읽으면 부모님이 판단해주세요"}
+              </p>
+            )}
           </div>
 
           {/* 🚗 자동차 트랙 */}
@@ -663,8 +639,8 @@ export function PracticeClient({
 
       {/* 하단 버튼 */}
       <div className="max-w-lg mx-auto w-full px-6 pb-8 space-y-3">
-        {/* 평가 버튼 2개 */}
-        {!isSlotsFull && (
+        {/* 평가 버튼 2개 — 로딩 중에는 비활성 */}
+        {!isSlotsFull && !stage3Loading && (
           <div className="flex gap-3">
             <button
               onClick={() => fillDot("bad")}
