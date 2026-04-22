@@ -103,7 +103,7 @@ function toQuality(goodCount: number): number {
 
 function CarTrack({ progress }: { progress: number }) {
   const pct = Math.max(0, Math.min(1, progress));
-  const leftPct = 6 + pct * 82; // 6%~88% 범위
+  const leftPct = 5 + pct * 88; // 5%~93% — 도로(inset-x-5) 범위에 맞춤
 
   return (
     <div className="relative w-full h-11 select-none">
