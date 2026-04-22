@@ -18,6 +18,33 @@ interface CategoryStatInput {
   pct: number;
 }
 
+// ── 메모리 캐시 (childId별 1시간 TTL) ───────────────────────────────────────
+interface CacheEntry {
+  text: string;
+  signature: string;
+  expiresAt: number;
+}
+const adviceCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간
+
+function buildSignature(
+  weakPhonemes: WeakPhonemeInput[],
+  categoryStats: CategoryStatInput[]
+): string {
+  const w = weakPhonemes
+    .filter((p) => p.weaknessLevel !== "정상범위")
+    .slice(0, 5)
+    .map((p) => `${p.phoneme}:${Math.round(p.errorRate)}:${p.totalAttempts}:${p.weaknessLevel}`)
+    .sort()
+    .join("|");
+  const c = categoryStats
+    .filter((s) => s.count > 0)
+    .map((s) => `${s.label}:${s.pct}`)
+    .sort()
+    .join(",");
+  return `${w}#${c}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -41,6 +68,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "권한 없음" }, { status: 403 });
     }
 
+    // ── 캐시 HIT: 동일 데이터로 이미 분석된 경우 즉시 반환 ────────────────
+    const signature = buildSignature(weakPhonemes, categoryStats);
+    const cacheKey = `${session.user.id}:${childId}`;
+    const cached = adviceCache.get(cacheKey);
+    if (cached && cached.signature === signature && cached.expiresAt > Date.now()) {
+      return NextResponse.json({ report: cached.text, fromCache: true });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey === "dummy") {
       return NextResponse.json(
@@ -49,7 +84,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 약점 음소 요약
     const phonemeSummary = weakPhonemes
       .filter((w) => w.weaknessLevel !== "정상범위")
       .slice(0, 5)
@@ -64,7 +98,6 @@ export async function POST(request: NextRequest) {
       })
       .join("\n");
 
-    // 오류 습관 분포 요약
     const categorySummary = categoryStats
       .filter((c) => c.count > 0)
       .map((c) => `${c.label} (${c.pct}%)`)
@@ -89,7 +122,7 @@ ${categorySummary || "데이터 없음"}
 - 아이 이름(${childName})을 자연스럽게 1~2번 포함`;
 
     const genai = new GoogleGenerativeAI(apiKey);
-    const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(prompt);
     const report = result.response.text();
 
@@ -97,30 +130,14 @@ ${categorySummary || "데이터 없음"}
       return NextResponse.json({ error: "분석 결과를 생성하지 못했어요" }, { status: 500 });
     }
 
-    // 단어 단위로 25ms 인터벌 스트리밍
-    const encoder = new TextEncoder();
-    const words = report.split(" ");
-    const stream = new ReadableStream({
-      start(controller) {
-        let i = 0;
-        const interval = setInterval(() => {
-          if (i >= words.length) {
-            clearInterval(interval);
-            controller.close();
-            return;
-          }
-          controller.enqueue(encoder.encode(words[i] + " "));
-          i++;
-        }, 25);
-      },
+    // 캐시에 저장
+    adviceCache.set(cacheKey, {
+      text: report,
+      signature,
+      expiresAt: Date.now() + CACHE_TTL_MS,
     });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-      },
-    });
+    return NextResponse.json({ report });
   } catch (error: unknown) {
     console.error("[ComprehensiveAnalysis Error]:", error);
     const msg = error instanceof Error ? error.message : "";

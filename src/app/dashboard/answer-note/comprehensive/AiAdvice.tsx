@@ -55,22 +55,13 @@ export function AiAdvice({ childId, childName, weakPhonemes, categoryStats }: Pr
           return;
         }
 
-        if (!res.body) {
+        const data = await res.json();
+        if (cancelled) return;
+        if (!data.report) {
           setError("응답을 받지 못했어요.");
-          setLoading(false);
           return;
         }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done || cancelled) break;
-          accumulated += decoder.decode(value, { stream: true });
-          setText(accumulated);
-        }
+        setText(data.report);
       } catch {
         if (!cancelled) setError("네트워크 오류가 발생했어요.");
       } finally {

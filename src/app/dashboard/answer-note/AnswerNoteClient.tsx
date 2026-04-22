@@ -464,7 +464,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
       if (!geminiRes.ok) {
         const err = await geminiRes.json().catch(() => null);
         if (geminiRes.status === 429 || err?.isQuotaError) {
-          setGeminiError("⏳ 오늘 AI 분석 횟수를 모두 사용했어요. 내일 다시 시도해 주세요!\n(무료 플랜 기준 하루 20회 제한)");
+          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
         } else {
           setGeminiError(err?.error || "AI 처방전을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
         }
