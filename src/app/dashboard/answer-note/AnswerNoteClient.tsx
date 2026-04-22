@@ -648,6 +648,26 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
     setPendingDeleteId(null);
   }
 
+  // 전체 초기화 요청
+  async function handleResetAll() {
+    if (!confirm("분석 기록을 전부 삭제할까요?\n복습 스케줄도 함께 삭제돼요.")) return;
+    try {
+      const res = await fetch("/api/error-analysis", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId }),
+      });
+      if (res.ok) {
+        setRecords([]);
+        setLocalResult(null);
+      } else {
+        alert("초기화에 실패했습니다.");
+      }
+    } catch {
+      alert("네트워크 오류가 발생했습니다.");
+    }
+  }
+
   // 실제 삭제 로직
   async function executeDelete(id: string) {
     try {
@@ -778,7 +798,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
       {/* ── 누적 분석 기록 ──────────────────────────────────────────────────── */}
       {records.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-[#3D3530]">📋 분석 기록</p>
             <span className="text-xs text-[#8B7E74] bg-[#F5F3FF] px-2 py-0.5 rounded-full">
               총 {records.length}개
@@ -789,6 +809,12 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
             >
               <span className="text-sm">📊</span> 종합 분석하기
             </Link>
+            <button
+              onClick={handleResetAll}
+              className="text-xs font-bold text-[#C4B5A8] hover:text-[#EF4444] transition-colors px-2 py-1 rounded-xl hover:bg-[#FEF2F2]"
+            >
+              🗑 전체 초기화
+            </button>
           </div>
           
           <BubbleCard padding="sm">

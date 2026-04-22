@@ -110,3 +110,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "조회 중 오류 발생" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/saved-words
+ * body: { childId } — 해당 아이의 저장 단어 전체 삭제
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { childId } = await request.json();
+    if (!childId) {
+      return NextResponse.json({ error: "childId 필수" }, { status: 400 });
+    }
+
+    const child = await prisma.child.findUnique({
+      where: { id: childId },
+      select: { userId: true },
+    });
+    if (!child || child.userId !== session.user.id) {
+      return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 });
+    }
+
+    const { count } = await prisma.savedWord.deleteMany({ where: { childId } });
+    return NextResponse.json({ success: true, deleted: count });
+  } catch (error) {
+    console.error("[SavedWords DELETE Error]:", error);
+    return NextResponse.json({ error: "삭제 중 오류 발생" }, { status: 500 });
+  }
+}

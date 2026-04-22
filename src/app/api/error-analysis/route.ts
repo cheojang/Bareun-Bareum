@@ -183,9 +183,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
     }
 
-    const { errorRecordId } = await request.json();
+    const body = await request.json();
+    const { errorRecordId, childId } = body;
+
+    // 전체 초기화: childId만 전달하면 해당 아이의 모든 기록 삭제
+    if (childId && !errorRecordId) {
+      const child = await prisma.child.findUnique({ where: { id: childId }, select: { userId: true } });
+      if (!child || child.userId !== session.user.id) {
+        return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 });
+      }
+      const { count } = await prisma.errorRecord.deleteMany({ where: { childId } });
+      return NextResponse.json({ success: true, deleted: count });
+    }
+
     if (!errorRecordId) {
-      return NextResponse.json({ error: "id 필수" }, { status: 400 });
+      return NextResponse.json({ error: "errorRecordId 또는 childId 필수" }, { status: 400 });
     }
 
     const record = await prisma.errorRecord.findUnique({

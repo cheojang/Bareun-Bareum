@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import Link from "next/link";
+import { ResetSavedWordsButton } from "./ResetSavedWordsButton";
 
 const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
   hard:   { label: "집중 연습", color: "pink" },
@@ -150,9 +151,12 @@ export default async function BookmarksPage() {
                     {savedWords.length}개
                   </span>
                 </p>
-                <Link href="/dashboard/practice">
-                  <span className="text-xs text-[#FFB38A] font-semibold">다시 연습하기 →</span>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <ResetSavedWordsButton childId={child.id} />
+                  <Link href="/dashboard/practice">
+                    <span className="text-xs text-[#FFB38A] font-semibold">다시 연습하기 →</span>
+                  </Link>
+                </div>
               </div>
               <div className="space-y-2.5">
                 {savedWords.map((sw: any) => {
