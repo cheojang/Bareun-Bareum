@@ -2,12 +2,43 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
+import { BubbleButton } from "@/components/ui/BubbleButton";
 
 export default function LoginPage() {
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const canLogin = terms && privacy;
+
+  // 이메일/비밀번호 로그인 상태
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canLogin || !email.trim() || !password) return;
+
+    setEmailLoading(true);
+    setEmailError("");
+
+    const res = await signIn("credentials", {
+      email: email.trim(),
+      password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setEmailError("이메일 또는 비밀번호가 맞지 않아요.");
+      setEmailLoading(false);
+      return;
+    }
+
+    window.location.href = "/dashboard";
+  }
 
   return (
     <main
@@ -101,11 +132,67 @@ export default function LoginPage() {
             </svg>
             Google로 계속하기
           </button>
+
+          {/* 이메일 로그인 토글 */}
+          <button
+            onClick={() => setShowEmailLogin((v) => !v)}
+            disabled={!canLogin}
+            className={`w-full flex items-center justify-center gap-3 rounded-full px-6 py-4 font-bold text-base bubble-btn transition-all border-2 ${
+              canLogin
+                ? "bg-[#FAFAF8] hover:bg-[#F0E8E0] text-[#3D3530] border-[#F0E8E0]"
+                : "bg-[#F0F0F0] text-[#C4B5A8] cursor-not-allowed border-[#E8E8E8]"
+            }`}
+          >
+            <span className="text-lg">✉️</span>
+            이메일로 로그인
+          </button>
         </div>
+
+        {/* 이메일/비밀번호 로그인 폼 */}
+        {showEmailLogin && (
+          <form onSubmit={handleEmailLogin} className="mt-4 pt-4 border-t border-[#F0E8E0] space-y-3">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="이메일"
+              className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] focus:border-[#FFB38A] outline-none text-sm text-[#3D3530] placeholder:text-[#C4B5A8] transition-colors"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호"
+              className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] focus:border-[#FFB38A] outline-none text-sm text-[#3D3530] placeholder:text-[#C4B5A8] transition-colors"
+            />
+            {emailError && (
+              <p className="text-xs text-[#EF4444] font-semibold">{emailError}</p>
+            )}
+            <BubbleButton
+              type="submit"
+              variant="peach"
+              size="md"
+              disabled={emailLoading || !canLogin || !email.trim() || !password}
+              className="w-full"
+            >
+              {emailLoading ? "로그인 중..." : "로그인"}
+            </BubbleButton>
+          </form>
+        )}
 
         {!canLogin && (
           <p className="text-xs text-center text-[#C4B5A8] mt-3">약관에 동의하면 로그인 버튼이 활성화돼요</p>
         )}
+
+        {/* 회원가입 링크 */}
+        <div className="mt-5 pt-4 border-t border-[#F0E8E0] text-center">
+          <p className="text-xs text-[#8B7E74]">
+            아직 계정이 없으신가요?{" "}
+            <Link href="/signup" className="text-[#FFB38A] font-bold hover:underline">
+              회원가입
+            </Link>
+          </p>
+        </div>
 
         {/* 개발용 빠른 로그인 */}
         {process.env.NODE_ENV === "development" && (

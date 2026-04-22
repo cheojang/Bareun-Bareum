@@ -12,6 +12,7 @@ model User {
   email            String            @unique
   emailVerified    DateTime?
   image            String?
+  password         String?           // 이메일 회원가입용 (bcrypt hash). OAuth 유저는 null
   role             String            @default("parent") // "parent" | "therapist"
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
