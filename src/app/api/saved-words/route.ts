@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 문장(공백 포함)은 저장 불가 — 단어만 저장
+    if (word.trim().includes(" ")) {
+      return NextResponse.json(
+        { error: "단어만 저장할 수 있어요. 문장은 저장되지 않아요." },
+        { status: 400 }
+      );
+    }
+
     // ✨ 1. findUnique를 사용한 빠른 소유권 확인 (인덱스 활용)
     const child = await prisma.child.findUnique({
       where: { id: childId },

@@ -376,8 +376,15 @@ function CurrentAnalysisCard({
       )}
 
       {/* 아이와 연습하기 버튼 */}
-      <BubbleButton variant="peach" size="lg" onClick={() => window.location.href = "/dashboard/practice"} className="w-full">
-        🎮 아이와 연습 시작하기 →
+      <BubbleButton
+        variant="peach"
+        size="lg"
+        onClick={() => {
+          window.location.href = `/dashboard/practice?errorRecordId=${localResult.errorRecordId}`;
+        }}
+        className="w-full"
+      >
+        🎮 바로 연습 시작하기 →
       </BubbleButton>
     </div>
   );

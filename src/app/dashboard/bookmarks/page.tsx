@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
-import { ReviewSection } from "./ReviewSection";
 import Link from "next/link";
 
 const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
@@ -28,54 +27,36 @@ export default async function BookmarksPage() {
     );
   }
 
-  // ── 아이연습에서 저장한 복습 단어 (SavedWord) ─────────────────────────────────
-  const savedWords = await prisma.savedWord.findMany({
-    where: { childId: child.id },
-    orderBy: { savedAt: "desc" },
-  });
+  // 오늘 복습 필요 개수 (반복연습 CTA용)
+  const now = new Date();
+  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  kstNow.setUTCHours(23, 59, 59, 999);
+  const kstEndOfDay = new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
 
-  // ── 오늘 복습이 필요한 단어 (SM-2 스케줄) ────────────────────────────────────
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
-  const reviewItems = await prisma.reviewSchedule.findMany({
-    where: {
-      childId: child.id,
-      isLearned: false,
-      nextReviewAt: { lte: todayEnd },
-    },
-    orderBy: { nextReviewAt: "asc" },
-    include: {
-      errorRecord: {
-        select: {
-          geminiFeedback: {
-            select: {
-              trainingStep1: true,
-              trainingStep2: true,
-              trainingStep3: true,
-              trainingStep4: true,
-            },
-          },
-        },
+  const [reviewCount, savedWords, recentErrors] = await Promise.all([
+    prisma.reviewSchedule.count({
+      where: { childId: child.id, isLearned: false, nextReviewAt: { lte: kstEndOfDay } },
+    }),
+    prisma.savedWord.findMany({
+      where: { childId: child.id },
+      orderBy: { savedAt: "desc" },
+    }),
+    prisma.errorRecord.findMany({
+      where: { childId: child.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        targetWord: true,
+        childPronunciation: true,
+        errorPattern: true,
+        errorCategory: true,
+        createdAt: true,
       },
-    },
-  });
+    }),
+  ]);
 
-  // ── 발음 분석 최근 기록 (빠른 복습용) ─────────────────────────────────────────
-  const recentErrors = await prisma.errorRecord.findMany({
-    where: { childId: child.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: {
-      id: true,
-      targetWord: true,
-      childPronunciation: true,
-      errorPattern: true,
-      errorCategory: true,
-      createdAt: true,
-    },
-  });
-
-  const isEmpty = savedWords.length === 0 && recentErrors.length === 0 && reviewItems.length === 0;
+  const isEmpty = savedWords.length === 0 && recentErrors.length === 0 && reviewCount === 0;
 
   return (
     <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
@@ -84,18 +65,17 @@ export default async function BookmarksPage() {
       <div>
         <h2 className="text-2xl font-black text-[#3D3530]">📌 복습 목록</h2>
         <p className="text-sm text-[#8B7E74] mt-1">
-          아이연습에서 저장한 단어들을 다시 연습해요
+          저장된 단어와 복습 일정을 확인해요
         </p>
       </div>
 
       {isEmpty ? (
-        /* 빈 상태 */
         <BubbleCard className="text-center py-12">
           <div className="text-5xl mb-4">📭</div>
           <p className="font-bold text-[#3D3530]">아직 저장된 단어가 없어요</p>
           <p className="text-sm text-[#8B7E74] mt-2 mb-5 leading-relaxed">
-            아이연습 중에 ☆ 버튼을 눌러<br />
-            잘 안 되는 단어를 저장해보세요
+            발음 분석 후 반복연습을 하면<br />
+            틀린 단어가 자동으로 쌓여요
           </p>
           <Link href="/dashboard/practice">
             <span className="inline-block px-5 py-2.5 bg-[#FFB38A] text-white rounded-full text-sm font-bold">
@@ -105,28 +85,23 @@ export default async function BookmarksPage() {
         </BubbleCard>
       ) : (
         <>
-          {/* ── 오늘 복습 (SM-2 망각 곡선) ──────────────────────────────── */}
-          {reviewItems.length > 0 && (
-            <ReviewSection
-              initialItems={reviewItems.map((item) => ({
-                id: item.id,
-                targetWord: item.targetWord,
-                childPronunciation: item.childPronunciation,
-                phoneme: item.phoneme,
-                errorPattern: item.errorPattern,
-                reviewCount: item.reviewCount,
-                interval: item.interval,
-                nextReviewAt: item.nextReviewAt.toISOString(),
-                trainingStep1: item.errorRecord?.geminiFeedback?.trainingStep1 ?? null,
-                trainingStep2: item.errorRecord?.geminiFeedback?.trainingStep2 ?? null,
-                trainingStep3: item.errorRecord?.geminiFeedback?.trainingStep3 ?? null,
-                trainingStep4: item.errorRecord?.geminiFeedback?.trainingStep4 ?? null,
-              }))}
-              childName={child.name}
-            />
+          {/* ── 오늘 복습 안내 CTA ─────────────────────────────────────────── */}
+          {reviewCount > 0 && (
+            <Link href="/dashboard/practice">
+              <BubbleCard className="border-2 border-[#FFD9B8] cursor-pointer hover:opacity-95 transition">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">🔔</div>
+                  <div className="flex-1">
+                    <p className="font-black text-[#3D3530]">오늘 복습할 단어 {reviewCount}개</p>
+                    <p className="text-xs text-[#8B7E74] mt-0.5">반복연습에서 바로 시작할 수 있어요</p>
+                  </div>
+                  <span className="text-[#FFB38A] font-bold">→</span>
+                </div>
+              </BubbleCard>
+            </Link>
           )}
 
-          {/* ── 최근 발음 분석 (빠른 참고) ───────────────────────────────── */}
+          {/* ── 최근 발음 분석 ────────────────────────────────────────────── */}
           {recentErrors.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-3">
@@ -137,37 +112,35 @@ export default async function BookmarksPage() {
               </div>
               <div className="space-y-2.5">
                 {recentErrors.map((rec: any) => (
-                  <BubbleCard key={rec.id} padding="sm">
-                    <div className="flex items-center gap-3">
-                      {/* 목표 → 오답 */}
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="text-xl font-black text-[#3D3530]">
-                          {rec.targetWord}
-                        </span>
-                        <span className="text-[#C4B5A8] text-sm">→</span>
-                        <span className="text-xl font-bold text-[#FCA5A5]">
-                          {rec.childPronunciation}
-                        </span>
+                  <Link key={rec.id} href={`/dashboard/practice?errorRecordId=${rec.id}`}>
+                    <BubbleCard padding="sm" className="hover:opacity-95 transition cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-xl font-black text-[#3D3530]">
+                            {rec.targetWord}
+                          </span>
+                          <span className="text-[#C4B5A8] text-sm">→</span>
+                          <span className="text-xl font-bold text-[#FCA5A5]">
+                            {rec.childPronunciation}
+                          </span>
+                        </div>
+                        <PastelBadge color="pink">{rec.errorPattern}</PastelBadge>
+                        <p className="text-xs text-[#C4B5A8] flex-shrink-0">
+                          {new Date(rec.createdAt).toLocaleDateString("ko-KR", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <span className="text-[#C4B5A8] text-xs">▶</span>
                       </div>
-
-                      {/* 오류 패턴 */}
-                      <PastelBadge color="pink">{rec.errorPattern}</PastelBadge>
-
-                      {/* 날짜 */}
-                      <p className="text-xs text-[#C4B5A8] flex-shrink-0">
-                        {new Date(rec.createdAt).toLocaleDateString("ko-KR", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </BubbleCard>
+                    </BubbleCard>
+                  </Link>
                 ))}
               </div>
             </section>
           )}
 
-          {/* ── 복습 단어 목록 ───────────────────────────────────────────── */}
+          {/* ── 저장한 단어 목록 ─────────────────────────────────────────── */}
           {savedWords.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-3">
@@ -187,15 +160,10 @@ export default async function BookmarksPage() {
                   return (
                     <BubbleCard key={sw.id} padding="sm">
                       <div className="flex items-center gap-3">
-                        {/* 단어 */}
                         <span className="text-xl font-black text-[#3D3530] flex-1">
                           {sw.word}
                         </span>
-
-                        {/* 난이도 배지 */}
                         <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
-
-                        {/* 저장일 */}
                         <p className="text-xs text-[#C4B5A8] flex-shrink-0">
                           {new Date(sw.savedAt).toLocaleDateString("ko-KR", {
                             month: "short",
@@ -210,11 +178,11 @@ export default async function BookmarksPage() {
             </section>
           )}
 
-          {/* 아이연습 CTA */}
+          {/* 반복연습 CTA */}
           <BubbleCard color="peach" className="text-center">
             <p className="font-bold text-[#3D3530] mb-1">저장한 단어로 연습할까요?</p>
             <p className="text-xs text-[#8B7E74] mb-3">
-              발음 분석 단어 + AI 추천 단어 3단계 훈련
+              발음 분석 단어 + AI 추천 단어 단계별 훈련
             </p>
             <Link href="/dashboard/practice">
               <span className="inline-block px-6 py-3 bg-white rounded-full text-sm font-black text-[#FFB38A] shadow-sm">
