@@ -456,6 +456,12 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => null);
+        // 완전히 다른 단어 입력 — 친절한 안내
+        if (err?.tooDifferent) {
+          setError(`${err.error}\n${err.hint ?? ""}`.trim());
+          setLocalLoading(false);
+          return;
+        }
         throw new Error(err?.error || "분석 중 오류가 발생했습니다");
       }
 
@@ -670,7 +676,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
         <div className="space-y-4">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-bold text-[#3D3530]">🎯 목표 단어</label>
+              <label className="block text-sm font-bold text-[#3D3530]">🎯 목표 발음</label>
               {(targetWord || childPronunciation) && (
                 <button
                   type="button"
@@ -691,10 +697,11 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
               type="text"
               value={targetWord}
               onChange={(e) => { setTargetWord(e.target.value); setTargetWordError(""); }}
-              placeholder="예) 사과"
+              placeholder="예) 사과, 합니다"
               disabled={localLoading}
               className={`w-full px-4 py-3 rounded-2xl border-2 ${targetWordError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
             />
+            <p className="text-[10px] text-[#C4B5A8] mt-1 ml-1">단어나 짧은 어절을 입력하세요 (최대 5글자)</p>
             {targetWordError && (
               <p className="text-xs text-[#EF4444] mt-1.5 ml-1 flex items-start gap-1">
                 <span className="flex-shrink-0">⚠️</span>
@@ -708,7 +715,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
               type="text"
               value={childPronunciation}
               onChange={(e) => { setChildPronunciation(e.target.value); setPronunciationError(""); }}
-              placeholder="예) 따과"
+              placeholder="예) 따과, 하미다"
               disabled={localLoading}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               className={`w-full px-4 py-3 rounded-2xl border-2 ${pronunciationError ? "border-[#FCA5A5]" : "border-[#F0E8E0]"} text-[#3D3530] text-lg font-semibold placeholder:text-[#C4B5A8] focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50`}
@@ -723,7 +730,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords }: Props) {
 
           {error && (
             <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl px-4 py-3">
-              <p className="text-sm text-[#EF4444] font-bold text-center">🚨 {error}</p>
+              <p className="text-sm text-[#EF4444] font-semibold text-left whitespace-pre-line">🚨 {error}</p>
             </div>
           )}
 

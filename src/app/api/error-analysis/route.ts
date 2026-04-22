@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { analyzeError } from '@/lib/jamo-analysis';
 import { auth } from '@/lib/auth';
-import { validateKoreanWord } from '@/lib/korean-input-validation';
+import {
+  validateKoreanWord,
+  computePhonemeSimilarity,
+  syllableLengthDiff,
+} from '@/lib/korean-input-validation';
+
+// 발음 변형이 아니라 완전히 다른 단어로 판정하는 기준
+const MIN_PHONEME_SIMILARITY = 0.4;  // 공통 자모 40% 미만이면 다른 단어
+const MAX_SYLLABLE_DIFF = 1;          // 음절 수 2 이상 차이나면 다른 단어
 
 // ─── WeakPhoneme 자동 집계 ────────────────────────────────────────────────────
 
@@ -79,6 +87,17 @@ export async function POST(request: NextRequest) {
 
     const childErr = validateKoreanWord(childPronunciation);
     if (childErr) return NextResponse.json({ error: `아이 발음: ${childErr}` }, { status: 400 });
+
+    // ─── 발음 변형 vs 완전히 다른 단어 판정 ────────────────────────────────
+    const syllableDiff = syllableLengthDiff(targetWord, childPronunciation);
+    const similarity = computePhonemeSimilarity(targetWord, childPronunciation);
+    if (syllableDiff > MAX_SYLLABLE_DIFF || similarity < MIN_PHONEME_SIMILARITY) {
+      return NextResponse.json({
+        error: "발음 변형이 아니라 다른 단어로 보여요.",
+        hint: "같은 단어를 아이가 다르게 발음한 경우만 분석할 수 있어요. 목표 단어와 아이 발음이 너무 달라서, 혹시 목표 단어를 잘못 적으신 건 아닌지 확인해 주세요.",
+        tooDifferent: true,
+      }, { status: 400 });
+    }
 
     const child = await prisma.child.findUnique({ where: { id: childId } });
     if (!child) return NextResponse.json({ error: "해당 아이를 찾을 수 없습니다" }, { status: 404 });

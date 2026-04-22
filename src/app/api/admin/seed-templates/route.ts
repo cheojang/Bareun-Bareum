@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const limit: number = Math.min(Number(body.limit) || 20, 50);
 
     const genai = getGenAI();
-    const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // 이미 완료된 조합 조회
     const existing = await prisma.phonemeTemplate.findMany({

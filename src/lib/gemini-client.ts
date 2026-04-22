@@ -51,7 +51,7 @@ export async function getGeminiFeedback(
     }
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
 친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
@@ -135,7 +135,7 @@ export async function getGeminiFeedbackStream(
   }
 
   const model = ai.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     systemInstruction: `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
 친절하고 구체적인 2~4문장 상세 가이드를 제공하세요. 'X세 아이에게는~'과 같은 상투적인 나이 언급 서두는 생략하고 바로 핵심 원인과 분석을 설명하세요.`,
@@ -206,7 +206,7 @@ export async function generateWeakPhonemeReport(
 
     const prompt = `${childName}의 발음 교정 약점 분석:\n\n${phonemeList}\n\n이 약점들을 종합하여 부모에게 도움이 될 만한 조언을 3~4문장으로 해주세요.`;
 
-    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
 
     return result.response.text();
