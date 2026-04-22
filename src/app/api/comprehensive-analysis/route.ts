@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "권한 없음" }, { status: 403 });
     }
 
-    // ── 캐시 HIT: 동일 데이터로 이미 분석된 경우 즉시 반환 ────────────────
+    // ── 캐시 HIT: JSON 즉시 반환 (Gemini 호출 없음) ─────────────────────────
     const signature = buildSignature(weakPhonemes, categoryStats);
     const cacheKey = `${session.user.id}:${childId}`;
     const cached = adviceCache.get(cacheKey);
@@ -121,23 +121,61 @@ ${categorySummary || "데이터 없음"}
 - "선생님으로서 보면" 같은 전문가적 시각에서 작성
 - 아이 이름(${childName})을 자연스럽게 1~2번 포함`;
 
+    // ── 캐시 MISS: Gemini 진짜 스트리밍 ───────────────────────────────────
     const genai = new GoogleGenerativeAI(apiKey);
     const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    const report = result.response.text();
 
-    if (!report) {
-      return NextResponse.json({ error: "분석 결과를 생성하지 못했어요" }, { status: 500 });
+    let streamResult;
+    try {
+      streamResult = await model.generateContentStream(prompt);
+    } catch (geminiErr: unknown) {
+      const msg = geminiErr instanceof Error ? geminiErr.message : "";
+      if (msg.includes("429") || msg.includes("quota") || msg.includes("Resource")) {
+        return NextResponse.json(
+          { error: "오늘 AI 분석 한도를 모두 사용했어요", isQuotaError: true },
+          { status: 429 }
+        );
+      }
+      console.error("[ComprehensiveAnalysis Gemini Error]:", geminiErr);
+      return NextResponse.json({ error: "서버 오류가 발생했어요" }, { status: 500 });
     }
 
-    // 캐시에 저장
-    adviceCache.set(cacheKey, {
-      text: report,
-      signature,
-      expiresAt: Date.now() + CACHE_TTL_MS,
+    const encoder = new TextEncoder();
+    let fullText = "";
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of streamResult.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) {
+              fullText += chunkText;
+              controller.enqueue(encoder.encode(chunkText));
+            }
+          }
+          // 스트림 완료 후 캐시 저장
+          if (fullText) {
+            adviceCache.set(cacheKey, {
+              text: fullText,
+              signature,
+              expiresAt: Date.now() + CACHE_TTL_MS,
+            });
+          }
+          controller.close();
+        } catch (err) {
+          console.error("[ComprehensiveAnalysis Stream Error]:", err);
+          controller.error(err);
+        }
+      },
     });
 
-    return NextResponse.json({ report });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error: unknown) {
     console.error("[ComprehensiveAnalysis Error]:", error);
     const msg = error instanceof Error ? error.message : "";
