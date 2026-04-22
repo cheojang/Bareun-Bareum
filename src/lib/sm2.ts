@@ -10,10 +10,10 @@
  *   1 = 오답
  *   0 = 완전히 모름      ← UI에서 "아직 어려워요 ❌"는 quality=1로 처리
  *
- * 복습 간격:
- *   1회 성공 → 1일 후
- *   2회 성공 → 3일 후
- *   3회 이상 → interval × easeFactor 일 후
+ * 복습 간격 (첫 복습부터 체감되도록 기본 SM-2보다 약간 공격적):
+ *   1회 성공 → 2일 후
+ *   2회 성공 → 5일 후
+ *   3회 이상 → interval × easeFactor 일 후  (최대 MAX_INTERVAL_DAYS)
  *   실패     → 1일 후로 리셋
  */
 
@@ -43,11 +43,11 @@ export function calculateNextReview(input: SM2Input): SM2Result {
   let newReviewCount = reviewCount;
 
   if (quality >= 3) {
-    // 성공 — 간격 확장
+    // 성공 — 간격 확장 (첫 복습부터 "아직 어려워요"(1일)와 체감 차이 나도록)
     if (reviewCount === 0) {
-      newInterval = 1;
+      newInterval = 2;
     } else if (reviewCount === 1) {
-      newInterval = 3;
+      newInterval = 5;
     } else {
       newInterval = Math.round(interval * easeFactor);
     }

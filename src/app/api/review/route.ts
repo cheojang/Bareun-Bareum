@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
       message: result.isLearned
         ? "🎉 완전히 외웠어요! 다음 복습 목록에서 졸업합니다."
         : quality >= 3
-        ? `✅ 잘 했어요! ${result.newInterval}일 후 다시 복습할게요.`
-        : `💪 조금 더 연습이 필요해요. 내일 다시 복습할게요.`,
+        ? `✅ 잘 했어요! 기억이 굳어지도록 ${result.newInterval}일 뒤에 다시 만나요.`
+        : `💪 아직 어렵군요. 기초를 다지기 위해 내일 한 번 더 연습해요.`,
       schedule: updated,
     });
   } catch (error) {
