@@ -239,18 +239,11 @@ function DevLoginButtons() {
         {loading === "dev@test.com" ? "로그인 중..." : "👪 부모 계정"}
       </button>
       <button
-        onClick={() => devLogin("therapist@test.com", "/center/children")}
+        onClick={() => devLogin("center@test.com", "/center")}
         disabled={!!loading}
         className="w-full rounded-xl bg-[#E8F5E9] hover:bg-[#D8EFD9] text-[#388E3C] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
       >
-        {loading === "therapist@test.com" ? "로그인 중..." : "🩺 치료사 계정"}
-      </button>
-      <button
-        onClick={() => devLogin("admin@test.com", "/center")}
-        disabled={!!loading}
-        className="w-full rounded-xl bg-[#E3F2FD] hover:bg-[#D3E8F5] text-[#1565C0] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
-      >
-        {loading === "admin@test.com" ? "로그인 중..." : "🏥 센터 어드민 계정"}
+        {loading === "center@test.com" ? "로그인 중..." : "🏥 센터 계정"}
       </button>
       {error && <p className="text-xs text-red-500 text-center mt-1">{error}</p>}
     </div>

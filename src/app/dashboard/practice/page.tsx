@@ -85,16 +85,18 @@ export default async function PracticePage({
   let stage1Words: { word: string; errorPattern: string }[] = [];
   let stage2Words: string[] = [];
   let errorPattern: string | undefined;
+  let trainingTip: string | undefined;
 
   if (errorRecordId) {
     // 분석 직후 연결: 해당 오류 기록 + 추천 단어
     const record = await prisma.errorRecord.findUnique({
       where: { id: errorRecordId },
-      include: { geminiFeedback: { select: { recommendedWords: true } } },
+      include: { geminiFeedback: { select: { recommendedWords: true, trainingStep2: true } } },
     });
     if (record && record.childId === child.id) {
       stage1Words = [{ word: record.targetWord, errorPattern: record.errorPattern }];
       errorPattern = record.errorPattern;
+      trainingTip = record.geminiFeedback?.trainingStep2 ?? undefined;
       if (record.geminiFeedback?.recommendedWords) {
         try {
           const words: string[] = JSON.parse(record.geminiFeedback.recommendedWords);
@@ -109,7 +111,7 @@ export default async function PracticePage({
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {
-        geminiFeedback: { select: { recommendedWords: true } },
+        geminiFeedback: { select: { recommendedWords: true, trainingStep2: true } },
       },
     });
 
@@ -139,6 +141,7 @@ export default async function PracticePage({
     }
 
     errorPattern = stage1Words[0]?.errorPattern;
+    trainingTip = errorRecords[0]?.geminiFeedback?.trainingStep2 ?? undefined;
   }
 
   return (
@@ -150,6 +153,7 @@ export default async function PracticePage({
       stage1Words={stage1Words}
       stage2Words={stage2Words}
       errorPattern={errorPattern}
+      trainingTip={trainingTip}
     />
   );
 }

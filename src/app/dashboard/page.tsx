@@ -126,10 +126,10 @@ export default async function DashboardHome() {
     <div className="px-5 pt-6 md:pt-8 md:px-8 max-w-lg md:max-w-5xl mx-auto">
 
       {/* ── 그리드 래퍼: 모바일 1컬럼 / 데스크탑 2컬럼 ── */}
-      <div className="md:grid md:grid-cols-2 md:gap-8 space-y-5 md:space-y-0">
+      <div className="flex flex-col gap-5 md:grid md:grid-cols-2 md:gap-8">
 
         {/* ── 왼쪽 컬럼 ─────────────────────────────────────────── */}
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
 
           {/* Greeting */}
           <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export default async function DashboardHome() {
         </div>
 
         {/* ── 오른쪽 컬럼 ───────────────────────────────────────── */}
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
 
           {/* 오늘 복습 배지 */}
           {reviewDueCount > 0 && (
@@ -246,7 +246,6 @@ export default async function DashboardHome() {
           )}
 
           {/* ── 약점 음소 분석 카드 ── */}
-          <div className="pt-3">
           <BubbleCard>
             <div className="flex items-center justify-between mb-3">
               <p className="font-bold text-[#3D3530]">🔍 약점 음소 분석</p>
@@ -335,7 +334,6 @@ export default async function DashboardHome() {
               </div>
             )}
           </BubbleCard>
-          </div>
 
         </div>
       </div>

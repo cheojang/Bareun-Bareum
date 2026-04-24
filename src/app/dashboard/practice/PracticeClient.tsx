@@ -30,6 +30,7 @@ interface Props {
   stage1Words: ErrorWord[];
   stage2Words: string[];
   errorPattern?: string;
+  trainingTip?: string;
 }
 
 type Stage = "review" | 1 | 2 | 3;
@@ -189,6 +190,7 @@ export function PracticeClient({
   stage1Words,
   stage2Words,
   errorPattern,
+  trainingTip,
 }: Props) {
   // 복습 아이템이 있으면 복습 단계부터 시작
   const startStage: Stage = reviewItems.length > 0 ? "review" : 1;
@@ -591,11 +593,14 @@ export function PracticeClient({
               </p>
             )}
 
-            {!stage3Loading && (
-              <p className="text-sm text-[#8B7E74] mt-2">
-                {currentItem?.kind === "sentence"
-                  ? "문장을 천천히 읽어봐요"
-                  : "소리내어 읽으면 부모님이 판단해주세요"}
+            {!stage3Loading && currentItem?.kind === "sentence" && (
+              <p className="text-sm text-[#8B7E74] mt-2">문장을 천천히 읽어봐요</p>
+            )}
+
+            {/* 훈련 팁 (2단계 처방전) */}
+            {trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
+              <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed">
+                💡 {trainingTip}
               </p>
             )}
           </div>
@@ -630,9 +635,14 @@ export function PracticeClient({
 
           {/* 도트 안내 */}
           {!isSlotsFull && (
-            <p className="text-xs text-[#C4B5A8] text-center">
-              아이 발음을 듣고 버튼을 눌러주세요 ({filledCount}/{MAX_DOTS})
-            </p>
+            <div className="text-center space-y-1">
+              {currentItem?.kind !== "sentence" && (
+                <p className="text-xs text-[#C4B5A8]">소리내어 읽으면 부모님이 판단해주세요</p>
+              )}
+              <p className="text-xs text-[#C4B5A8]">
+                아이 발음을 듣고 버튼을 눌러주세요 ({filledCount}/{MAX_DOTS})
+              </p>
+            </div>
           )}
         </div>
       </div>

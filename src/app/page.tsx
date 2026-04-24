@@ -180,12 +180,12 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-sm text-[#8B7E74] mb-2">바른발음 앱</p>
-              <p className="text-3xl font-black text-[#FFB38A]">3,000원<span className="text-base">/월</span></p>
-              <p className="text-xs text-[#C4B5A8] mt-1">연간결제 시 · 연 36,000원</p>
+              <p className="text-3xl font-black text-[#FFB38A]">5,000원<span className="text-base">/월</span></p>
+              <p className="text-xs text-[#C4B5A8] mt-1">연간결제 시 · 연 60,000원</p>
               <div className="h-[1px] bg-[#FFB38A]/20 my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="✅" text="매일 무제한 연습" />
-                <CompareItem icon="✅" text="연 36,000원 = 센터 1회 비용 이하" />
+                <CompareItem icon="✅" text="연 60,000원 = 센터 1회 비용과 동등" />
                 <CompareItem icon="✅" text="언제 어디서나 즉시 분석" />
                 <CompareItem icon="✅" text="AI 맞춤 훈련 처방전" />
               </div>

@@ -493,8 +493,12 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
 
       if (!geminiRes.ok) {
         const err = await geminiRes.json().catch(() => null);
-        if (geminiRes.status === 429 || err?.isQuotaError) {
+        if (err?.isQuotaError) {
           setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
+        } else if (err?.isServiceBusy || geminiRes.status === 503) {
+          setGeminiError("🕐 AI 서버가 잠시 바빠요. '분석하기'를 다시 눌러주세요.");
+        } else if (geminiRes.status === 429) {
+          setGeminiError(err?.error || "요청이 너무 많아요. 잠시 후(약 1분) 다시 시도해 주세요.");
         } else {
           setGeminiError(err?.error || "AI 처방전을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
         }
@@ -509,7 +513,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
         trainingSteps: [],
         recommendedWords: [],
       };
-      let streamError: { message: string; quota: boolean } | null = null;
+      let streamError: { message: string; quota: boolean; serviceBusy: boolean } | null = null;
 
       // ── 캐시 HIT: JSON 즉시 반환 ────────────────────────────────────────
       if (contentType.includes("application/json")) {
@@ -553,6 +557,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
               streamError = {
                 message: msg.error ?? "AI 분석 중 오류가 발생했습니다",
                 quota: !!msg.isQuotaError,
+                serviceBusy: !!msg.isServiceBusy,
               };
               continue;
             }
@@ -587,6 +592,8 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
       if (streamError) {
         if (streamError.quota) {
           setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
+        } else if (streamError.serviceBusy) {
+          setGeminiError("🕐 AI 서버가 잠시 바빠요. '분석하기'를 다시 눌러주세요.");
         } else {
           setGeminiError(streamError.message);
         }

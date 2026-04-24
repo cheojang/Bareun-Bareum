@@ -214,6 +214,12 @@ export async function POST(request: NextRequest) {
       );
     } catch (geminiErr: any) {
       console.error("[Gemini] 스트림 시작 실패:", geminiErr.message);
+      if (geminiErr.message?.includes('키가 설정되지 않았습니다')) {
+        return NextResponse.json({ error: "AI 분석 서비스를 사용할 수 없습니다. 관리자에게 문의하세요." }, { status: 503 });
+      }
+      if (geminiErr.message?.includes('503') || geminiErr.message?.includes('Service Unavailable')) {
+        return NextResponse.json({ error: "AI 서버가 바빠요. 잠시 후 다시 눌러주세요.", isServiceBusy: true }, { status: 503 });
+      }
       if (geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')) {
         return NextResponse.json({
           error: "AI 분석 일일 한도에 도달했습니다. 내일 다시 시도해 주세요.",
@@ -334,13 +340,17 @@ export async function POST(request: NextRequest) {
         } catch (err: any) {
           console.error("[Gemini] 스트림 처리 오류:", err);
           const isQuota = err?.message?.includes('429') || err?.message?.includes('quota');
+          const isServiceBusy = err?.message?.includes('503') || err?.message?.includes('Service Unavailable');
           try {
             sendLine({
               type: "error",
               error: isQuota
                 ? "오늘 AI 분석 한도를 모두 사용했어요"
+                : isServiceBusy
+                ? "AI 서버가 바빠요. 잠시 후 다시 눌러주세요."
                 : "AI 분석 중 오류가 발생했습니다",
               isQuotaError: isQuota,
+              isServiceBusy,
             });
           } catch {}
           controller.close();

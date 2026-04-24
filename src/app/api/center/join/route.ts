@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     update: {},
   });
 
-  return NextResponse.json({ success: true, centerName: center.name });
+  return NextResponse.json({ success: true, centerId: center.id, centerName: center.name });
 }
 
 /**

@@ -21,6 +21,10 @@ const devProvider =
             let userRole: "parent" | "therapist" = "parent";
             let therapistRole: "owner" | "staff" | null = null;
             let name = "개발자(부모)";
+            if (email === "center@test.com") {
+              userRole = "therapist"; therapistRole = "owner"; name = "개발자(센터장)";
+            }
+            // 하위 호환 — 기존 dev 이메일도 유지
             if (email === "therapist@test.com") {
               userRole = "therapist"; therapistRole = "staff"; name = "개발자(상담사)";
             }

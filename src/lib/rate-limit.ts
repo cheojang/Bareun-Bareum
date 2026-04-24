@@ -59,9 +59,9 @@ export class RateLimiter {
 
 // ── 사전 정의된 리미터들 ──────────────────────────────────────────────────────
 
-/** Gemini AI 분석: 사용자당 분당 10건, 버스트 5건 */
+/** Gemini AI 분석: 사용자당 분당 10건, 버스트 10건 */
 export const geminiLimiter = new RateLimiter({
-  capacity: 5,
+  capacity: 10,
   refillPerSecond: 10 / 60, // 1분에 10건
 });
 

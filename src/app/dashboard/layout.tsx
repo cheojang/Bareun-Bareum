@@ -39,6 +39,13 @@ export default async function DashboardLayout({
         },
       });
 
+  // 치료사 연계 여부: 아이 중 하나라도 센터에 등록되어 있으면 true
+  const hasTherapistLink = isGuest
+    ? false
+    : (await prisma.centerChild.count({
+        where: { child: { userId: session.user.id! } },
+      })) > 0;
+
   return (
     <div
       className="min-h-dvh"
@@ -103,7 +110,7 @@ export default async function DashboardLayout({
           )}
 
           {/* 내비게이션 아이템 */}
-          <SidebarNavItems />
+          <SidebarNavItems hasTherapistLink={hasTherapistLink} />
 
           {/* 하단 버전 표시 */}
           <div className="px-5 py-4 border-t border-[#F0E8E0]">

@@ -22,7 +22,7 @@ function isActive(pathname: string, href: string) {
 }
 
 /** 태블릿/데스크탑 사이드바 내비게이션 */
-export function SidebarNavItems() {
+export function SidebarNavItems({ hasTherapistLink = false }: { hasTherapistLink?: boolean }) {
   const pathname = usePathname();
 
   const renderItem = (item: { href: string; icon: string; label: string }) => {
@@ -49,12 +49,14 @@ export function SidebarNavItems() {
   return (
     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
       {NAV_ITEMS.map(renderItem)}
-      <div className="pt-3 border-t border-[#F0E8E0] mt-3 space-y-1">
-        <p className="text-[10px] font-bold text-[#C4B5A8] px-4 pb-1 uppercase tracking-wide">
-          치료사 연계
-        </p>
-        {B2B_NAV_ITEMS.map(renderItem)}
-      </div>
+      {hasTherapistLink && (
+        <div className="pt-3 border-t border-[#F0E8E0] mt-3 space-y-1">
+          <p className="text-[10px] font-bold text-[#C4B5A8] px-4 pb-1 uppercase tracking-wide">
+            치료사 연계
+          </p>
+          {B2B_NAV_ITEMS.map(renderItem)}
+        </div>
+      )}
     </nav>
   );
 }
