@@ -4,15 +4,16 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = (await request.json()) as {
+    const { name, email, password, code } = (await request.json()) as {
       name?: string;
       email?: string;
       password?: string;
+      code?: string;
     };
 
-    if (!name?.trim() || !email?.trim() || !password) {
+    if (!name?.trim() || !email?.trim() || !password || !code?.trim()) {
       return NextResponse.json(
-        { error: "이름, 이메일, 비밀번호를 모두 입력해주세요." },
+        { error: "모든 항목을 입력해주세요." },
         { status: 400 },
       );
     }
@@ -32,7 +33,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalized = email.trim().toLowerCase();
+
+    // 이메일 인증번호 검증
+    const token = await prisma.verificationToken.findUnique({
+      where: { identifier_token: { identifier: normalized, token: code.trim() } },
+    });
+
+    if (!token) {
+      return NextResponse.json({ error: "인증번호가 올바르지 않아요." }, { status: 400 });
+    }
+    if (token.expires < new Date()) {
+      await prisma.verificationToken.delete({
+        where: { identifier_token: { identifier: normalized, token: code.trim() } },
+      });
+      return NextResponse.json({ error: "인증번호가 만료됐어요. 다시 발송해주세요." }, { status: 400 });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email: normalized } });
     if (existing) {
       return NextResponse.json(
         { error: "이미 가입된 이메일이에요. 로그인해주세요." },
@@ -42,14 +60,20 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await prisma.user.create({
-      data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        password: hashedPassword,
-        role: "parent",
-      },
-    });
+    await prisma.$transaction([
+      prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: normalized,
+          password: hashedPassword,
+          role: "parent",
+        },
+      }),
+      // 사용한 토큰 삭제
+      prisma.verificationToken.delete({
+        where: { identifier_token: { identifier: normalized, token: code.trim() } },
+      }),
+    ]);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
