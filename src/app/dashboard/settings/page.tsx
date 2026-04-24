@@ -7,6 +7,7 @@ import { PastelBadge } from "@/components/ui/PastelBadge";
 import { SignOutButton } from "./SignOutButton";
 import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
 import { CenterEnrollCard } from "@/components/settings/CenterEnrollCard";
+import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -111,6 +112,14 @@ export default async function SettingsPage() {
       {/* Sign out */}
       <BubbleCard>
         <SignOutButton />
+      </BubbleCard>
+
+      {/* 회원 탈퇴 */}
+      <BubbleCard>
+        <p className="text-xs text-[#C4B5A8] mb-3">
+          탈퇴 시 모든 아이 기록과 계정 정보가 영구적으로 삭제됩니다.
+        </p>
+        <DeleteAccountButton />
       </BubbleCard>
     </div>
   );
