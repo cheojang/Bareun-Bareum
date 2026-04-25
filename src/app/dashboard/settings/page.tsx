@@ -6,6 +6,7 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { SignOutButton } from "./SignOutButton";
 import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
+import { ChildImageUpload } from "@/components/settings/ChildImageUpload";
 import { CenterEnrollCard } from "@/components/settings/CenterEnrollCard";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 
@@ -79,14 +80,13 @@ export default async function SettingsPage() {
       <BubbleCard>
         <p className="font-bold text-[#3D3530] mb-3">아이 프로필</p>
         <div className="space-y-3">
-          {children.map((child: { id: string; name: string; mascotLevel: number; totalWords: number }) => (
+          {children.map((child: { id: string; name: string; mascotLevel: number; totalWords: number; image?: string | null }) => (
             <div key={child.id} className="flex items-center gap-3 p-3 bg-[#FFF5EE] rounded-2xl">
-              <span className="text-2xl">👶</span>
+              <ChildImageUpload childId={child.id} currentImage={child.image} />
               <div className="flex-1">
                 <p className="font-semibold text-[#3D3530]">{child.name}</p>
                 <p className="text-xs text-[#8B7E74]">Lv.{child.mascotLevel} · {child.totalWords}개 단어</p>
               </div>
-              {/* 🗑️ 휴지통 삭제 버튼 */}
               <ChildDeleteButton childId={child.id} childName={child.name} />
             </div>
           ))}

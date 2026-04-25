@@ -194,6 +194,7 @@ export default async function PracticePage({
     <PracticeClient
       childId={child.id}
       childName={child.name}
+      childImage={child.image}
       mascotLevel={child.mascotLevel}
       reviewItems={reviewItems}
       stage1Words={stage1Words}

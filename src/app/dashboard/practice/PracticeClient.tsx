@@ -33,6 +33,7 @@ interface ReviewWord {
 interface Props {
   childId: string;
   childName: string;
+  childImage?: string | null;
   mascotLevel: number;
   reviewItems: ReviewWord[];
   stage1Words: ErrorWord[];
@@ -111,12 +112,12 @@ function toQuality(goodCount: number): number {
 
 // ─── 자동차 트랙 컴포넌트 ──────────────────────────────────────────────────────
 
-function CarTrack({ progress }: { progress: number }) {
+function CarTrack({ progress, childImage }: { progress: number; childImage?: string | null }) {
   const pct = Math.max(0, Math.min(1, progress));
   const leftPct = 5 + pct * 88; // 5%~93% — 도로(inset-x-5) 범위에 맞춤
 
   return (
-    <div className="relative w-full h-11 select-none">
+    <div className="relative w-full h-12 select-none">
       {/* 도로 */}
       <div className="absolute inset-x-5 bottom-2 h-3 bg-[#F0E8E0] rounded-full overflow-hidden shadow-inner">
         {/* 차선 (점선) */}
@@ -138,17 +139,34 @@ function CarTrack({ progress }: { progress: number }) {
       <div className="absolute bottom-1.5 left-1 text-sm">🚦</div>
       {/* 결승 */}
       <div className="absolute bottom-1.5 right-1 text-sm">🏁</div>
-      {/* 자동차 — scaleX(-1)로 좌→우 방향 */}
+      {/* 아이 사진 or 자동차 */}
       <div
-        className="absolute bottom-3 text-2xl transition-all duration-700 ease-out"
+        className="absolute transition-all duration-700 ease-out"
         style={{
           left: `${leftPct}%`,
-          filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.15))",
+          bottom: "10px",
+          transform: "translateX(-50%)",
+          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
         }}
       >
-        <span style={{ display: "inline-block", transform: "translateX(-50%) scaleX(-1)" }}>
-          🚗
-        </span>
+        {childImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={childImage}
+            alt="아이"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid #FFB38A",
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: 24, display: "inline-block", transform: "scaleX(-1)" }}>
+            🚗
+          </span>
+        )}
       </div>
     </div>
   );
@@ -194,6 +212,7 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
 export function PracticeClient({
   childId,
   childName,
+  childImage,
   mascotLevel,
   reviewItems,
   stage1Words,
@@ -811,7 +830,7 @@ export function PracticeClient({
           </div>
 
           {/* 🚗 자동차 트랙 */}
-          <CarTrack progress={carProgress} />
+          <CarTrack progress={carProgress} childImage={childImage} />
 
           {/* 도트 (5개) */}
           <ResultDots slots={currentSlots} />

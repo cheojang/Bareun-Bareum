@@ -23,7 +23,7 @@ export default async function DashboardLayout({
     : await prisma.child.findMany({
         where: { userId: session.user.id! },
         orderBy: { createdAt: "asc" },
-        select: { id: true, name: true, mascotLevel: true },
+        select: { id: true, name: true, mascotLevel: true, image: true },
       });
 
   const savedId = isGuest ? "" : await getSelectedChildId();

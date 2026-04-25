@@ -8,6 +8,7 @@ interface Child {
   id: string;
   name: string;
   mascotLevel: number;
+  image?: string | null;
 }
 
 interface Props {
@@ -57,7 +58,16 @@ export function ChildSelector({ children, selectedId }: Props) {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 bg-[#FFF5EE] hover:bg-[#FFE4D8] transition-colors rounded-full px-3 py-1.5 border border-[#FFD4B8]"
       >
-        <span className="text-base leading-none">{emoji}</span>
+        {selected?.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={selected.image}
+            alt={selected.name}
+            className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <span className="text-base leading-none">{emoji}</span>
+        )}
         <span className="text-base font-black text-[#3D3530] max-w-[70px] truncate">
           {selected?.name ?? "선택"}
         </span>
@@ -80,7 +90,16 @@ export function ChildSelector({ children, selectedId }: Props) {
                 className={`w-full flex items-center gap-2 px-4 py-3 text-left transition-colors
                   ${isSelected ? "bg-[#FFE4D8]" : "hover:bg-[#FFF5EE]"}`}
               >
-                <span className="text-lg">{childEmoji}</span>
+                {child.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={child.image}
+                    alt={child.name}
+                    className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <span className="text-lg">{childEmoji}</span>
+                )}
                 <span className={`text-sm font-bold ${isSelected ? "text-[#FFB38A]" : "text-[#3D3530]"}`}>
                   {child.name}
                 </span>
