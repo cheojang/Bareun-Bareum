@@ -205,7 +205,7 @@ export function PracticeClient({
 
   const [stage, setStage] = useState<Stage>(startStage);
 
-  const makeItems = (s: Stage): PracticeItem[] => {
+  const makeItems = useCallback((s: Stage): PracticeItem[] => {
     if (s === "review") {
       return reviewItems.map((r) => ({
         text: r.targetWord,
@@ -228,7 +228,7 @@ export function PracticeClient({
       similarTo: w.sourceWord,
     }));
     return [];
-  };
+  }, [reviewItems, stage1Words, stage2Words]);
 
   const [items, setItems] = useState<PracticeItem[]>(() => makeItems(startStage));
   const [stage3Loading, setStage3Loading] = useState(false);
@@ -258,10 +258,33 @@ export function PracticeClient({
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
 
-  // 자동차 진행률: 도트 하나씩 누를 때마다 조금씩 전진
-  const totalDots = items.length * MAX_DOTS;
-  const filledDots = currentIndex * MAX_DOTS + filledCount;
-  const carProgress = totalDots > 0 ? filledDots / totalDots : 0;
+  // ── 자동차 진행률: 전체 단계(복습+1+2+3단계) 통합 기준으로 계산 ─────────────────
+  // 3단계는 AI 동적 생성이라, 진입 전엔 추정값(5개), 진입 후엔 실제 items.length 사용
+  const STAGE3_ESTIMATED = 5;
+  const stage3ItemCount = stage === 3 ? items.length : STAGE3_ESTIMATED;
+
+  // 전체 아이템 수 (존재하는 단계만 합산)
+  const totalAllItems =
+    (reviewItems.length > 0 ? reviewItems.length : 0) +
+    (stage1Words.length > 0 ? stage1Words.length : 0) +
+    (stage2Words.length > 0 ? stage2Words.length : 0) +
+    stage3ItemCount;
+
+  // 현재 단계 이전까지 완료된 아이템 수
+  const itemsBeforeCurrentStage = (() => {
+    if (stage === "review") return 0;
+    let count = reviewItems.length > 0 ? reviewItems.length : 0;
+    if (stage === 1) return count;
+    count += stage1Words.length;
+    if (stage === 2) return count;
+    count += stage2Words.length;
+    return count; // stage === 3
+  })();
+
+  // 전체 도트 기준 진행률 계산
+  const totalAllDots = totalAllItems * MAX_DOTS;
+  const globalFilledDots = itemsBeforeCurrentStage * MAX_DOTS + currentIndex * MAX_DOTS + filledCount;
+  const carProgress = totalAllDots > 0 ? globalFilledDots / totalAllDots : 0;
 
   // ── 단계 전환 ─────────────────────────────────────────────────────────────────
   // 인트로 오버레이 없이 즉시 전환 — 버튼 한 번 누르면 바로 다음 단계
@@ -387,7 +410,7 @@ export function PracticeClient({
     [currentIndex, isSlotsFull]
   );
 
-  // ── 5개 채워졌을 때 처리 ───────────────────────────────────────────────────────
+  // ── 5개 채워졌을 때 처리: 저장 로직 ─────────────────────────────────────────────
   useEffect(() => {
     if (!isSlotsFull || !currentItem) return;
 
@@ -432,12 +455,51 @@ export function PracticeClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSlotsFull]);
 
-  // ── 이전 아이템 ───────────────────────────────────────────────────────────────
+  // ── 5개 채워졌을 때: 1.5초 후 자동으로 다음으로 이동 ────────────────────────────
+  useEffect(() => {
+    if (!isSlotsFull) return;
+
+    // 1.5초 후 자동 이동 (컴포넌트 언마운트 또는 아이템 변경 시 타이머 취소)
+    const timer = setTimeout(() => {
+      handleNext();
+    }, 2500);
+
+    return () => clearTimeout(timer); // 클린업: 타이머 누수 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSlotsFull, currentIndex]);
+
+  // ── 이전 아이템 (단계 역행 포함) ────────────────────────────────────────────────
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
+      // 같은 단계 안에서 이전으로
       setCurrentIndex((i) => i - 1);
+      return;
     }
-  }, [currentIndex]);
+
+    // currentIndex === 0 → 이전 단계의 마지막 아이템으로 이동
+    let prevStage: Stage | null = null;
+    if (stage === 3) {
+      prevStage = stage2Words.length > 0 ? 2 : 1;
+    } else if (stage === 2) {
+      prevStage = 1;
+    } else if (stage === 1) {
+      prevStage = reviewItems.length > 0 ? "review" : null;
+    } else if (stage === "review") {
+      prevStage = null; // 복습이 시작 단계면 맨 앞
+    }
+
+    if (prevStage === null) return; // 이미 맨 처음
+
+    const prevItems = makeItems(prevStage);
+    setStage(prevStage);
+    setItems(prevItems);
+    setDotSlots((prev) => {
+      // 이전 단계 아이템 수만큼 dotSlots 복원 (빈 슬롯으로)
+      if (prev.length === prevItems.length) return prev;
+      return Array.from({ length: Math.max(prevItems.length, 1) }, () => Array(MAX_DOTS).fill(null));
+    });
+    setCurrentIndex(prevItems.length - 1); // 마지막 아이템으로
+  }, [currentIndex, stage, stage1Words, stage2Words, reviewItems, makeItems]);
 
   // ── 다음 아이템 ───────────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
@@ -570,21 +632,9 @@ export function PracticeClient({
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
   const meta = STAGE_META[stage as string];
-  const isLastItem = currentIndex + 1 >= items.length;
   const masteryInfo = currentMastery ? getMasteryLabel(currentMastery) : null;
   const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
   const goodCount = currentSlots.filter((s) => s === "good").length;
-
-  // 다음 버튼 레이블
-  const getNextLabel = () => {
-    if (!isLastItem) return "다음 →";
-    if (stage === "review") {
-      return stage1Words.length > 0 ? `오늘 연습 시작 → (${STAGE_META[1].label})` : "완료 🎊";
-    }
-    if (stage === 1 && stage2Words.length > 0) return `다음 단계 → (${STAGE_META[2].label})`;
-    if (stage === 1 || stage === 2) return `다음 단계 → (${STAGE_META[3].label})`;
-    return "문장 모아보기 📖";
-  };
 
   // 단계 인디케이터 (복습 포함)
   const stageSteps = (
@@ -677,89 +727,84 @@ export function PracticeClient({
 
           {/* 연습 카드 */}
           <div
-            className="w-full bg-white/90 rounded-[32px] shadow-lg text-center relative"
-            style={{
-              border: `2px solid ${meta.color}22`,
-              padding: currentItem?.kind === "sentence" ? "2rem 1.5rem" : "2rem 1.5rem",
-            }}
+            className="w-full bg-white/90 rounded-[32px] shadow-lg text-center"
+            style={{ border: `2px solid ${meta.color}22` }}
           >
             {/* 2단계 유사 패턴 라벨 — 좌상단에 작게 표시 */}
             {currentItem?.similarTo && (
-              <span className="absolute top-3 left-4 text-[11px] font-semibold text-[#8B7E74]">
+              <span className="block text-[11px] font-semibold text-[#8B7E74] pt-4 pb-1">
                 🔗 <span className="text-[#FFB38A]">{currentItem.similarTo}</span>와 유사
               </span>
             )}
 
-            {/* ← 이전 (좌측 원형 화살표 버튼) */}
-            <button
-              onClick={handlePrev}
-              disabled={currentIndex === 0}
-              aria-label="이전"
-              className="group absolute left-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
-            >
-              <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-enabled:group-hover:bg-[#FFF5EE] group-enabled:group-hover:border-[#FFB38A] group-enabled:group-hover:text-[#FFB38A] transition-colors shadow-sm">
-                ←
-              </span>
-              <span className="text-[10px] text-[#8B7E74] font-semibold">이전</span>
-            </button>
-
-            {/* → 다음 (우측 원형 화살표 버튼 — 단계 전환도 가능) */}
-            <button
-              onClick={handleNext}
-              aria-label="다음"
-              className="group absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 transition-all active:scale-90"
-            >
-              <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-hover:bg-[#FFF5EE] group-hover:border-[#FFB38A] group-hover:text-[#FFB38A] transition-colors shadow-sm">
-                →
-              </span>
-              <span className="text-[10px] text-[#8B7E74] font-semibold">다음</span>
-            </button>
-
-
             {currentItem?.badge && (
               <span
-                className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
+                className="inline-block text-xs font-bold px-3 py-1 rounded-full mt-4 mb-1"
                 style={{ backgroundColor: meta.bg, color: meta.color }}
               >
                 {stripEnglishParens(currentItem.badge)}
               </span>
             )}
 
-            {/* 1단계 오답·복습 아이템: 아이 발음 → 옳은 표현 함께 표시 */}
-            {currentItem?.childPron && currentItem?.kind !== "sentence" ? (
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="text-center">
-                  <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
-                  <p className="text-3xl font-bold text-[#FCA5A5]">{currentItem.childPron}</p>
-                </div>
-                <span className="text-2xl text-[#C4B5A8]">→</span>
-                <div className="text-center">
-                  <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
-                  <p className="text-4xl font-black text-[#3D3530]">{currentItem.text}</p>
-                </div>
-              </div>
-            ) : stage3Loading ? (
-              <div className="py-6">
-                <div className="text-5xl mb-3 animate-bounce">🤖</div>
-                <p className="text-base font-bold text-[#3D3530]">AI가 문장을 만들고 있어요</p>
-                <p className="text-xs text-[#8B7E74] mt-1 animate-pulse">잠시만 기다려주세요...</p>
-              </div>
-            ) : (
-              <p
-                className="font-black text-[#3D3530] tracking-wide leading-snug"
-                style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : "4rem" }}
+            {/* ── 단어 표시 영역: 버튼이 이 영역의 세로 중앙에 고정됨 ── */}
+            {/* relative를 카드 전체가 아닌 이 영역에만 적용 → 처방전 길이에 영향 없음 */}
+            <div className="relative flex items-center justify-center px-14 py-6">
+
+              {/* ← 이전 (좌측 원형 화살표 버튼) */}
+              <button
+                onClick={handlePrev}
+                disabled={currentIndex === 0 && stage === startStage}
+                aria-label="이전"
+                className="group absolute left-3 top-1/2 -translate-y-1/2 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
               >
-                {currentItem?.text}
-              </p>
-            )}
+                <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-enabled:group-hover:bg-[#FFF5EE] group-enabled:group-hover:border-[#FFB38A] group-enabled:group-hover:text-[#FFB38A] transition-colors shadow-sm">
+                  ←
+                </span>
+              </button>
 
-            {!stage3Loading && currentItem?.kind === "sentence" && (
-              <p className="text-sm text-[#8B7E74] mt-2">문장을 천천히 읽어봐요</p>
-            )}
+              {/* 단어 / 문장 콘텐츠 */}
+              {currentItem?.childPron && currentItem?.kind !== "sentence" ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="text-center">
+                    <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
+                    <p className="text-3xl font-bold text-[#FCA5A5]">{currentItem.childPron}</p>
+                  </div>
+                  <span className="text-2xl text-[#C4B5A8]">→</span>
+                  <div className="text-center">
+                    <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
+                    <p className="text-4xl font-black text-[#3D3530]">{currentItem.text}</p>
+                  </div>
+                </div>
+              ) : stage3Loading ? (
+                <div className="py-6">
+                  <div className="text-5xl mb-3 animate-bounce">🤖</div>
+                  <p className="text-base font-bold text-[#3D3530]">AI가 문장을 만들고 있어요</p>
+                  <p className="text-xs text-[#8B7E74] mt-1 animate-pulse">잠시만 기다려주세요...</p>
+                </div>
+              ) : (
+                <p
+                  className="font-black text-[#3D3530] tracking-wide leading-snug"
+                  style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : "4rem" }}
+                >
+                  {currentItem?.text}
+                </p>
+              )}
 
-            {/* 훈련 팁 (2단계 처방전) — 단어별로 매칭 */}
+              {/* → 다음 (우측 원형 화살표 버튼 — 단계 전환도 가능) */}
+              <button
+                onClick={handleNext}
+                aria-label="다음"
+                className="group absolute right-3 top-1/2 -translate-y-1/2 transition-all active:scale-90"
+              >
+                <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-hover:bg-[#FFF5EE] group-hover:border-[#FFB38A] group-hover:text-[#FFB38A] transition-colors shadow-sm">
+                  →
+                </span>
+              </button>
+            </div>
+
+            {/* 훈련 팁 (2단계 처방전) — 단어 영역 아래에 별도 배치 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
-              <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed">
+              <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
                 💡 {currentItem.trainingTip}
               </p>
             )}
@@ -796,9 +841,7 @@ export function PracticeClient({
           {/* 도트 안내 */}
           {!isSlotsFull && (
             <div className="text-center space-y-1">
-              {currentItem?.kind !== "sentence" && (
-                <p className="text-xs text-[#C4B5A8]">소리내어 읽으면 부모님이 판단해주세요</p>
-              )}
+              <p className="text-xs text-[#C4B5A8]">소리내어 읽으면 부모님이 판단해주세요</p>
               <p className="text-xs text-[#C4B5A8]">
                 아이 발음을 듣고 버튼을 눌러주세요 ({filledCount}/{MAX_DOTS})
               </p>
@@ -837,15 +880,6 @@ export function PracticeClient({
           </div>
         )}
 
-        {/* 다음 단계 / 완료 버튼 — 단계 전환용 (item 이동은 카드 안 삼각형이 담당) */}
-        <BubbleButton
-          variant="white"
-          size="md"
-          onClick={handleNext}
-          className="w-full"
-        >
-          {getNextLabel()}
-        </BubbleButton>
       </div>
     </div>
   );

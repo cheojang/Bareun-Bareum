@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx prisma:*)",
       "Bash(ls /workspaces/SORI/.env*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(node -e ' *)"
     ]
   }
 }

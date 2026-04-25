@@ -155,11 +155,10 @@ function RecordRow({
         </div>
 
         {/* 오류 패턴 배지 */}
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0E8E0] ${categoryStyle.text} flex-shrink-0 hidden sm:inline`}>
-          {record.errorPattern}
-        </span>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0E8E0] ${categoryStyle.text} flex-shrink-0 sm:hidden`}>
-          {record.errorPattern.length > 6 ? record.errorPattern.slice(0, 6) + "…" : record.errorPattern}
+        <span 
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0E8E0] ${categoryStyle.text} flex-shrink-0 max-w-[100px] sm:max-w-none truncate`}
+        >
+          {stripEnglishParens(record.errorPattern)}
         </span>
 
         {/* AI 완료 여부 */}
