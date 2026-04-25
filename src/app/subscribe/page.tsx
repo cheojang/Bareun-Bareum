@@ -31,9 +31,10 @@ export default async function SubscribePage() {
           </div>
           <ul className="space-y-1 text-sm text-[#8B7E74]">
             <li>✅ 기본 단어 연습 (20개)</li>
-            <li>✅ AI 조음 분석</li>
+            <li>✅ AI 조음 분석 (월 10회)</li>
+            <li>✅ 종합 진단 보고서</li>
+            <li>❌ AI 분석 무제한</li>
             <li>❌ 프리미엄 단어장</li>
-            <li>❌ 맞춤형 진단 무제한</li>
           </ul>
         </BubbleCard>
 
@@ -44,20 +45,20 @@ export default async function SubscribePage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="font-black text-[#3D3530] text-lg">프리미엄 플랜</p>
-              <p className="text-3xl font-black text-[#FFB38A]">월 9,900원</p>
+              <p className="text-3xl font-black text-[#FFB38A]">월 5,000원</p>
             </div>
             <PastelBadge color="peach">⭐ 추천</PastelBadge>
           </div>
           <ul className="space-y-1 text-sm text-[#3D3530] mb-4">
+            <li>✅ AI 분석 무제한</li>
             <li>✅ 프리미엄 단어장 무제한</li>
-            <li>✅ AI 맞춤형 분석 무제한</li>
             <li>✅ 성장 리포트 상세 분석</li>
             <li>✅ 연습 스케줄 알림</li>
             <li>✅ 첫 달 무료 체험</li>
           </ul>
           <TossPaymentButton
             userId={userId}
-            amount={9900}
+            amount={5000}
             orderName="바른발음 프리미엄 구독"
           />
         </BubbleCard>

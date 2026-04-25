@@ -493,12 +493,16 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
 
       if (!geminiRes.ok) {
         const err = await geminiRes.json().catch(() => null);
-        if (err?.isQuotaError) {
-          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
+        if (err?.isMonthlyLimitReached && err?.isGuest) {
+          setGeminiError("이번 달 비회원 AI 분석 횟수(2회)를 모두 사용했어요.\n회원가입하면 매달 10회 무료로 이용할 수 있어요!");
+        } else if (err?.isMonthlyLimitReached) {
+          setGeminiError("이번 달 AI 분석 횟수(10회)를 모두 사용했어요.\n다음 달 1일에 자동 초기화돼요.\n프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요!");
+        } else if (err?.isQuotaError) {
+          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요.");
         } else if (err?.isServiceBusy || geminiRes.status === 503) {
           setGeminiError("🕐 AI 서버가 잠시 바빠요. '분석하기'를 다시 눌러주세요.");
         } else if (geminiRes.status === 429) {
-          setGeminiError(err?.error || "요청이 너무 많아요. 잠시 후(약 1분) 다시 시도해 주세요.");
+          setGeminiError(err?.error || "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.");
         } else {
           setGeminiError(err?.error || "AI 처방전을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
         }

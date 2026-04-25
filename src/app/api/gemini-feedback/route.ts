@@ -99,14 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
     }
 
-    // Rate limit: 분당 10건 / 버스트 5건
-    const { geminiLimiter } = await import("@/lib/rate-limit");
-    if (!geminiLimiter.allow(session.user.id)) {
-      return NextResponse.json(
-        { error: "요청이 너무 많아요. 1분 뒤 다시 시도해 주세요." },
-        { status: 429 }
-      );
-    }
+    // 월간 제한은 캐시 미스 시에만 적용 (아래 캐시 확인 후)
 
     const { errorRecordId } = await request.json();
     if (!errorRecordId) {
@@ -195,6 +188,46 @@ export async function POST(request: NextRequest) {
         geminiConfidence: 5,
         fromCache:        true,
       });
+    }
+
+    // ─── 월간 사용 제한 체크 (캐시 미스 경우에만 적용) ──────────────────────
+    const {
+      FREE_AI_MONTHLY_LIMIT, GUEST_AI_MONTHLY_LIMIT, GUEST_COOKIE_NAME,
+      isUserPremium, countMonthlyGeminiUsage, parseGuestCookie, makeGuestCookieValue,
+    } = await import("@/lib/usage-limit");
+
+    const isGuest = session.user.id === "guest";
+    let guestCookieHeader: string | null = null;
+
+    if (isGuest) {
+      const cookieValue = request.cookies.get(GUEST_COOKIE_NAME)?.value;
+      const used = parseGuestCookie(cookieValue);
+      if (used >= GUEST_AI_MONTHLY_LIMIT) {
+        return NextResponse.json({
+          error: `비회원은 AI 분석을 월 ${GUEST_AI_MONTHLY_LIMIT}회까지 이용할 수 있어요. 회원가입하면 월 ${FREE_AI_MONTHLY_LIMIT}회 이용할 수 있어요.`,
+          isMonthlyLimitReached: true,
+          isGuest: true,
+          limit: GUEST_AI_MONTHLY_LIMIT,
+          used,
+        }, { status: 429 });
+      }
+      // 쿠키 갱신 헤더 준비 (스트리밍 응답에 첨부)
+      const expires = new Date();
+      expires.setMonth(expires.getMonth() + 1);
+      guestCookieHeader = `${GUEST_COOKIE_NAME}=${makeGuestCookieValue(used + 1)}; Path=/; SameSite=Lax; Expires=${expires.toUTCString()}`;
+    } else {
+      const premium = await isUserPremium(session.user.id);
+      if (!premium) {
+        const used = await countMonthlyGeminiUsage(session.user.id);
+        if (used >= FREE_AI_MONTHLY_LIMIT) {
+          return NextResponse.json({
+            error: `이번 달 AI 분석 횟수(${FREE_AI_MONTHLY_LIMIT}회)를 모두 사용했어요. 다음 달 1일에 초기화돼요. 프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요.`,
+            isMonthlyLimitReached: true,
+            limit: FREE_AI_MONTHLY_LIMIT,
+            used,
+          }, { status: 429 });
+        }
+      }
     }
 
     // ─── 2순위: Gemini API 신규 호출 (NDJSON 스트리밍) ───────────────────────
@@ -363,6 +396,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/x-ndjson; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
+        ...(guestCookieHeader ? { "Set-Cookie": guestCookieHeader } : {}),
       },
     });
 
