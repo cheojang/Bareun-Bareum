@@ -5,10 +5,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 import { isAdmin } from "@/lib/admin-auth";
 
+// 503 과부하 시 3단계 폴백
+const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+
+function is503(e: any) {
+  return e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
+}
+
 function getGenAI() {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY 없음");
   return new GoogleGenerativeAI(key);
+}
+
+// 폴백 적용 단발 호출 헬퍼
+async function generateWithFallback(genai: GoogleGenerativeAI, prompt: string): Promise<string> {
+  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
+    const modelName = MODEL_FALLBACK[i];
+    try {
+      if (i > 0) console.log(`[SeedTemplates] 폴백 모델 사용: ${modelName}`);
+      const model = genai.getGenerativeModel({ model: modelName });
+      const raw = await model.generateContent(prompt);
+      return raw.response.text();
+    } catch (e: any) {
+      if (is503(e) && i < MODEL_FALLBACK.length - 1) {
+        console.warn(`[SeedTemplates] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("모든 Gemini 모델이 503 상태입니다");
 }
 
 function buildPrompt(combo: TemplateCombination) {
@@ -70,7 +97,6 @@ export async function POST(request: NextRequest) {
     const limit: number = Math.min(Number(body.limit) || 20, 50);
 
     const genai = getGenAI();
-    const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // 이미 완료된 조합 조회
     const existing = await prisma.phonemeTemplate.findMany({
@@ -93,8 +119,7 @@ export async function POST(request: NextRequest) {
 
     for (const combo of pending) {
       try {
-        const raw = await model.generateContent(buildPrompt(combo));
-        const text = raw.response.text()
+        const text = (await generateWithFallback(genai, buildPrompt(combo)))
           .replace(/^```(?:json)?\s*/i, "")
           .replace(/\s*```$/, "")
           .trim();

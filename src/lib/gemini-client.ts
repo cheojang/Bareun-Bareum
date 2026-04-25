@@ -7,9 +7,10 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// 503 과부하 시 Flash → Pro 순서로 폴백
-// Flash가 바쁠 때 Pro는 사용자 수가 적어 여유롭고 품질도 더 높음
-const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-1.5-pro'];
+// 503 과부하 시 3단계 폴백
+// 1순위: 2.5-flash (저렴·빠름) → 2순위: 2.0-flash (가격 동일·다른 인프라)
+// → 3순위: 1.5-pro (비싸지만 안정적, 마지막 보루)
+const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
 // Gemini AI 인스턴스 (싱글톤)
 let genai: GoogleGenerativeAI | null = null;
@@ -44,9 +45,9 @@ function buildUserPrompt(
 - 오류 패턴: ${errorType} (${errorCategory})
 - 아이 나이: ${childAge}세
 
-JSON으로 응답하세요:
+JSON으로 응답하세요. 모든 값은 반드시 한국어로만 작성하고, 영문 학술용어나 영문 괄호 표기(예: (Fricative Affrication))는 절대 포함하지 마세요:
 {
-  "patternName": "오류 패턴 이름 (간결하게)",
+  "patternName": "오류 패턴 이름 (간결한 한글, 영문 금지)",
   "rootCause": "상세 원인 분석",
   "trainingStep1": "1단계 조음 감각 깨우기",
   "trainingStep2": "2단계 소리 느끼기",

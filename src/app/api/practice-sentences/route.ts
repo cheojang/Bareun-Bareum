@@ -3,6 +3,13 @@ import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { decomposeChar } from "@/lib/jamo-analysis";
 
+// 503 과부하 시 3단계 폴백 (다른 Gemini 모듈과 동일한 전략)
+const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+
+function is503(e: any) {
+  return e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
+}
+
 // 🎯 목표 발음 하이라이팅: 문장에서 목표 발음이 있는 글자 위치 찾기
 interface SentenceWithHighlights {
   text: string;
@@ -92,9 +99,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // ✨ ESM 방식 import로 Next.js 최적화 보장
     const genai = new GoogleGenerativeAI(apiKey);
-    const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const wordList = words.slice(0, 8).join(", ");
     const prompt = `아동 언어치료 발음 연습용 짧은 문장을 만들어주세요.
@@ -114,8 +119,24 @@ ${errorPattern ? `교정 중인 발음 패턴: ${errorPattern}` : ""}
 사자가 뛰어요.
 수박이 달아요.`;
 
-    const result = await model.generateContent(prompt);
-    const text: string = result.response.text();
+    // 모델 폴백 루프: 503이면 다음 모델로
+    let text = "";
+    for (let i = 0; i < MODEL_FALLBACK.length; i++) {
+      const modelName = MODEL_FALLBACK[i];
+      try {
+        if (i > 0) console.log(`[Sentences] 폴백 모델 사용: ${modelName}`);
+        const model = genai.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        text = result.response.text();
+        break;
+      } catch (e: any) {
+        if (is503(e) && i < MODEL_FALLBACK.length - 1) {
+          console.warn(`[Sentences] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
+          continue;
+        }
+        throw e;
+      }
+    }
 
     const sentences: string[] = text
       .split("\n")

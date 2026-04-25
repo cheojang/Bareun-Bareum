@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+import { stripEnglishParens } from "@/lib/strip-english";
 import Link from "next/link";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
@@ -12,6 +13,13 @@ import Link from "next/link";
 interface ErrorWord {
   word: string;
   errorPattern: string;
+  trainingTip?: string;
+  childPronunciation?: string;
+}
+
+interface SimilarWord {
+  word: string;
+  sourceWord: string; // 어떤 분석 단어와 유사 패턴인지
 }
 
 interface ReviewWord {
@@ -28,9 +36,8 @@ interface Props {
   mascotLevel: number;
   reviewItems: ReviewWord[];
   stage1Words: ErrorWord[];
-  stage2Words: string[];
+  stage2Words: SimilarWord[];
   errorPattern?: string;
-  trainingTip?: string;
 }
 
 type Stage = "review" | 1 | 2 | 3;
@@ -41,6 +48,8 @@ interface PracticeItem {
   text: string;
   kind: "word" | "sentence";
   badge?: string;
+  trainingTip?: string;      // 단어별 2단계 처방전 (오류 패턴과 매칭)
+  similarTo?: string;        // 2단계: 어떤 원본 분석 단어와 유사 패턴인지
   scheduleId?: string;       // 복습 아이템만
   childPron?: string;        // 복습 아이템에서 아이 발음 표시용
 }
@@ -190,7 +199,6 @@ export function PracticeClient({
   stage1Words,
   stage2Words,
   errorPattern,
-  trainingTip,
 }: Props) {
   // 복습 아이템이 있으면 복습 단계부터 시작
   const startStage: Stage = reviewItems.length > 0 ? "review" : 1;
@@ -207,8 +215,18 @@ export function PracticeClient({
         childPron: r.childPronunciation,
       }));
     }
-    if (s === 1) return stage1Words.map((e) => ({ text: e.word, kind: "word" as const, badge: e.errorPattern }));
-    if (s === 2) return stage2Words.map((w) => ({ text: w, kind: "word" as const }));
+    if (s === 1) return stage1Words.map((e) => ({
+      text: e.word,
+      kind: "word" as const,
+      badge: e.errorPattern,
+      trainingTip: e.trainingTip,
+      childPron: e.childPronunciation,
+    }));
+    if (s === 2) return stage2Words.map((w) => ({
+      text: w.word,
+      kind: "word" as const,
+      similarTo: w.sourceWord,
+    }));
     return [];
   };
 
@@ -224,6 +242,14 @@ export function PracticeClient({
   const [saving, setSaving] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [allDone, setAllDone] = useState(false);
+
+  // 3단계 사전 fetch — 2단계 마지막 단어에서 미리 문장 받아두기
+  const [prefetchedS3, setPrefetchedS3] = useState<string[] | null>(null);
+  const prefetchInFlightRef = useRef(false);
+
+  // 3단계 완료 후 모든 문장 리뷰 화면
+  const [showSentenceReview, setShowSentenceReview] = useState(false);
+  const [allSentences, setAllSentences] = useState<string[]>([]);
 
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
@@ -258,12 +284,24 @@ export function PracticeClient({
         setItems(s2);
         setDotSlots(Array.from({ length: s2.length }, () => Array(MAX_DOTS).fill(null)));
       } else if (target === 3) {
-        // 3단계: 로딩 플레이스홀더 먼저 표시 → 비동기 fetch 후 교체
+        // 3단계 진입 — 사전 fetch한 문장이 있으면 즉시 표시, 없으면 로딩
+        if (prefetchedS3 && prefetchedS3.length > 0) {
+          const s3Items: PracticeItem[] = prefetchedS3.map((s) => ({
+            text: s,
+            kind: "sentence",
+          }));
+          setItems(s3Items);
+          setDotSlots(Array.from({ length: s3Items.length }, () => Array(MAX_DOTS).fill(null)));
+          setAllSentences(prefetchedS3);
+          return;
+        }
+
+        // 사전 fetch 못 했으면 기존처럼 로딩 → fetch
         const placeholder: PracticeItem[] = [{ text: "문장 준비 중...", kind: "sentence" }];
         setItems(placeholder);
         setDotSlots([Array(MAX_DOTS).fill(null)]);
         setStage3Loading(true);
-        const allWords = [...stage1Words.map((e) => e.word), ...stage2Words];
+        const allWords = [...stage1Words.map((e) => e.word), ...stage2Words.map((w) => w.word)];
         try {
           const res = await fetch("/api/practice-sentences", {
             method: "POST",
@@ -277,6 +315,7 @@ export function PracticeClient({
           }));
           setItems(s3Items);
           setDotSlots(Array.from({ length: s3Items.length }, () => Array(MAX_DOTS).fill(null)));
+          setAllSentences(data.sentences as string[]);
         } catch {
           const fallback: PracticeItem[] = allWords.slice(0, 5).map((w) => ({
             text: `${w}을 말해봐요!`,
@@ -284,14 +323,46 @@ export function PracticeClient({
           }));
           setItems(fallback);
           setDotSlots(Array.from({ length: fallback.length }, () => Array(MAX_DOTS).fill(null)));
+          setAllSentences(fallback.map((f) => f.text));
         } finally {
           setStage3Loading(false);
         }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stage1Words, stage2Words, errorPattern, reviewItems]
+    [stage1Words, stage2Words, errorPattern, reviewItems, prefetchedS3]
   );
+
+  // ── 3단계 사전 fetch — 2단계 마지막 단어 또는 2단계 없을 때 1단계 마지막 ──
+  useEffect(() => {
+    if (prefetchedS3 || prefetchInFlightRef.current) return;
+    if (stage1Words.length === 0) return;
+
+    // 마지막에서 두 번째 단어 시점부터 미리 fetch
+    // (단어가 1개뿐이면 0번째에서 시작 — 그래도 일부 시간 단축됨)
+    const triggerIdx = Math.max(0, items.length - 2);
+    const isStage1Trigger = stage === 1 && currentIndex >= triggerIdx && stage2Words.length === 0;
+    const isStage2Trigger = stage === 2 && currentIndex >= triggerIdx;
+    if (!isStage1Trigger && !isStage2Trigger) return;
+
+    prefetchInFlightRef.current = true;
+    const allWords = [...stage1Words.map((e) => e.word), ...stage2Words.map((w) => w.word)];
+    fetch("/api/practice-sentences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words: allWords, errorPattern }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data?.sentences) && data.sentences.length > 0) {
+          setPrefetchedS3(data.sentences);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        prefetchInFlightRef.current = false;
+      });
+  }, [stage, currentIndex, items.length, prefetchedS3, stage1Words, stage2Words, errorPattern]);
 
   // ── 도트 채우기 ───────────────────────────────────────────────────────────────
   const fillDot = useCallback(
@@ -361,6 +432,13 @@ export function PracticeClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSlotsFull]);
 
+  // ── 이전 아이템 ───────────────────────────────────────────────────────────────
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((i) => i - 1);
+    }
+  }, [currentIndex]);
+
   // ── 다음 아이템 ───────────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
     if (currentIndex + 1 < items.length) {
@@ -381,7 +459,8 @@ export function PracticeClient({
     } else if (stage === 1 || stage === 2) {
       transitionToStage(3);
     } else {
-      setAllDone(true);
+      // 3단계 마지막 → 모든 문장 리뷰 화면 표시
+      setShowSentenceReview(true);
     }
   }, [currentIndex, items.length, stage, stage1Words.length, stage2Words.length, transitionToStage]);
 
@@ -401,6 +480,54 @@ export function PracticeClient({
         <Link href="/dashboard/answer-note">
           <BubbleButton variant="peach" size="lg">발음 분석 작성하기 →</BubbleButton>
         </Link>
+      </div>
+    );
+  }
+
+  // ── 3단계 완료 후 모든 문장 다시 보기 ─────────────────────────────────────────
+  if (showSentenceReview) {
+    return (
+      <div
+        className="min-h-dvh flex flex-col items-center px-5 py-8"
+        style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
+      >
+        <div className="max-w-lg w-full mx-auto flex-1 flex flex-col">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3 animate-bounce-in">📖</div>
+            <h2 className="text-2xl font-black text-[#3D3530] mb-1">모두 완료했어요!</h2>
+            <p className="text-sm text-[#8B7E74]">
+              지금까지 연습한 문장이에요. 한 번 더 천천히 읽어볼까요?
+            </p>
+          </div>
+
+          <div className="flex-1 space-y-3 mb-6">
+            {allSentences.map((s, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl px-5 py-4 shadow-sm border-2 border-[#F0E8E0] flex items-start gap-3"
+              >
+                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FFD4B8] text-[#3D3530] font-black text-sm flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <p className="flex-1 text-lg font-bold text-[#3D3530] leading-relaxed pt-0.5">
+                  {s}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <BubbleButton
+            variant="peach"
+            size="xl"
+            onClick={() => {
+              setShowSentenceReview(false);
+              setAllDone(true);
+            }}
+            className="w-full"
+          >
+            연습 마치기 🎉
+          </BubbleButton>
+        </div>
       </div>
     );
   }
@@ -456,7 +583,7 @@ export function PracticeClient({
     }
     if (stage === 1 && stage2Words.length > 0) return `다음 단계 → (${STAGE_META[2].label})`;
     if (stage === 1 || stage === 2) return `다음 단계 → (${STAGE_META[3].label})`;
-    return "완료 🎊";
+    return "문장 모아보기 📖";
   };
 
   // 단계 인디케이터 (복습 포함)
@@ -550,32 +677,65 @@ export function PracticeClient({
 
           {/* 연습 카드 */}
           <div
-            className="w-full bg-white/90 rounded-[32px] shadow-lg text-center"
+            className="w-full bg-white/90 rounded-[32px] shadow-lg text-center relative"
             style={{
               border: `2px solid ${meta.color}22`,
               padding: currentItem?.kind === "sentence" ? "2rem 1.5rem" : "2rem 1.5rem",
             }}
           >
+            {/* 2단계 유사 패턴 라벨 — 좌상단에 작게 표시 */}
+            {currentItem?.similarTo && (
+              <span className="absolute top-3 left-4 text-[11px] font-semibold text-[#8B7E74]">
+                🔗 <span className="text-[#FFB38A]">{currentItem.similarTo}</span>와 유사
+              </span>
+            )}
+
+            {/* ← 이전 (좌측 원형 화살표 버튼) */}
+            <button
+              onClick={handlePrev}
+              disabled={currentIndex === 0}
+              aria-label="이전"
+              className="group absolute left-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
+            >
+              <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-enabled:group-hover:bg-[#FFF5EE] group-enabled:group-hover:border-[#FFB38A] group-enabled:group-hover:text-[#FFB38A] transition-colors shadow-sm">
+                ←
+              </span>
+              <span className="text-[10px] text-[#8B7E74] font-semibold">이전</span>
+            </button>
+
+            {/* → 다음 (우측 원형 화살표 버튼 — 단계 전환도 가능) */}
+            <button
+              onClick={handleNext}
+              aria-label="다음"
+              className="group absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 transition-all active:scale-90"
+            >
+              <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-hover:bg-[#FFF5EE] group-hover:border-[#FFB38A] group-hover:text-[#FFB38A] transition-colors shadow-sm">
+                →
+              </span>
+              <span className="text-[10px] text-[#8B7E74] font-semibold">다음</span>
+            </button>
+
+
             {currentItem?.badge && (
               <span
                 className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
                 style={{ backgroundColor: meta.bg, color: meta.color }}
               >
-                {currentItem.badge}
+                {stripEnglishParens(currentItem.badge)}
               </span>
             )}
 
-            {/* 복습 아이템: 목표 단어 → 아이 발음 함께 표시 */}
-            {currentItem?.scheduleId && currentItem.childPron ? (
+            {/* 1단계 오답·복습 아이템: 아이 발음 → 옳은 표현 함께 표시 */}
+            {currentItem?.childPron && currentItem?.kind !== "sentence" ? (
               <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="text-center">
-                  <p className="text-[10px] text-[#8B7E74] mb-0.5">목표</p>
-                  <p className="text-4xl font-black text-[#3D3530]">{currentItem.text}</p>
-                </div>
-                <span className="text-2xl text-[#C4B5A8]">→</span>
                 <div className="text-center">
                   <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
                   <p className="text-3xl font-bold text-[#FCA5A5]">{currentItem.childPron}</p>
+                </div>
+                <span className="text-2xl text-[#C4B5A8]">→</span>
+                <div className="text-center">
+                  <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
+                  <p className="text-4xl font-black text-[#3D3530]">{currentItem.text}</p>
                 </div>
               </div>
             ) : stage3Loading ? (
@@ -597,10 +757,10 @@ export function PracticeClient({
               <p className="text-sm text-[#8B7E74] mt-2">문장을 천천히 읽어봐요</p>
             )}
 
-            {/* 훈련 팁 (2단계 처방전) */}
-            {trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
+            {/* 훈련 팁 (2단계 처방전) — 단어별로 매칭 */}
+            {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed">
-                💡 {trainingTip}
+                💡 {currentItem.trainingTip}
               </p>
             )}
           </div>
@@ -648,7 +808,7 @@ export function PracticeClient({
       </div>
 
       {/* 하단 버튼 */}
-      <div className="max-w-lg mx-auto w-full px-6 pb-8 space-y-3">
+      <div className="max-w-lg mx-auto w-full px-6 pb-8 pt-5 space-y-3">
         {/* 평가 버튼 2개 — 로딩 중에는 비활성 */}
         {!isSlotsFull && !stage3Loading && (
           <div className="flex gap-3">
@@ -677,7 +837,7 @@ export function PracticeClient({
           </div>
         )}
 
-        {/* 다음 버튼 */}
+        {/* 다음 단계 / 완료 버튼 — 단계 전환용 (item 이동은 카드 안 삼각형이 담당) */}
         <BubbleButton
           variant="white"
           size="md"

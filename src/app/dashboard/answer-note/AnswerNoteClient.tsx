@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
+import { stripEnglishParens } from "@/lib/strip-english";
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -256,10 +257,10 @@ function CurrentAnalysisCard({
             <p className="text-xs font-semibold text-[#8B7E74]">오류 유형</p>
             <p className="text-xl font-black text-[#3D3530]">
               {(geminiResult as any)?.patternName ? (
-                (geminiResult as any).patternName
+                stripEnglishParens((geminiResult as any).patternName)
               ) : (
                 <>
-                  {localResult.errorPattern}
+                  {stripEnglishParens(localResult.errorPattern)}
                   {geminiLoading && <span className="text-sm font-semibold text-[#8B7E74] ml-2 animate-pulse">(상세 분석중...)</span>}
                 </>
               )}
