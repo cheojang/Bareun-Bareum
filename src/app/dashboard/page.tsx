@@ -67,20 +67,23 @@ export default async function DashboardHome() {
     where: { childId: child.id, isLearned: false, nextReviewAt: { lte: todayEnd } },
   });
 
-  // ── 최근 연습 기록 (5개) ─────────────────────────────────────────────────────
+  // ── 최근 연습 기록 (5개) — 현재 선택된 아이만 ───────────────────────────────
   const recentSessions = await prisma.practiceSession.findMany({
-    where: { userId },
+    where: { userId, childId: child.id },
     orderBy: { startedAt: "desc" },
     take: 5,
     include: {
       child: { select: { name: true } },
-      _count: { select: { wordRecords: true } },
+      wordRecords: {
+        select: { targetWord: true },
+        orderBy: { practicedAt: "asc" },
+      },
     },
   });
 
-  // ── 활동 캘린더 데이터 (16주) ───────────────────────────────────────────────
+  // ── 활동 캘린더 데이터 (2주) ───────────────────────────────────────────────
   const calendarStart = new Date();
-  calendarStart.setDate(calendarStart.getDate() - 16 * 7);
+  calendarStart.setDate(calendarStart.getDate() - 2 * 7);
 
   const calendarRecords = await prisma.wordRecord.findMany({
     where: {
@@ -110,7 +113,7 @@ export default async function DashboardHome() {
 
           {/* 인사 + 마스코트 */}
           <div className="flex items-center gap-3">
-            <MascotAvatar level={child.mascotLevel} />
+            <MascotAvatar level={child.mascotLevel} image={child.image} />
             <div>
               <p className="text-sm text-[#8B7E74]">안녕하세요!</p>
               <h2 className="text-xl font-black text-[#3D3530]">{child.name} 성장 중 🌱</h2>
@@ -130,21 +133,20 @@ export default async function DashboardHome() {
 
           {/* 활동 캘린더 */}
           <BubbleCard>
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-bold text-[#3D3530]">📅 연습 기록</p>
-              <span className="text-xs text-[#C4B5A8]">최근 16주</span>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <p className="font-bold text-[#3D3530]">📅 연습 기록 (2주)</p>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#F0E8E0" }} />
+                  <span className="text-[10px] text-[#C4B5A8]">미출석</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#FFB38A" }} />
+                  <span className="text-[10px] text-[#C4B5A8]">출석</span>
+                </div>
+              </div>
             </div>
             <ActivityCalendar data={calendarData} />
-          </BubbleCard>
-
-          {/* 오늘도 연습 CTA */}
-          <BubbleCard color="peach" className="text-center">
-            <p className="text-lg font-black text-[#3D3530] mb-3">오늘도 연습해볼까요? 🎯</p>
-            <Link href="/dashboard/session/new">
-              <BubbleButton variant="peach" size="lg" className="w-full">
-                오늘의 코스 시작
-              </BubbleButton>
-            </Link>
           </BubbleCard>
 
         </div>
@@ -192,29 +194,67 @@ export default async function DashboardHome() {
                 <p className="text-sm font-semibold text-[#3D3530]">아직 연습 기록이 없어요</p>
                 <p className="text-xs text-[#8B7E74] mt-1">첫 연습을 시작해보세요!</p>
               </BubbleCard>
-            ) : (
-              <div className="space-y-3">
-                {recentSessions.map((s) => (
-                  <BubbleCard key={s.id} padding="sm" className="flex items-center gap-4">
-                    <span className="text-2xl">📖</span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-[#3D3530] text-sm">{s.child.name}</p>
-                      <p className="text-xs text-[#8B7E74]">
-                        {s._count.wordRecords}개 단어 ·{" "}
-                        {new Date(s.startedAt).toLocaleDateString("ko-KR", {
-                          month: "short",
-                          day: "numeric",
-                          weekday: "short",
-                        })}
-                      </p>
-                    </div>
-                    <Link href={`/dashboard/session/${s.id}`}>
-                      <span className="text-[#FFB38A] text-sm font-semibold">보기 →</span>
-                    </Link>
-                  </BubbleCard>
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              // 날짜별로 그 날 연습한 모든 단어 합치기 (중복 제거, 순서 유지)
+              const dateMap = new Map<string, string[]>();
+              for (const s of recentSessions) {
+                const label = new Date(s.startedAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+                if (!dateMap.has(label)) dateMap.set(label, []);
+                const arr = dateMap.get(label)!;
+                for (const w of s.wordRecords) {
+                  if (!arr.includes(w.targetWord)) arr.push(w.targetWord);
+                }
+              }
+              // 최신순 유지(원본 sort가 startedAt desc)
+              const groups: { dateLabel: string; words: string[] }[] = [];
+              for (const [dateLabel, words] of dateMap) groups.push({ dateLabel, words });
+
+              const MAX_CHIPS = 6; // 줄 넘침 방지
+
+              return (
+                <BubbleCard padding="sm">
+                  {groups.map((group, gi) => {
+                    const isLastGroup = gi === groups.length - 1;
+                    const visible = group.words.slice(0, MAX_CHIPS);
+                    const remaining = group.words.length - visible.length;
+                    return (
+                      <div key={group.dateLabel}>
+                        {/* 날짜 구분선 */}
+                        <div className={`flex items-center gap-3 ${gi > 0 ? "mt-1" : ""} py-2`}>
+                          <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                          <span className="text-[11px] font-black text-[#C4B5A8] tracking-wider">{group.dateLabel}</span>
+                          <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
+                        </div>
+                        {/* 해당 날짜의 단어 모음 */}
+                        <div className={`flex items-start gap-3 py-2.5 px-1 ${!isLastGroup ? "border-b border-[#F5F0EB]" : ""}`}>
+                          <span className="text-xl flex-shrink-0">📖</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[#8B7E74] mb-1.5">
+                              {group.words.length}개 단어
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {visible.map((w) => (
+                                <span
+                                  key={w}
+                                  className="inline-block text-[11px] font-semibold text-[#3D3530] bg-[#FFF5EE] border border-[#FFD4B8] rounded-full px-2 py-0.5"
+                                >
+                                  {w}
+                                </span>
+                              ))}
+                              {remaining > 0 && (
+                                <span className="inline-block text-[11px] font-semibold text-[#8B7E74] bg-[#F5F0EB] rounded-full px-2 py-0.5">
+                                  외 {remaining}개
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </BubbleCard>
+              );
+            })()}
           </div>
 
         </div>
@@ -233,10 +273,19 @@ function StatMini({ value, label, emoji }: { value: number; label: string; emoji
   );
 }
 
-function MascotAvatar({ level }: { level: number }) {
+function MascotAvatar({ level, image }: { level: number; image?: string | null }) {
   return (
     <div className="relative flex-shrink-0">
-      <SoriMascot size={56} variant="logo" animated={false} />
+      {image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={image}
+          alt="아이 프로필"
+          className="w-14 h-14 rounded-full object-cover border-2 border-[#FFD4B8]"
+        />
+      ) : (
+        <SoriMascot size={56} variant="logo" animated={false} />
+      )}
       <span className="absolute -bottom-1 -right-1 bg-[#FFB38A] text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center">
         {level}
       </span>

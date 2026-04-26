@@ -32,7 +32,7 @@ export function ResetSavedWordsButton({ childId }: { childId: string }) {
     <button
       onClick={handleReset}
       disabled={loading}
-      className="text-xs font-bold text-[#C4B5A8] hover:text-[#EF4444] transition-colors px-2 py-1 rounded-xl hover:bg-[#FEF2F2] disabled:opacity-50"
+      className="text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors disabled:opacity-50 leading-none"
     >
       {loading ? "삭제 중..." : "🗑 전체 초기화"}
     </button>

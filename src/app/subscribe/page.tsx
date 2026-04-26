@@ -30,11 +30,10 @@ export default async function SubscribePage() {
             <PastelBadge color="yellow">현재 이용 중</PastelBadge>
           </div>
           <ul className="space-y-1 text-sm text-[#8B7E74]">
-            <li>✅ 기본 단어 연습 (20개)</li>
             <li>✅ AI 조음 분석 (월 10회)</li>
+            <li>✅ 단계별 반복 연습</li>
             <li>✅ 종합 진단 보고서</li>
             <li>❌ AI 분석 무제한</li>
-            <li>❌ 프리미엄 단어장</li>
           </ul>
         </BubbleCard>
 
@@ -50,11 +49,9 @@ export default async function SubscribePage() {
             <PastelBadge color="peach">⭐ 추천</PastelBadge>
           </div>
           <ul className="space-y-1 text-sm text-[#3D3530] mb-4">
-            <li>✅ AI 분석 무제한</li>
-            <li>✅ 프리미엄 단어장 무제한</li>
-            <li>✅ 성장 리포트 상세 분석</li>
-            <li>✅ 연습 스케줄 알림</li>
-            <li>✅ 첫 달 무료 체험</li>
+            <li>✅ AI 조음 분석 무제한</li>
+            <li>✅ 단계별 반복 연습</li>
+            <li>✅ 종합 진단 보고서</li>
           </ul>
           <TossPaymentButton
             userId={userId}

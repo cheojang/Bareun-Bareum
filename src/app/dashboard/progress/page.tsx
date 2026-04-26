@@ -4,17 +4,21 @@ import { redirect } from "next/navigation";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { GrassCalendar } from "@/components/progress/GrassCalendar";
+import { getSelectedChildId } from "@/lib/child-cookie";
 
 export default async function ProgressPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const child = await prisma.child.findFirst({
+  const children = await prisma.child.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
   });
 
-  if (!child) redirect("/onboarding");
+  if (children.length === 0) redirect("/onboarding");
+
+  const savedId = await getSelectedChildId();
+  const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // Calendar data: last 12 weeks
   const since = new Date();

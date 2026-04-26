@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
+import { getSelectedChildId } from "@/lib/child-cookie";
 import Link from "next/link";
 import { ResetSavedWordsButton } from "./ResetSavedWordsButton";
 
@@ -15,12 +16,13 @@ export default async function BookmarksPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const child = await prisma.child.findFirst({
+  // 헤더에서 선택한 아이 쿠키 우선, 없으면 첫 번째 아이
+  const children = await prisma.child.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
   });
 
-  if (!child) {
+  if (children.length === 0) {
     return (
       <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto">
         <p className="text-[#8B7E74]">아이 정보가 없어요.</p>
@@ -28,7 +30,10 @@ export default async function BookmarksPage() {
     );
   }
 
-  // 오늘 복습 필요 개수 (반복연습 CTA용)
+  const savedId = await getSelectedChildId();
+  const child = children.find((c) => c.id === savedId) ?? children[0];
+
+  // 오늘 복습 필요 개수 (복습하기 CTA용)
   const now = new Date();
   const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
   kstNow.setUTCHours(23, 59, 59, 999);
@@ -75,12 +80,12 @@ export default async function BookmarksPage() {
           <div className="text-5xl mb-4">📭</div>
           <p className="font-bold text-[#3D3530]">아직 저장된 단어가 없어요</p>
           <p className="text-sm text-[#8B7E74] mt-2 mb-5 leading-relaxed">
-            발음 분석 후 반복연습을 하면<br />
+            발음 분석 후 분석단어 훈련을 하면<br />
             틀린 단어가 자동으로 쌓여요
           </p>
           <Link href="/dashboard/practice">
             <span className="inline-block px-5 py-2.5 bg-[#FFB38A] text-white rounded-full text-sm font-bold">
-              반복연습 시작하기 →
+              분석단어 훈련 시작하기 →
             </span>
           </Link>
         </BubbleCard>
@@ -88,13 +93,13 @@ export default async function BookmarksPage() {
         <>
           {/* ── 오늘 복습 안내 CTA ─────────────────────────────────────────── */}
           {reviewCount > 0 && (
-            <Link href="/dashboard/practice">
+            <Link href="/dashboard/practice/review">
               <BubbleCard className="border-2 border-[#FFD9B8] cursor-pointer hover:opacity-95 transition">
                 <div className="flex items-center gap-3">
                   <div className="text-3xl">🔔</div>
                   <div className="flex-1">
                     <p className="font-black text-[#3D3530]">오늘 복습할 단어 {reviewCount}개</p>
-                    <p className="text-xs text-[#8B7E74] mt-0.5">반복연습에서 바로 시작할 수 있어요</p>
+                    <p className="text-xs text-[#8B7E74] mt-0.5">복습하기에서 바로 시작할 수 있어요</p>
                   </div>
                   <span className="text-[#FFB38A] font-bold">→</span>
                 </div>
@@ -149,10 +154,10 @@ export default async function BookmarksPage() {
                     저장한 단어
                     <span className="ml-2 text-sm font-normal text-[#8B7E74]">{savedWords.length}개</span>
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <ResetSavedWordsButton childId={child.id} />
-                    <Link href="/dashboard/practice">
-                      <span className="text-xs text-[#FFB38A] font-semibold">다시 연습하기 →</span>
+                    <Link href="/dashboard/practice" className="text-xs text-[#FFB38A] font-semibold leading-none">
+                      다시 연습하기 →
                     </Link>
                   </div>
                 </div>
@@ -186,7 +191,7 @@ export default async function BookmarksPage() {
             );
           })()}
 
-          {/* 반복연습 CTA */}
+          {/* 분석단어 훈련 CTA */}
           <BubbleCard color="peach" className="text-center">
             <p className="font-bold text-[#3D3530] mb-1">저장한 단어로 연습할까요?</p>
             <p className="text-xs text-[#8B7E74] mb-3">
@@ -194,7 +199,7 @@ export default async function BookmarksPage() {
             </p>
             <Link href="/dashboard/practice">
               <span className="inline-block px-6 py-3 bg-white rounded-full text-sm font-black text-[#FFB38A] shadow-sm">
-                반복연습 시작하기 🎮
+                분석단어 훈련 시작하기 🎮
               </span>
             </Link>
           </BubbleCard>

@@ -426,6 +426,15 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
     if (saved === "true") setSkipDeleteConfirm(true);
   }, []);
 
+  // 아이 변경 시 props로 받은 새 pastRecords로 state 동기화 + 진행중 분석 초기화
+  useEffect(() => {
+    setRecords(pastRecords);
+    setLocalResult(null);
+    setGeminiResult(null);
+    setGeminiError("");
+    setError("");
+  }, [childId, pastRecords]);
+
   async function handleAnalyze() {
     const targetErr = validateKoreanWord(targetWord);
     const pronunciationErr = validateKoreanWord(childPronunciation);
@@ -823,13 +832,13 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
             </span>
             <Link
               href={`/dashboard/answer-note/comprehensive?childId=${childId}`}
-              className="ml-auto text-xs font-black bg-[#7EDFD0] text-white px-4 py-2.5 rounded-2xl hover:bg-[#68C9BC] transition-all shadow-md shadow-[#7EDFD0]/20 active:scale-95 flex items-center gap-2"
+              className="ml-auto text-xs font-semibold text-[#C4B5A8] hover:text-[#0D9488] transition-colors leading-none"
             >
-              <span className="text-sm">📊</span> 종합 분석하기
+              📊 종합 분석하기
             </Link>
             <button
               onClick={handleResetAll}
-              className="text-xs font-bold text-[#C4B5A8] hover:text-[#EF4444] transition-colors px-2 py-1 rounded-xl hover:bg-[#FEF2F2]"
+              className="text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors leading-none"
             >
               🗑 전체 초기화
             </button>

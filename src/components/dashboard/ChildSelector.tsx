@@ -47,12 +47,7 @@ export function ChildSelector({ children, selectedId }: Props) {
   const emoji = MASCOT_EMOJIS[Math.min((selected?.mascotLevel ?? 1) - 1, 4)];
 
   return (
-    <div ref={ref} className="relative flex items-center gap-1.5">
-      {/* "아이 :" 라벨 */}
-      <span className="text-sm font-black text-[#A89A90] whitespace-nowrap">
-        아이 :
-      </span>
-
+    <div ref={ref} className="relative flex items-center">
       {/* 트리거 버튼 */}
       <button
         onClick={() => setOpen((v) => !v)}

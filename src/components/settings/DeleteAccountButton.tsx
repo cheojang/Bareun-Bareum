@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 
-export function DeleteAccountButton() {
+export function DeleteAccountButton({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -43,21 +43,31 @@ export function DeleteAccountButton() {
 
   return (
     <>
-      <button
-        onClick={openModal}
-        className="w-full py-3 rounded-2xl text-sm font-bold text-[#EF4444] hover:bg-[#FEE2E2] transition-colors"
-      >
-        회원 탈퇴
-      </button>
+      {compact ? (
+        <button
+          onClick={openModal}
+          aria-label="회원 탈퇴"
+          className="flex items-center gap-1 text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors leading-none"
+        >
+          🗑 회원탈퇴
+        </button>
+      ) : (
+        <button
+          onClick={openModal}
+          className="w-full py-3 rounded-2xl text-sm font-bold text-[#EF4444] hover:bg-[#FEE2E2] transition-colors"
+        >
+          회원 탈퇴
+        </button>
+      )}
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          className="fixed inset-0 z-50 flex items-center justify-center px-5 py-6 overflow-y-auto"
           style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <div
-            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl my-auto"
             style={{ backgroundColor: "#FFFAF7", border: "1.5px solid #F0E8E0" }}
           >
             <div className="text-5xl text-center mb-4">😢</div>

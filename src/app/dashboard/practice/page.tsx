@@ -3,38 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { PracticeClient } from "./PracticeClient";
 
-// KST 기준 오늘 자정 (UTC로 변환)
-function getKstEndOfDay() {
-  const now = new Date();
-  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  kstNow.setUTCHours(23, 59, 59, 999);
-  return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
-}
-
-// 오늘 복습 아이템을 스마트하게 선별 — 많이 틀리는 음소 우선, 최대 5개
-function smartFilterReviews(
-  items: { id: string; targetWord: string; childPronunciation: string; phoneme: string; errorPattern: string; reviewCount: number }[],
-  maxCount: number
-) {
-  const phonemeCount: Record<string, number> = {};
-  for (const item of items) {
-    phonemeCount[item.phoneme] = (phonemeCount[item.phoneme] ?? 0) + 1;
-  }
-  const sorted = [...items].sort(
-    (a, b) => (phonemeCount[b.phoneme] ?? 0) - (phonemeCount[a.phoneme] ?? 0)
-  );
-  const result: typeof items = [];
-  const phonemeUsed: Record<string, number> = {};
-  for (const item of sorted) {
-    if (result.length >= maxCount) break;
-    const used = phonemeUsed[item.phoneme] ?? 0;
-    if (used >= 2) continue;
-    phonemeUsed[item.phoneme] = used + 1;
-    result.push(item);
-  }
-  return result;
-}
-
 export default async function PracticePage({
   searchParams,
 }: {
@@ -56,30 +24,6 @@ export default async function PracticePage({
 
   const params = await searchParams;
   const errorRecordId = params.errorRecordId;
-
-  const kstEndOfDay = getKstEndOfDay();
-
-  // ── 오늘 복습이 필요한 단어 (ReviewSchedule) ─────────────────────────────
-  const allReviewsDue = await prisma.reviewSchedule.findMany({
-    where: {
-      childId: child.id,
-      isLearned: false,
-      nextReviewAt: { lte: kstEndOfDay },
-    },
-    orderBy: { easeFactor: "asc" }, // easeFactor 낮을수록 어려운 단어
-    take: 20,
-  });
-  const reviewItems = smartFilterReviews(
-    allReviewsDue.map((r) => ({
-      id: r.id,
-      targetWord: r.targetWord,
-      childPronunciation: r.childPronunciation,
-      phoneme: r.phoneme === "미분류" ? "전체" : r.phoneme,
-      errorPattern: r.errorPattern,
-      reviewCount: r.reviewCount,
-    })),
-    5
-  );
 
   // ── 1단계·2단계 단어 로딩 ────────────────────────────────────────────────
   // trainingTip을 단어별로 매칭하기 위해 stage1Words에 함께 저장
@@ -196,7 +140,6 @@ export default async function PracticePage({
       childName={child.name}
       childImage={child.image}
       mascotLevel={child.mascotLevel}
-      reviewItems={reviewItems}
       stage1Words={stage1Words}
       stage2Words={stage2Words}
       errorPattern={errorPattern}

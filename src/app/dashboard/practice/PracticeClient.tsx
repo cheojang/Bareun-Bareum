@@ -22,26 +22,17 @@ interface SimilarWord {
   sourceWord: string; // 어떤 분석 단어와 유사 패턴인지
 }
 
-interface ReviewWord {
-  id: string;
-  targetWord: string;
-  childPronunciation: string;
-  phoneme: string;
-  reviewCount: number;
-}
-
 interface Props {
   childId: string;
   childName: string;
   childImage?: string | null;
   mascotLevel: number;
-  reviewItems: ReviewWord[];
   stage1Words: ErrorWord[];
   stage2Words: SimilarWord[];
   errorPattern?: string;
 }
 
-type Stage = "review" | 1 | 2 | 3;
+type Stage = 1 | 2 | 3;
 type DotResult = "good" | "bad" | null;
 type MasteryLevel = "mastered" | "medium" | "hard";
 
@@ -51,8 +42,7 @@ interface PracticeItem {
   badge?: string;
   trainingTip?: string;      // 단어별 2단계 처방전 (오류 패턴과 매칭)
   similarTo?: string;        // 2단계: 어떤 원본 분석 단어와 유사 패턴인지
-  scheduleId?: string;       // 복습 아이템만
-  childPron?: string;        // 복습 아이템에서 아이 발음 표시용
+  childPron?: string;        // 1단계 오답 단어에서 아이 발음 표시용
 }
 
 const MAX_DOTS = 5;
@@ -60,12 +50,6 @@ const MAX_DOTS = 5;
 // ─── 단계 메타 ─────────────────────────────────────────────────────────────────
 
 const STAGE_META: Record<string, { label: string; desc: string; color: string; bg: string }> = {
-  review: {
-    label: "오늘의 복습",
-    desc: "지난번에 어려웠던 단어를 다시 연습해요",
-    color: "#7C6FCD",
-    bg: "#F5F3FF",
-  },
   1: {
     label: "1단계 · 오답 단어",
     desc: "틀렸던 단어부터 다시 연습해요",
@@ -214,26 +198,16 @@ export function PracticeClient({
   childName,
   childImage,
   mascotLevel,
-  reviewItems,
   stage1Words,
   stage2Words,
   errorPattern,
 }: Props) {
-  // 복습 아이템이 있으면 복습 단계부터 시작
-  const startStage: Stage = reviewItems.length > 0 ? "review" : 1;
+  // 항상 1단계부터 시작
+  const startStage: Stage = 1;
 
   const [stage, setStage] = useState<Stage>(startStage);
 
   const makeItems = useCallback((s: Stage): PracticeItem[] => {
-    if (s === "review") {
-      return reviewItems.map((r) => ({
-        text: r.targetWord,
-        kind: "word" as const,
-        badge: r.phoneme,
-        scheduleId: r.id,
-        childPron: r.childPronunciation,
-      }));
-    }
     if (s === 1) return stage1Words.map((e) => ({
       text: e.word,
       kind: "word" as const,
@@ -247,7 +221,7 @@ export function PracticeClient({
       similarTo: w.sourceWord,
     }));
     return [];
-  }, [reviewItems, stage1Words, stage2Words]);
+  }, [stage1Words, stage2Words]);
 
   const [items, setItems] = useState<PracticeItem[]>(() => makeItems(startStage));
   const [stage3Loading, setStage3Loading] = useState(false);
@@ -284,17 +258,14 @@ export function PracticeClient({
 
   // 전체 아이템 수 (존재하는 단계만 합산)
   const totalAllItems =
-    (reviewItems.length > 0 ? reviewItems.length : 0) +
     (stage1Words.length > 0 ? stage1Words.length : 0) +
     (stage2Words.length > 0 ? stage2Words.length : 0) +
     stage3ItemCount;
 
   // 현재 단계 이전까지 완료된 아이템 수
   const itemsBeforeCurrentStage = (() => {
-    if (stage === "review") return 0;
-    let count = reviewItems.length > 0 ? reviewItems.length : 0;
-    if (stage === 1) return count;
-    count += stage1Words.length;
+    if (stage === 1) return 0;
+    let count = stage1Words.length;
     if (stage === 2) return count;
     count += stage2Words.length;
     return count; // stage === 3
@@ -313,11 +284,7 @@ export function PracticeClient({
       setCurrentIndex(0);
       setStage(target);
 
-      if (target === "review") {
-        const rItems = makeItems("review");
-        setItems(rItems);
-        setDotSlots(Array.from({ length: rItems.length }, () => Array(MAX_DOTS).fill(null)));
-      } else if (target === 1) {
+      if (target === 1) {
         const s1 = makeItems(1);
         setItems(s1);
         setDotSlots(Array.from({ length: s1.length }, () => Array(MAX_DOTS).fill(null)));
@@ -372,7 +339,7 @@ export function PracticeClient({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stage1Words, stage2Words, errorPattern, reviewItems, prefetchedS3]
+    [stage1Words, stage2Words, errorPattern, prefetchedS3]
   );
 
   // ── 3단계 사전 fetch — 2단계 마지막 단어 또는 2단계 없을 때 1단계 마지막 ──
@@ -502,9 +469,7 @@ export function PracticeClient({
     } else if (stage === 2) {
       prevStage = 1;
     } else if (stage === 1) {
-      prevStage = reviewItems.length > 0 ? "review" : null;
-    } else if (stage === "review") {
-      prevStage = null; // 복습이 시작 단계면 맨 앞
+      prevStage = null; // 1단계가 첫 단계
     }
 
     if (prevStage === null) return; // 이미 맨 처음
@@ -518,7 +483,7 @@ export function PracticeClient({
       return Array.from({ length: Math.max(prevItems.length, 1) }, () => Array(MAX_DOTS).fill(null));
     });
     setCurrentIndex(prevItems.length - 1); // 마지막 아이템으로
-  }, [currentIndex, stage, stage1Words, stage2Words, reviewItems, makeItems]);
+  }, [currentIndex, stage, stage2Words, makeItems]);
 
   // ── 다음 아이템 ───────────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
@@ -526,15 +491,7 @@ export function PracticeClient({
       setCurrentIndex((i) => i + 1);
       return;
     }
-    // 현재 단계/페이즈 완료
-    if (stage === "review") {
-      if (stage1Words.length > 0) {
-        transitionToStage(1);
-      } else {
-        setAllDone(true);
-      }
-      return;
-    }
+    // 현재 단계 완료
     if (stage === 1 && stage2Words.length > 0) {
       transitionToStage(2);
     } else if (stage === 1 || stage === 2) {
@@ -543,10 +500,10 @@ export function PracticeClient({
       // 3단계 마지막 → 모든 문장 리뷰 화면 표시
       setShowSentenceReview(true);
     }
-  }, [currentIndex, items.length, stage, stage1Words.length, stage2Words.length, transitionToStage]);
+  }, [currentIndex, items.length, stage, stage2Words.length, transitionToStage]);
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
-  if (stage1Words.length === 0 && reviewItems.length === 0) {
+  if (stage1Words.length === 0) {
     return (
       <div
         className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
@@ -655,10 +612,9 @@ export function PracticeClient({
   const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
   const goodCount = currentSlots.filter((s) => s === "good").length;
 
-  // 단계 인디케이터 (복습 포함)
+  // 단계 인디케이터 (3단계)
   const stageSteps = (
     [
-      { key: "review" as Stage, show: reviewItems.length > 0 },
       { key: 1 as Stage, show: stage1Words.length > 0 },
       { key: 2 as Stage, show: stage2Words.length > 0 },
       { key: 3 as Stage, show: true },
@@ -673,19 +629,6 @@ export function PracticeClient({
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       <ConfettiEffect trigger={confetti} />
-
-      {/* 헤더 */}
-      <div className="max-w-lg mx-auto w-full flex items-center justify-between px-5 pt-6 pb-2">
-        <Link href="/dashboard">
-          <button className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center text-xl shadow-sm">
-            ←
-          </button>
-        </Link>
-        <MascotCharacter level={mascotLevel} size="sm" />
-        <div className="bg-white/80 rounded-full px-4 py-2 font-black text-[#FFB38A]">
-          ⭐ {totalGood}
-        </div>
-      </div>
 
       {/* 단계 표시 바 */}
       <div className="max-w-lg mx-auto w-full px-5 py-2">
@@ -781,33 +724,60 @@ export function PracticeClient({
                 </span>
               </button>
 
-              {/* 단어 / 문장 콘텐츠 */}
-              {currentItem?.childPron && currentItem?.kind !== "sentence" ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="text-center">
-                    <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
-                    <p className="text-3xl font-bold text-[#FCA5A5]">{currentItem.childPron}</p>
-                  </div>
-                  <span className="text-2xl text-[#C4B5A8]">→</span>
-                  <div className="text-center">
-                    <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
-                    <p className="text-4xl font-black text-[#3D3530]">{currentItem.text}</p>
-                  </div>
-                </div>
-              ) : stage3Loading ? (
-                <div className="py-6">
-                  <div className="text-5xl mb-3 animate-bounce">🤖</div>
-                  <p className="text-base font-bold text-[#3D3530]">AI가 문장을 만들고 있어요</p>
-                  <p className="text-xs text-[#8B7E74] mt-1 animate-pulse">잠시만 기다려주세요...</p>
-                </div>
-              ) : (
-                <p
-                  className="font-black text-[#3D3530] tracking-wide leading-snug"
-                  style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : "4rem" }}
-                >
-                  {currentItem?.text}
-                </p>
-              )}
+              {/* 단어 / 문장 콘텐츠 — 글자 수에 따라 크기 자동 조정 */}
+              {(() => {
+                const text = currentItem?.text ?? "";
+                const childPron = currentItem?.childPron ?? "";
+                const maxLen = Math.max(text.length, childPron.length);
+                // 비교 뷰용 크기 (좌: 아이 발음, 우: 옳은 표현)
+                const compareLeft  = maxLen <= 2 ? "2.75rem" : maxLen === 3 ? "2.25rem" : maxLen === 4 ? "1.875rem" : "1.5rem";
+                const compareRight = maxLen <= 2 ? "3.5rem"  : maxLen === 3 ? "2.75rem" : maxLen === 4 ? "2.25rem" : "1.875rem";
+                // 단일 단어 뷰용 크기
+                const singleSize = text.length <= 2 ? "4rem" : text.length === 3 ? "3.25rem" : text.length === 4 ? "2.5rem" : "2rem";
+
+                if (currentItem?.childPron && currentItem?.kind !== "sentence") {
+                  return (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="text-center min-w-0">
+                        <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
+                        <p
+                          className="font-bold text-[#FCA5A5] whitespace-nowrap"
+                          style={{ fontSize: compareLeft }}
+                        >
+                          {childPron}
+                        </p>
+                      </div>
+                      <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
+                      <div className="text-center min-w-0">
+                        <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
+                        <p
+                          className="font-black text-[#3D3530] whitespace-nowrap"
+                          style={{ fontSize: compareRight }}
+                        >
+                          {text}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                if (stage3Loading) {
+                  return (
+                    <div className="py-6">
+                      <div className="text-5xl mb-3 animate-bounce">🤖</div>
+                      <p className="text-base font-bold text-[#3D3530]">AI가 문장을 만들고 있어요</p>
+                      <p className="text-xs text-[#8B7E74] mt-1 animate-pulse">잠시만 기다려주세요...</p>
+                    </div>
+                  );
+                }
+                return (
+                  <p
+                    className="font-black text-[#3D3530] tracking-wide leading-snug"
+                    style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : singleSize }}
+                  >
+                    {text}
+                  </p>
+                );
+              })()}
 
               {/* → 다음 (우측 원형 화살표 버튼 — 단계 전환도 가능) */}
               <button

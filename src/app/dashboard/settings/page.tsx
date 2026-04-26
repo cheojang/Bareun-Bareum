@@ -47,21 +47,17 @@ export default async function SettingsPage() {
 
       {/* Subscription */}
       <BubbleCard color={isPremium ? "mint" : "peach"}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="font-bold text-[#3D3530]">
-              {isPremium ? "프리미엄 구독 중" : "무료 플랜"}
+        <div className="mb-3">
+          <p className="text-xs text-[#8B7E74] mb-0.5">현재 이용 중인 플랜</p>
+          <p className="font-bold text-[#3D3530]">
+            {isPremium ? "✨ 프리미엄 플랜" : "무료 플랜"}
+          </p>
+          {isPremium && subscription?.currentPeriodEnd && (
+            <p className="text-xs text-[#8B7E74] mt-0.5">
+              다음 갱신:{" "}
+              {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
             </p>
-            {isPremium && subscription?.currentPeriodEnd && (
-              <p className="text-xs text-[#8B7E74]">
-                다음 갱신:{" "}
-                {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
-              </p>
-            )}
-          </div>
-          <PastelBadge color={isPremium ? "mint" : "yellow"}>
-            {isPremium ? "✨ 프리미엄" : "무료"}
-          </PastelBadge>
+          )}
         </div>
         {!isPremium && (
           <Link href="/subscribe">
@@ -72,7 +68,10 @@ export default async function SettingsPage() {
 
       {/* Children */}
       <BubbleCard>
-        <p className="font-bold text-[#3D3530] mb-3">아이 프로필</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-bold text-[#3D3530]">아이 프로필</p>
+          <DeleteAccountButton compact />
+        </div>
         <div className="space-y-3">
           {children.map((child: { id: string; name: string; mascotLevel: number; totalWords: number; image?: string | null }) => (
             <div key={child.id} className="flex items-center gap-3 p-3 bg-[#FFF5EE] rounded-2xl">
@@ -90,19 +89,12 @@ export default async function SettingsPage() {
             </BubbleButton>
           </Link>
         </div>
+
       </BubbleCard>
 
       {/* Sign out */}
       <BubbleCard>
         <SignOutButton />
-      </BubbleCard>
-
-      {/* 회원 탈퇴 */}
-      <BubbleCard>
-        <p className="text-xs text-[#C4B5A8] mb-3">
-          탈퇴 시 모든 아이 기록과 계정 정보가 영구적으로 삭제됩니다.
-        </p>
-        <DeleteAccountButton />
       </BubbleCard>
     </div>
   );
