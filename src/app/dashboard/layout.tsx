@@ -39,12 +39,8 @@ export default async function DashboardLayout({
         },
       });
 
-  // 치료사 연계 여부: 아이 중 하나라도 센터에 등록되어 있으면 true
-  const hasTherapistLink = isGuest
-    ? false
-    : (await prisma.centerChild.count({
-        where: { child: { userId: session.user.id! } },
-      })) > 0;
+  // 상담소 기능 2단계에서 활성화 예정 — 현재 비활성화
+  const hasTherapistLink = false;
 
   return (
     <div

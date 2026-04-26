@@ -7,7 +7,6 @@ import { PastelBadge } from "@/components/ui/PastelBadge";
 import { SignOutButton } from "./SignOutButton";
 import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
 import { ChildImageUpload } from "@/components/settings/ChildImageUpload";
-import { CenterEnrollCard } from "@/components/settings/CenterEnrollCard";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 
 export default async function SettingsPage() {
@@ -18,11 +17,6 @@ export default async function SettingsPage() {
     prisma.child.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
-      include: {
-        centerMappings: {
-          include: { center: { select: { id: true, name: true } } },
-        },
-      },
     }),
     prisma.subscription.findUnique({ where: { userId } }),
   ]);
@@ -97,17 +91,6 @@ export default async function SettingsPage() {
           </Link>
         </div>
       </BubbleCard>
-
-      {/* 센터 연계 등록 */}
-      {children.length > 0 && (
-        <BubbleCard>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">🏥</span>
-            <p className="font-bold text-[#3D3530]">센터 연계 등록</p>
-          </div>
-          <CenterEnrollCard children={children} />
-        </BubbleCard>
-      )}
 
       {/* Sign out */}
       <BubbleCard>
