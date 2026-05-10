@@ -4,6 +4,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { getGeminiFeedbackStream } from '@/lib/gemini-client';
 import { auth } from '@/lib/auth';
+import { LRUCache } from '@/lib/lru-cache';
+
+interface WordPairResult {
+  patternName:      string;
+  rootCause:        string;
+  trainingStep1:    string;
+  trainingStep2:    string;
+  trainingStep3:    string;
+  trainingStep4:    string;
+  recommendedWords: string[];
+  parentMessage:    string;
+  fromCache:        true;
+  fromGlobalCache:  true;
+}
+
+// 프로세스 생존 동안 유지되는 인메모리 LRU 캐시 (최대 3000개 단어쌍)
+const wordPairLRU = new LRUCache<string, WordPairResult>(3000);
 
 // ── 스트리밍 중 완성된 문자열 필드 추출 (안전하게 닫힌 것만) ──────────────
 // JSON 모드로 응답하므로 value 내부의 "는 반드시 \"로 escape됨
@@ -121,6 +138,45 @@ export async function POST(request: NextRequest) {
     }
     if (errorRecord.child.userId !== session.user.id) {
       return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
+    }
+
+    // ─── 0순위: 글로벌 WordPairCache (LRU → DB) ──────────────────────────────
+    const wpKey = `${errorRecord.targetWord}::${errorRecord.childPronunciation}`;
+    const lruHit = wordPairLRU.get(wpKey);
+    if (lruHit) {
+      console.log("[Cache-LRU] 글로벌 HIT:", errorRecord.targetWord);
+      return NextResponse.json({ ...lruHit, patternName: errorRecord.errorPattern });
+    }
+    const globalCache = await prisma.wordPairCache.findUnique({
+      where: {
+        targetWord_childPronunciation: {
+          targetWord: errorRecord.targetWord,
+          childPronunciation: errorRecord.childPronunciation,
+        },
+      },
+    });
+    if (globalCache) {
+      console.log("[Cache-DB] 글로벌 HIT:", errorRecord.targetWord, `(총 ${globalCache.hitCount + 1}회)`);
+      let recWords: string[] = [];
+      try { recWords = JSON.parse(globalCache.recommendedWords); } catch {}
+      const result: WordPairResult = {
+        patternName:      errorRecord.errorPattern,
+        rootCause:        globalCache.rootCause,
+        trainingStep1:    globalCache.trainingStep1,
+        trainingStep2:    globalCache.trainingStep2,
+        trainingStep3:    globalCache.trainingStep3,
+        trainingStep4:    globalCache.trainingStep4,
+        recommendedWords: recWords,
+        parentMessage:    globalCache.parentMessage,
+        fromCache:        true,
+        fromGlobalCache:  true,
+      };
+      wordPairLRU.set(wpKey, result);
+      prisma.wordPairCache.update({
+        where: { id: globalCache.id },
+        data: { hitCount: { increment: 1 } },
+      }).catch(() => {});
+      return NextResponse.json(result);
     }
 
     // ─── jamoBreakdown 파싱 → 음소 + 위치 추출 ──────────────────────────────
@@ -360,6 +416,46 @@ export async function POST(request: NextRequest) {
                     update: {},
                   }).catch(() => {});
                 }
+
+                // ── 글로벌 WordPairCache 저장 (선착순 — 이미 있으면 덮어쓰지 않음) ──
+                await prisma.wordPairCache.upsert({
+                  where: {
+                    targetWord_childPronunciation: {
+                      targetWord: errorRecord.targetWord,
+                      childPronunciation: errorRecord.childPronunciation,
+                    },
+                  },
+                  create: {
+                    targetWord:         errorRecord.targetWord,
+                    childPronunciation: errorRecord.childPronunciation,
+                    errorType:          errorRecord.errorType,
+                    errorCategory:      errorRecord.errorCategory,
+                    rootCause:          parsed.rootCause ?? "",
+                    trainingStep1:      parsed.trainingStep1 ?? "",
+                    trainingStep2:      parsed.trainingStep2 ?? "",
+                    trainingStep3:      parsed.trainingStep3 ?? "",
+                    trainingStep4:      parsed.trainingStep4 ?? "",
+                    recommendedWords:   JSON.stringify(parsed.recommendedWords ?? []),
+                    parentMessage:      parsed.parentMessage ?? "",
+                  },
+                  update: {},
+                }).then(() => {
+                  // LRU에도 즉시 등록
+                  const lruVal: WordPairResult = {
+                    patternName:      errorRecord.errorPattern,
+                    rootCause:        parsed.rootCause ?? "",
+                    trainingStep1:    parsed.trainingStep1 ?? "",
+                    trainingStep2:    parsed.trainingStep2 ?? "",
+                    trainingStep3:    parsed.trainingStep3 ?? "",
+                    trainingStep4:    parsed.trainingStep4 ?? "",
+                    recommendedWords: parsed.recommendedWords ?? [],
+                    parentMessage:    parsed.parentMessage ?? "",
+                    fromCache:        true,
+                    fromGlobalCache:  true,
+                  };
+                  wordPairLRU.set(wpKey, lruVal);
+                  console.log("[Cache] 글로벌 캐시 저장:", errorRecord.targetWord);
+                }).catch(() => {});
               } catch (saveError) {
                 console.error("DB Save Error:", saveError);
               }

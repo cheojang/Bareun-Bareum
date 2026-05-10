@@ -236,6 +236,7 @@ function CurrentAnalysisCard({
   geminiLoading,
   geminiResult,
   geminiError,
+  fromGlobalCache,
 }: {
   targetWord: string;
   childPronunciation: string;
@@ -244,6 +245,7 @@ function CurrentAnalysisCard({
   geminiLoading: boolean;
   geminiResult: GeminiResult | null;
   geminiError: string;
+  fromGlobalCache: boolean;
 }) {
   const categoryStyle = CATEGORY_STYLE[localResult.errorCategory] ?? DEFAULT_STYLE;
 
@@ -287,6 +289,15 @@ function CurrentAnalysisCard({
           </div>
         </div>
       </BubbleCard>
+
+      {/* 글로벌 캐시 HIT 배지 */}
+      {fromGlobalCache && geminiResult?.rootCause && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs bg-[#E8F8F5] text-[#2ECC71] font-semibold px-2.5 py-1 rounded-full">
+            ⚡ 저장된 분석 결과
+          </span>
+        </div>
+      )}
 
       {/* Gemini 로딩 스켈레톤 - 어떤 필드도 아직 안 왔을 때만 */}
       {geminiLoading && !geminiResult?.rootCause && (geminiResult?.trainingSteps.length ?? 0) === 0 && (
@@ -410,6 +421,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
   const [geminiLoading, setGeminiLoading] = useState(false);
   const [geminiResult, setGeminiResult] = useState<GeminiResult | null>(null);
   const [geminiError, setGeminiError] = useState("");
+  const [fromGlobalCache, setFromGlobalCache] = useState(false);
 
   const [error, setError] = useState("");
   const [targetWordError, setTargetWordError] = useState("");
@@ -433,6 +445,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
     setGeminiResult(null);
     setGeminiError("");
     setError("");
+    setFromGlobalCache(false);
   }, [childId, pastRecords]);
 
   async function handleAnalyze() {
@@ -456,6 +469,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
     setLocalResult(null);
     setGeminiResult(null);
     setGeminiError("");
+    setFromGlobalCache(false);
 
     // 현재 분석 단어 저장 (결과 카드에서 참조용)
     const tw = targetWord.trim();
@@ -540,6 +554,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
         };
         setGeminiResult(acc);
         setGeminiLoading(false);
+        if (raw.fromGlobalCache) setFromGlobalCache(true);
       }
       // ── 캐시 MISS: NDJSON 스트림 파싱 ───────────────────────────────────
       else if (geminiRes.body) {
@@ -819,6 +834,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
           geminiLoading={geminiLoading}
           geminiResult={geminiResult}
           geminiError={geminiError}
+          fromGlobalCache={fromGlobalCache}
         />
       )}
 

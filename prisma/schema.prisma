@@ -381,6 +381,28 @@ model TherapyNote {
   @@index([therapistId])
 }
 
+// WordPairCache: 글로벌 단어쌍 캐시 — 동일 (목표단어+아이발음) 재분석 시 Gemini 호출 없이 즉시 반환
+model WordPairCache {
+  id                 String   @id @default(cuid())
+  targetWord         String
+  childPronunciation String
+  errorType          String
+  errorCategory      String
+  rootCause          String   @db.Text
+  trainingStep1      String   @db.Text
+  trainingStep2      String   @db.Text
+  trainingStep3      String   @db.Text
+  trainingStep4      String   @db.Text
+  recommendedWords   String   // JSON array
+  parentMessage      String   @db.Text
+  hitCount           Int      @default(1)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([targetWord, childPronunciation])
+  @@index([hitCount])
+}
+
 // Message: 부모 ↔ 치료사 1:1 메시지
 model Message {
   id          String    @id @default(cuid())
