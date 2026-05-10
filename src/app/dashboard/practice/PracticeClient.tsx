@@ -8,6 +8,179 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import Link from "next/link";
 
+// ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
+function CompletionScreen({
+  childName, totalReps, repTarget, totalGood,
+  masteredCount, needsWorkCount, practiceWords, errorPattern, childId,
+}: {
+  childName: string; totalReps: number; repTarget: number; totalGood: number;
+  masteredCount: number; needsWorkCount: number;
+  practiceWords: string[]; errorPattern?: string; childId: string;
+}) {
+  const [cards, setCards] = useState<{ context: string; phrases: string[] }[]>([]);
+  const [loadingCards, setLoadingCards] = useState(true);
+
+  useEffect(() => {
+    if (practiceWords.length === 0) { setLoadingCards(false); return; }
+    fetch("/api/coaching-cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words: practiceWords, errorPattern, childName }),
+    })
+      .then((r) => r.json())
+      .then((d) => setCards(d.cards ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingCards(false));
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div
+      className="min-h-dvh flex flex-col items-center pb-12 text-center px-6"
+      style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
+    >
+      <ConfettiEffect trigger />
+      <div className="text-8xl mb-4 mt-12 animate-bounce-in">🎉</div>
+      <h2 className="text-3xl font-black text-[#3D3530] mb-2">{childName} 최고야!</h2>
+      <p className="text-[#8B7E74] mb-6">오늘 연습을 모두 완료했어요!</p>
+
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        <span className="px-4 py-2 bg-[#FFF5EE] rounded-full text-sm font-bold text-[#FFB38A]">
+          🔁 총 {totalReps}회 반복{totalReps >= repTarget ? " 🎯" : ""}
+        </span>
+        <span className="px-4 py-2 bg-[#7EDFD0]/20 rounded-full text-sm font-bold text-[#0D9488]">
+          ⭐ {totalGood}번 성공
+        </span>
+        {masteredCount > 0 && (
+          <span className="px-4 py-2 bg-[#F0FAF8] rounded-full text-sm font-bold text-[#0D9488]">
+            🌟 {masteredCount}개 완벽 마스터
+          </span>
+        )}
+        {needsWorkCount > 0 && (
+          <span className="px-4 py-2 bg-[#FDF2F8] rounded-full text-sm font-bold text-[#EC4899]">
+            💪 {needsWorkCount}개 내일 다시 연습해요
+          </span>
+        )}
+      </div>
+
+      {/* 부모 코칭 카드 */}
+      <div className="w-full max-w-md text-left mb-8">
+        <p className="text-sm font-black text-[#3D3530] mb-3 text-center">
+          🌿 오늘 일상에서도 연습해보세요
+        </p>
+        {loadingCards ? (
+          <div className="flex justify-center gap-1.5 py-4">
+            {[0,1,2].map((i) => (
+              <div key={i} className="w-2 h-2 rounded-full bg-[#FFB38A] animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+        ) : cards.map((card) => (
+          <div key={card.context} className="mb-3 bg-white/80 rounded-2xl px-4 py-3 shadow-sm border border-[#F0E8E0]">
+            <p className="text-sm font-black text-[#3D3530] mb-2">{card.context}</p>
+            <ul className="space-y-1.5">
+              {card.phrases.map((ph, i) => (
+                <li key={i} className="text-xs text-[#8B7E74] leading-relaxed flex gap-1.5">
+                  <span className="text-[#FFB38A] flex-shrink-0">•</span>
+                  {ph}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <Link href="/dashboard">
+        <BubbleButton variant="peach" size="xl">홈으로 가기 🏠</BubbleButton>
+      </Link>
+    </div>
+  );
+}
+
+// ─── 청각 폭격 컴포넌트 ────────────────────────────────────────────────────────
+function AuditoryBombardment({
+  words,
+  onDone,
+}: {
+  words: string[];
+  onDone: () => void;
+}) {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [done, setDone] = useState(false);
+  const calledRef = useRef(false);
+
+  useEffect(() => {
+    if (calledRef.current || words.length === 0) return;
+    calledRef.current = true;
+
+    async function playAll() {
+      for (let i = 0; i < words.length; i++) {
+        setActiveIdx(i);
+        await new Promise<void>((resolve) => {
+          if (!window.speechSynthesis) { setTimeout(resolve, 600); return; }
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(words[i]);
+          u.lang = "ko-KR";
+          u.rate = 0.82;
+          u.pitch = 1.05;
+          u.onend = () => setTimeout(resolve, 320);
+          u.onerror = () => setTimeout(resolve, 400);
+          window.speechSynthesis.speak(u);
+        });
+      }
+      setActiveIdx(null);
+      setDone(true);
+    }
+
+    // 짧은 딜레이 후 시작 (마운트 직후 바로 재생되면 브라우저가 막을 수 있음)
+    const t = setTimeout(playAll, 600);
+    return () => { clearTimeout(t); window.speechSynthesis?.cancel(); };
+  }, [words]);
+
+  return (
+    <div
+      className="min-h-dvh flex flex-col items-center justify-center px-6 text-center gap-6"
+      style={{ background: "linear-gradient(135deg,#FFF5EE 0%,#F0FAF8 50%,#EDE9FE 100%)" }}
+    >
+      <div className="text-5xl animate-bounce">👂</div>
+      <div>
+        <h2 className="text-2xl font-black text-[#3D3530] mb-1">먼저 들어볼게요!</h2>
+        <p className="text-sm text-[#8B7E74]">단어들을 귀 기울여 들어보세요</p>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2 max-w-xs">
+        {words.map((w, i) => (
+          <span
+            key={w}
+            className="px-4 py-2 rounded-full text-base font-black transition-all duration-300"
+            style={{
+              backgroundColor: i === activeIdx ? "#FFB38A" : "#F5F0EB",
+              color: i === activeIdx ? "#fff" : "#8B7E74",
+              transform: i === activeIdx ? "scale(1.15)" : "scale(1)",
+              boxShadow: i === activeIdx ? "0 4px 12px #FFB38A55" : "none",
+            }}
+          >
+            {w}
+          </span>
+        ))}
+      </div>
+
+      {!done ? (
+        <p className="text-xs text-[#C4B5A8] animate-pulse mt-2">재생 중...</p>
+      ) : (
+        <BubbleButton variant="peach" size="lg" onClick={onDone}>
+          연습 시작하기 →
+        </BubbleButton>
+      )}
+
+      <button
+        onClick={onDone}
+        className="text-xs text-[#C4B5A8] underline mt-1"
+      >
+        건너뛰기
+      </button>
+    </div>
+  );
+}
+
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
 interface ErrorWord {
@@ -236,6 +409,19 @@ export function PracticeClient({
   const [confetti, setConfetti] = useState(false);
   const [allDone, setAllDone] = useState(false);
 
+  // ── 반복 카운터 (운동학습 원리: 음소당 50회 이상이 효과적) ─────────────────────
+  const [totalReps, setTotalReps] = useState(0);
+  const REP_TARGET = 50;
+
+  // ── 청각 폭격 페이즈 ─────────────────────────────────────────────────────────
+  const [phase, setPhase] = useState<"bombardment" | "practice">(
+    stage1Words.length > 0 ? "bombardment" : "practice"
+  );
+  const bombardmentWords = [
+    ...stage1Words.map((e) => e.word),
+    ...stage2Words.map((w) => w.word),
+  ];
+
   // 3단계 사전 fetch — 2단계 마지막 단어에서 미리 문장 받아두기
   const [prefetchedS3, setPrefetchedS3] = useState<string[] | null>(null);
   const prefetchInFlightRef = useRef(false);
@@ -377,6 +563,7 @@ export function PracticeClient({
   const fillDot = useCallback(
     (result: "good" | "bad") => {
       if (isSlotsFull) return;
+      setTotalReps((n) => n + 1);
 
       setDotSlots((prev) => {
         const next = prev.map((row) => [...row]);
@@ -575,36 +762,33 @@ export function PracticeClient({
     const masteredCount = [...autoSavedItems.values()].filter((v) => v === "mastered").length;
     const needsWorkCount = [...autoSavedItems.values()].filter((v) => v === "hard").length;
     return (
-      <div
-        className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
-        style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
-      >
-        <ConfettiEffect trigger />
-        <div className="text-8xl mb-4 animate-bounce-in">🎉</div>
-        <h2 className="text-3xl font-black text-[#3D3530] mb-2">{childName} 최고야!</h2>
-        <p className="text-[#8B7E74] mb-6">오늘 연습을 모두 완료했어요!</p>
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          <span className="px-4 py-2 bg-[#7EDFD0]/20 rounded-full text-sm font-bold text-[#0D9488]">
-            ⭐ {totalGood}번 성공
-          </span>
-          {masteredCount > 0 && (
-            <span className="px-4 py-2 bg-[#F0FAF8] rounded-full text-sm font-bold text-[#0D9488]">
-              🌟 {masteredCount}개 완벽 마스터
-            </span>
-          )}
-          {needsWorkCount > 0 && (
-            <span className="px-4 py-2 bg-[#FDF2F8] rounded-full text-sm font-bold text-[#EC4899]">
-              💪 {needsWorkCount}개 내일 다시 연습해요
-            </span>
-          )}
-        </div>
-        <Link href="/dashboard">
-          <BubbleButton variant="peach" size="xl">홈으로 가기 🏠</BubbleButton>
-        </Link>
-      </div>
+      <CompletionScreen
+        childName={childName}
+        totalReps={totalReps}
+        repTarget={REP_TARGET}
+        totalGood={totalGood}
+        masteredCount={masteredCount}
+        needsWorkCount={needsWorkCount}
+        practiceWords={[
+          ...stage1Words.map((e) => e.word),
+          ...stage2Words.map((w) => w.word),
+        ]}
+        errorPattern={errorPattern}
+        childId={childId}
+      />
     );
   }
 
+
+  // ── 청각 폭격 화면 ───────────────────────────────────────────────────────────
+  if (phase === "bombardment") {
+    return (
+      <AuditoryBombardment
+        words={bombardmentWords}
+        onDone={() => setPhase("practice")}
+      />
+    );
+  }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
   const meta = STAGE_META[stage as string];
@@ -801,6 +985,28 @@ export function PracticeClient({
 
           {/* 🚗 자동차 트랙 */}
           <CarTrack progress={carProgress} childImage={childImage} />
+
+          {/* 반복 카운터 */}
+          <div className="w-full flex items-center gap-2.5 px-1">
+            <span className="text-xs text-[#8B7E74] flex-shrink-0 font-semibold">반복</span>
+            <div className="flex-1 h-2 bg-[#F0E8E0] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, (totalReps / REP_TARGET) * 100)}%`,
+                  background: totalReps >= REP_TARGET
+                    ? "linear-gradient(90deg,#7EDFD0,#2ECC71)"
+                    : "linear-gradient(90deg,#FFD4B8,#FFB38A)",
+                }}
+              />
+            </div>
+            <span
+              className="text-xs font-black flex-shrink-0 min-w-[42px] text-right"
+              style={{ color: totalReps >= REP_TARGET ? "#0D9488" : "#FFB38A" }}
+            >
+              {totalReps >= REP_TARGET ? "🎯" : ""}{totalReps}/{REP_TARGET}
+            </span>
+          </div>
 
           {/* 도트 (5개) */}
           <ResultDots slots={currentSlots} />
