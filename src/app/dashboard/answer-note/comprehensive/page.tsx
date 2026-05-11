@@ -349,21 +349,40 @@ export default async function ComprehensivePage({
                     <span className="text-[10px] text-[#8B7E74]">{meta.sublabel}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {group.map((w) => (
-                      <div key={w.phoneme} className="bg-white/80 rounded-xl px-3 py-2 shadow-sm">
-                        <p className="text-base font-black text-[#3D3530] leading-none mb-1">{w.phoneme}</p>
-                        {PHONEME_AGE[w.phoneme] && (
-                          <p className="text-[9px] text-[#8B7E74] font-semibold leading-none">
-                            습득 {PHONEME_AGE[w.phoneme]}
-                          </p>
-                        )}
-                        {PHONEME_HOW[w.phoneme] && (
-                          <p className="text-[9px] text-[#C4B5A8] mt-0.5 leading-tight max-w-[10rem]">
-                            {PHONEME_HOW[w.phoneme]}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                    {group.map((w) => {
+                      const isTrainable = level === "집중교정필요" || level === "꾸준한연습필요";
+                      const card = (
+                        <div className="bg-white/80 rounded-xl px-3 py-2 shadow-sm h-full">
+                          <p className="text-base font-black text-[#3D3530] leading-none mb-1">{w.phoneme}</p>
+                          {PHONEME_AGE[w.phoneme] && (
+                            <p className="text-[9px] text-[#8B7E74] font-semibold leading-none">
+                              습득 {PHONEME_AGE[w.phoneme]}
+                            </p>
+                          )}
+                          {PHONEME_HOW[w.phoneme] && (
+                            <p className="text-[9px] text-[#C4B5A8] mt-0.5 leading-tight max-w-[10rem]">
+                              {PHONEME_HOW[w.phoneme]}
+                            </p>
+                          )}
+                          {isTrainable && (
+                            <p className="text-[9px] font-bold text-[#FFB38A] mt-1 leading-none">
+                              🎯 대립쌍 훈련 →
+                            </p>
+                          )}
+                        </div>
+                      );
+                      return isTrainable ? (
+                        <Link
+                          key={w.phoneme}
+                          href={`/dashboard/practice/minimal-pairs?phoneme=${encodeURIComponent(w.phoneme)}&childId=${child.id}`}
+                          className="hover:scale-105 transition-transform active:scale-95"
+                        >
+                          {card}
+                        </Link>
+                      ) : (
+                        <div key={w.phoneme}>{card}</div>
+                      );
+                    })}
                   </div>
                 </div>
               );
