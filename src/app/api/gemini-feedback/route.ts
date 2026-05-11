@@ -248,16 +248,18 @@ export async function POST(request: NextRequest) {
 
     // ─── 월간 사용 제한 체크 (캐시 미스 경우에만 적용) ──────────────────────
     const {
-      FREE_AI_MONTHLY_LIMIT, GUEST_AI_MONTHLY_LIMIT, GUEST_COOKIE_NAME,
-      isUserPremium, countMonthlyGeminiUsage, parseGuestCookie, makeGuestCookieValue,
+      FREE_AI_MONTHLY_LIMIT, GUEST_AI_MONTHLY_LIMIT,
+      isUserPremium, countMonthlyGeminiUsage,
+      hashGuestIp, getClientIp, getGuestMonthlyUsage, incrementGuestUsage,
     } = await import("@/lib/usage-limit");
 
     const isGuest = session.user.id === "guest";
-    let guestCookieHeader: string | null = null;
+    let guestIpHash: string | null = null;
 
     if (isGuest) {
-      const cookieValue = request.cookies.get(GUEST_COOKIE_NAME)?.value;
-      const used = parseGuestCookie(cookieValue);
+      // IP 해시 기반 서버측 카운터 (쿠키 변조/삭제로 우회 불가)
+      guestIpHash = hashGuestIp(getClientIp(request));
+      const used = await getGuestMonthlyUsage(guestIpHash);
       if (used >= GUEST_AI_MONTHLY_LIMIT) {
         return NextResponse.json({
           error: `비회원은 AI 분석을 월 ${GUEST_AI_MONTHLY_LIMIT}회까지 이용할 수 있어요. 회원가입하면 월 ${FREE_AI_MONTHLY_LIMIT}회 이용할 수 있어요.`,
@@ -267,10 +269,8 @@ export async function POST(request: NextRequest) {
           used,
         }, { status: 429 });
       }
-      // 쿠키 갱신 헤더 준비 (스트리밍 응답에 첨부)
-      const expires = new Date();
-      expires.setMonth(expires.getMonth() + 1);
-      guestCookieHeader = `${GUEST_COOKIE_NAME}=${makeGuestCookieValue(used + 1)}; Path=/; SameSite=Lax; Expires=${expires.toUTCString()}`;
+      // 사전 증가: 동시 요청 race condition 차단 (Gemini 호출 실패 시 차감하지 않음 — 안전한 over-count)
+      await incrementGuestUsage(guestIpHash);
     } else {
       const premium = await isUserPremium(session.user.id);
       if (!premium) {
@@ -492,7 +492,6 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/x-ndjson; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
-        ...(guestCookieHeader ? { "Set-Cookie": guestCookieHeader } : {}),
       },
     });
 

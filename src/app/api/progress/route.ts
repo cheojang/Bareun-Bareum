@@ -1,54 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PhonemeError } from "@/types/phonetics";
+import { getKSTDateString } from "@/lib/kst-utils";
+import { requireUserId, requireChildOwner, apiErrorResponse } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const childId = searchParams.get("childId");
-    if (!childId) {
-      return NextResponse.json({ error: "childId is required" }, { status: 400 });
-    }
-
-    // 1. 소유권 확인
-    const child = await prisma.child.findFirst({
-      where: { id: childId, userId: session.user.id },
-    });
-    if (!child) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    const userId = await requireUserId();
+    const childId = new URL(req.url).searchParams.get("childId");
+    const child = await requireChildOwner(childId, userId);
 
     // 2. 캘린더 히트맵 (최근 12주)
     const since = new Date();
     since.setDate(since.getDate() - 84);
 
     const sessions = await prisma.practiceSession.findMany({
-      where: { childId, startedAt: { gte: since } },
+      where: { childId: child.id, startedAt: { gte: since } },
       include: { _count: { select: { wordRecords: true } } },
       orderBy: { startedAt: "asc" },
     });
 
     const calendarMap: Record<string, number> = {};
     for (const s of sessions) {
-      // ✨ 타임존 버그 해결: KST 기준으로 날짜 키(YYYY-MM-DD) 생성
-      const kstDate = new Date(
-        s.startedAt.getTime() + 9 * 60 * 60 * 1000
-      );
-      const dateKey = kstDate.toISOString().split("T")[0];
-
+      const dateKey = getKSTDateString(s.startedAt);
       calendarMap[dateKey] =
         (calendarMap[dateKey] ?? 0) + s._count.wordRecords;
     }
 
     // 3. 최근 30개 기록을 통한 오류 분석 및 정확도 계산
     const recentRecords = await prisma.wordRecord.findMany({
-      where: { session: { childId } },
+      where: { session: { childId: child.id } },
       orderBy: { practicedAt: "desc" },
       take: 30,
       select: { errorPhonemes: true, isCorrect: true },
@@ -94,10 +75,6 @@ export async function GET(req: NextRequest) {
       phonemeErrors,
     });
   } catch (error) {
-    console.error("[Dashboard API Error]:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return apiErrorResponse(error);
   }
 }

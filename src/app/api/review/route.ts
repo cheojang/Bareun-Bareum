@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateNextReview } from "@/lib/sm2";
+import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 /**
  * GET /api/review?childId=xxx
@@ -27,12 +28,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "접근 권한 없음" }, { status: 403 });
     }
 
-    // ✨ KST(한국 시간) 기준 오늘 날짜의 끝 구하기
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const kstNow = new Date(utc + (9 * 60 * 60 * 1000));
-    kstNow.setUTCHours(23, 59, 59, 999);
-    const kstEndOfDayInUTC = new Date(kstNow.getTime() - (9 * 60 * 60 * 1000));
+    // KST(한국 시간) 기준 오늘 날짜의 끝
+    const kstEndOfDayInUTC = getKSTEndOfDay();
 
     // 오늘 복습이 필요한 단어 (졸업하지 않은 것) + 전체 미완료 개수 병렬 조회
     const [dueItems, totalPending] = await Promise.all([

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { requireUserId, requireChildOwner, apiErrorResponse } from "@/lib/api-auth";
 
 /**
  * GET /api/weak-phonemes?childId=...
@@ -8,33 +8,12 @@ import { auth } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
-    }
-
+    const userId = await requireUserId();
     const childId = request.nextUrl.searchParams.get('childId');
+    const child = await requireChildOwner(childId, userId);
 
-    if (!childId) {
-      return NextResponse.json({ error: 'childId 필수' }, { status: 400 });
-    }
-
-    // 1. Child 확인 + 소유권 검증
-    const child = await prisma.child.findUnique({
-      where: { id: childId },
-      select: { name: true, userId: true },
-    });
-
-    if (!child || child.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: '아이를 찾을 수 없거나 권한이 없습니다' },
-        { status: 403 }
-      );
-    }
-
-    // 2. WeakPhoneme 조회 (오류 많은 순)
     const weakPhonemes = await prisma.weakPhoneme.findMany({
-      where: { childId },
+      where: { childId: childId! },
       orderBy: { errorCount: 'desc' },
       take: 10,
     });
@@ -60,8 +39,7 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error) {
-    console.error('[WeakPhonemes GET Error]:', error);
-    return NextResponse.json({ error: '분석 데이터를 가져오지 못했습니다' }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }
 

@@ -5,6 +5,7 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { ActivityCalendar } from "@/components/dashboard/ActivityCalendar";
+import { getKSTDateString } from "@/lib/kst-utils";
 
 export default async function DashboardHome() {
   const session = await auth();
@@ -96,8 +97,7 @@ export default async function DashboardHome() {
   // UTC+9(KST) 기준으로 날짜별 카운트 집계
   const calendarMap: Record<string, number> = {};
   for (const r of calendarRecords) {
-    const kst = new Date(r.practicedAt.getTime() + 9 * 60 * 60 * 1000);
-    const date = kst.toISOString().slice(0, 10);
+    const date = getKSTDateString(r.practicedAt);
     calendarMap[date] = (calendarMap[date] ?? 0) + 1;
   }
   const calendarData = Object.entries(calendarMap).map(([date, count]) => ({ date, count }));

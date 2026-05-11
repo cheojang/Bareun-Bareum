@@ -1,3 +1,5 @@
+import { getKSTDayAfter, getKSTEndOfDay } from "@/lib/kst-utils";
+
 /**
  * SM-2 알고리즘 (SuperMemo 2)
  * Anki, 많은 플래시카드 앱이 사용하는 망각 곡선 기반 복습 스케줄링
@@ -68,15 +70,8 @@ export function calculateNextReview(input: SM2Input): SM2Result {
   // 🧠 모터 러닝: 간격을 14일 이내로 제한 (근육 기억 손실 방지)
   newInterval = Math.min(newInterval, MAX_INTERVAL_DAYS);
 
-  // 🌍 Vercel UTC → KST 변환 (한국 기준 자정)
-  const now = new Date();
-  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstNow = new Date(utcNow + kstOffset);
-
-  const nextReviewAt = new Date(kstNow);
-  nextReviewAt.setDate(nextReviewAt.getDate() + newInterval);
-  nextReviewAt.setHours(0, 0, 0, 0);
+  // KST 기준 newInterval일 뒤 자정 (UTC Date 반환)
+  const nextReviewAt = getKSTDayAfter(newInterval);
 
   // 5회 이상 성공 → 졸업
   const isLearned = newReviewCount >= 5;
@@ -92,11 +87,5 @@ export function calculateNextReview(input: SM2Input): SM2Result {
 
 /** 오늘 복습이 필요한지 확인 (KST 기준) */
 export function isDueToday(nextReviewAt: Date): boolean {
-  const now = new Date();
-  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstToday = new Date(utcNow + kstOffset);
-
-  kstToday.setHours(23, 59, 59, 999);
-  return nextReviewAt <= kstToday;
+  return nextReviewAt <= getKSTEndOfDay();
 }

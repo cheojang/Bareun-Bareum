@@ -6,14 +6,22 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 
-const devProvider =
-  process.env.NODE_ENV === "development"
-    ? [
+// dev 로그인: NODE_ENV=development AND 명시적 opt-in(ALLOW_DEV_LOGIN=1) 모두 충족 시에만 활성
+// production 서버에서 NODE_ENV가 잘못 설정된 사고를 대비한 이중 가드
+const IS_DEV_LOGIN_ENABLED =
+  process.env.NODE_ENV === "development" && process.env.ALLOW_DEV_LOGIN === "1";
+
+const devProvider = IS_DEV_LOGIN_ENABLED
+  ? [
         Credentials({
           id: "dev",
           name: "개발자 로그인",
           credentials: { email: { label: "Email", type: "text" } },
           async authorize(credentials) {
+            // 런타임 재검증 (런타임에 env가 바뀌었거나 빌드 타임 평가 우회 방지)
+            if (process.env.NODE_ENV !== "development" || process.env.ALLOW_DEV_LOGIN !== "1") {
+              return null;
+            }
             const email = (credentials?.email as string) ?? "dev@test.com";
 
             // 역할 결정: User.role = "parent" | "therapist"
@@ -65,7 +73,7 @@ const devProvider =
           },
         }),
       ]
-    : [];
+  : [];
 
 // ── 비회원 (게스트) 로그인 ──────────────────────────────────────────────────────
 const guestProvider = Credentials({

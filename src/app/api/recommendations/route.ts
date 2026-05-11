@@ -1,35 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getRecommendations } from "@/lib/recommendations";
 import { PhonemeError } from "@/types/phonetics";
+import { requireUserId, apiErrorResponse } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const childId = searchParams.get("childId");
-
+    const userId = await requireUserId();
+    const childId = new URL(req.url).searchParams.get("childId");
     if (!childId) {
-      return NextResponse.json(
-        { error: "childId is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "childId is required" }, { status: 400 });
     }
 
-    // 1. 최근 기록 조회 (최근 50개로 확장하여 중복 추천 방지 강화)
+    // session.userId로 소유권 검증을 where 절에 함께 포함 (childRecord가 없으면 빈 배열)
     const recentRecords = await prisma.wordRecord.findMany({
-      where: {
-        session: {
-          childId: childId,
-          userId: session.user.id, // ✨ 보안을 위해 userId 소유권 검증 추가
-        },
-      },
-      orderBy: { practicedAt: "desc" }, // 최근 연습 순서로 정렬
+      where: { session: { childId, userId } },
+      orderBy: { practicedAt: "desc" },
       take: 50,
       select: { errorPhonemes: true, targetWord: true },
     });
@@ -61,10 +47,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[Recommendations API Error]:", error);
-    return NextResponse.json(
-      { error: "추천 단어를 가져오지 못했습니다." },
-      { status: 500 }
-    );
+    return apiErrorResponse(error);
   }
 }

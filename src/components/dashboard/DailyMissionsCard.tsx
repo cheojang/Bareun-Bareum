@@ -3,27 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
+import { fetchJson } from "@/lib/client-fetch";
 
-type Mission =
-  | {
-      type: "review";
-      reviewScheduleId: string;
-      targetWord: string;
-      phoneme: string;
-      hint: string;
-    }
-  | {
-      type: "weakness";
-      phoneme: string;
-      errorRate: number;
-      hint: string;
-    }
-  | {
-      type: "challenge";
-      targetWord: string;
-      phoneme: string;
-      hint: string;
-    };
+import type { Mission } from "@/types/missions";
 
 interface Props {
   childId: string;
@@ -61,15 +43,13 @@ export function DailyMissionsCard({ childId }: Props) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/daily-missions?childId=${childId}`)
-      .then((r) => r.json())
+    fetchJson<{ missions?: Mission[]; totalReviewPending?: number }>(
+      `/api/daily-missions?childId=${encodeURIComponent(childId)}`,
+    )
       .then((d) => {
         if (cancelled) return;
-        setMissions(d.missions ?? []);
-        setTotalPending(d.totalReviewPending ?? 0);
-      })
-      .catch(() => {
-        if (!cancelled) setMissions([]);
+        setMissions(d?.missions ?? []);
+        setTotalPending(d?.totalReviewPending ?? 0);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

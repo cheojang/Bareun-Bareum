@@ -60,6 +60,10 @@ model PracticeSession {
   endedAt     DateTime?
   durationMin Int?
   wordRecords WordRecord[]
+
+  // /api/progress, /api/recommendations 등에서 (userId, childId)로 자주 조회
+  @@index([userId, childId])
+  @@index([childId, startedAt])
 }
 
 model WordRecord {
@@ -401,6 +405,19 @@ model WordPairCache {
 
   @@unique([targetWord, childPronunciation])
   @@index([hitCount])
+}
+
+// GuestUsage: 비회원(게스트) 월간 AI 호출 카운터 — IP 해시 기반 서버측 저장 (쿠키 변조 우회 방지)
+model GuestUsage {
+  id        String   @id @default(cuid())
+  ipHash    String
+  month     String   // "YYYY-MM"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([ipHash, month])
+  @@index([month])
 }
 
 // Message: 부모 ↔ 치료사 1:1 메시지

@@ -5,6 +5,7 @@ import { PastelBadge } from "@/components/ui/PastelBadge";
 import { getSelectedChildId } from "@/lib/child-cookie";
 import Link from "next/link";
 import { ResetSavedWordsButton } from "./ResetSavedWordsButton";
+import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
   hard:   { label: "집중 연습", color: "pink" },
@@ -34,10 +35,7 @@ export default async function BookmarksPage() {
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // 오늘 복습 필요 개수 (복습하기 CTA용)
-  const now = new Date();
-  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  kstNow.setUTCHours(23, 59, 59, 999);
-  const kstEndOfDay = new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
+  const kstEndOfDay = getKSTEndOfDay();
 
   const [reviewCount, savedWords, recentErrors] = await Promise.all([
     prisma.reviewSchedule.count({

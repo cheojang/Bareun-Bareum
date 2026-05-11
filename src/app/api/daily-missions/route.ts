@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 /**
  * GET /api/daily-missions?childId=xxx
@@ -16,26 +17,7 @@ import { prisma } from "@/lib/prisma";
  *
  * 3개를 못 채우면 그대로 반환(클라이언트가 "오늘은 쉬어도 좋아요" 표시).
  */
-type Mission =
-  | {
-      type: "review";
-      reviewScheduleId: string;
-      targetWord: string;
-      phoneme: string;
-      hint: string;
-    }
-  | {
-      type: "weakness";
-      phoneme: string;
-      errorRate: number;
-      hint: string;
-    }
-  | {
-      type: "challenge";
-      targetWord: string;
-      phoneme: string;
-      hint: string;
-    };
+import type { Mission } from "@/types/missions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,11 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // KST 기준 오늘의 끝 계산
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const kstNow = new Date(utc + 9 * 60 * 60 * 1000);
-    kstNow.setUTCHours(23, 59, 59, 999);
-    const kstEndOfDayInUTC = new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
+    const kstEndOfDayInUTC = getKSTEndOfDay();
 
     // 병렬 조회
     const [reviewsDue, totalPending, weakPhonemes, savedWords] = await Promise.all([

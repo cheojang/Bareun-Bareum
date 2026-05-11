@@ -6,6 +6,7 @@ import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
+import { postJson } from "@/lib/client-fetch";
 import Link from "next/link";
 
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
@@ -22,14 +23,11 @@ function CompletionScreen({
 
   useEffect(() => {
     if (practiceWords.length === 0) { setLoadingCards(false); return; }
-    fetch("/api/coaching-cards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: practiceWords, errorPattern, childName }),
-    })
-      .then((r) => r.json())
-      .then((d) => setCards(d.cards ?? []))
-      .catch(() => {})
+    postJson<{ cards: { context: string; phrases: string[] }[] }>(
+      "/api/coaching-cards",
+      { words: practiceWords, errorPattern, childName },
+    )
+      .then((d) => setCards(d?.cards ?? []))
       .finally(() => setLoadingCards(false));
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -111,28 +109,53 @@ function AuditoryBombardment({
     if (calledRef.current || words.length === 0) return;
     calledRef.current = true;
 
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const utterances: SpeechSynthesisUtterance[] = [];
+
     async function playAll() {
       for (let i = 0; i < words.length; i++) {
+        if (cancelled) return;
         setActiveIdx(i);
         await new Promise<void>((resolve) => {
-          if (!window.speechSynthesis) { setTimeout(resolve, 600); return; }
+          if (cancelled) { resolve(); return; }
+          if (!window.speechSynthesis) {
+            const t = setTimeout(resolve, 600);
+            timers.push(t);
+            return;
+          }
           window.speechSynthesis.cancel();
           const u = new SpeechSynthesisUtterance(words[i]);
           u.lang = "ko-KR";
           u.rate = 0.82;
           u.pitch = 1.05;
-          u.onend = () => setTimeout(resolve, 320);
-          u.onerror = () => setTimeout(resolve, 400);
+          const finish = (delay: number) => {
+            if (cancelled) { resolve(); return; }
+            const t = setTimeout(resolve, delay);
+            timers.push(t);
+          };
+          u.onend = () => finish(320);
+          u.onerror = () => finish(400);
+          utterances.push(u);
           window.speechSynthesis.speak(u);
         });
       }
+      if (cancelled) return;
       setActiveIdx(null);
       setDone(true);
     }
 
     // 짧은 딜레이 후 시작 (마운트 직후 바로 재생되면 브라우저가 막을 수 있음)
-    const t = setTimeout(playAll, 600);
-    return () => { clearTimeout(t); window.speechSynthesis?.cancel(); };
+    const start = setTimeout(playAll, 600);
+    timers.push(start);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      // utterance 콜백 해제 — 언마운트 후 setState 호출 차단
+      utterances.forEach((u) => { u.onend = null; u.onerror = null; });
+      window.speechSynthesis?.cancel();
+    };
   }, [words]);
 
   return (
@@ -524,8 +547,7 @@ export function PracticeClient({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stage1Words, stage2Words, errorPattern, prefetchedS3]
+    [makeItems, stage1Words, stage2Words, errorPattern, prefetchedS3]
   );
 
   // ── 3단계 사전 fetch — 2단계 마지막 단어 또는 2단계 없을 때 1단계 마지막 ──
@@ -542,18 +564,12 @@ export function PracticeClient({
 
     prefetchInFlightRef.current = true;
     const allWords = [...stage1Words.map((e) => e.word), ...stage2Words.map((w) => w.word)];
-    fetch("/api/practice-sentences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: allWords, errorPattern }),
-    })
-      .then((r) => r.json())
+    postJson<{ sentences?: string[] }>("/api/practice-sentences", { words: allWords, errorPattern })
       .then((data) => {
         if (Array.isArray(data?.sentences) && data.sentences.length > 0) {
           setPrefetchedS3(data.sentences);
         }
       })
-      .catch(() => {})
       .finally(() => {
         prefetchInFlightRef.current = false;
       });
@@ -728,7 +744,7 @@ export function PracticeClient({
           <div className="flex-1 space-y-3 mb-6">
             {allSentences.map((s, i) => (
               <div
-                key={i}
+                key={`${i}-${s}`}
                 className="bg-white rounded-2xl px-5 py-4 shadow-sm border-2 border-[#F0E8E0] flex items-start gap-3"
               >
                 <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FFD4B8] text-[#3D3530] font-black text-sm flex items-center justify-center">

@@ -4,15 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { compareWords } from "@/lib/korean-phonetics";
 import { buildArticulationGuides } from "@/lib/articulation-analysis";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
+import { getKSTStartOfDay } from "@/lib/kst-utils";
 
-// 🌍 KST(한국 시간) 기준 자정 타임스탬프 구하기
-function getKSTMidnight(date: Date | string | number) {
-  const d = new Date(date);
-  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  const kst = new Date(utc + 9 * 60 * 60 * 1000);
-  kst.setUTCHours(0, 0, 0, 0);
-  return kst.getTime();
-}
+// KST(한국 시간) 기준 자정 타임스탬프 (밀리초)
+const getKSTMidnight = (date: Date | string | number) =>
+  getKSTStartOfDay(new Date(date)).getTime();
 
 export async function POST(req: NextRequest) {
   const session = await auth();

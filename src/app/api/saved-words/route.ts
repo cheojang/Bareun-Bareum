@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireUserId, requireChildOwner, apiErrorResponse } from "@/lib/api-auth";
 
 /**
  * POST /api/saved-words
@@ -8,21 +8,12 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await requireUserId();
+    const { childId, word, targetPhoneme, difficulty } = await request.json();
+
+    if (!word) {
+      return NextResponse.json({ error: "word 필수" }, { status: 400 });
     }
-
-    const body = await request.json();
-    const { childId, word, targetPhoneme, difficulty } = body;
-
-    if (!childId || !word) {
-      return NextResponse.json(
-        { error: "childId, word 필수" },
-        { status: 400 }
-      );
-    }
-
     // 문장(공백 포함)은 저장 불가 — 단어만 저장
     if (word.trim().includes(" ")) {
       return NextResponse.json(
@@ -31,23 +22,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✨ 1. findUnique를 사용한 빠른 소유권 확인 (인덱스 활용)
-    const child = await prisma.child.findUnique({
-      where: { id: childId },
-      select: { userId: true },
-    });
-    if (!child || child.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "아이를 찾을 수 없거나 권한이 없습니다" },
-        { status: 404 }
-      );
-    }
+    await requireChildOwner(childId, userId);
 
-    // ✨ 2. upsert 로직 보강: 다시 저장될 때도 최신 정보 반영
     const saved = await prisma.savedWord.upsert({
-      where: {
-        childId_word: { childId, word },
-      },
+      where: { childId_word: { childId, word } },
       create: {
         childId,
         word,
@@ -55,7 +33,6 @@ export async function POST(request: NextRequest) {
         difficulty: difficulty ?? "medium",
       },
       update: {
-        // 기존 단어를 다시 저장할 때 최신 정보로 갱신
         targetPhoneme: targetPhoneme ?? "연습",
         difficulty: difficulty ?? "medium",
         savedAt: new Date(),
@@ -64,8 +41,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, savedWordId: saved.id }, { status: 201 });
   } catch (error) {
-    console.error("[SavedWords POST Error]:", error);
-    return NextResponse.json({ error: "저장 중 오류가 발생했습니다" }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }
 
@@ -75,39 +51,18 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const childId = searchParams.get("childId");
-
-    if (!childId) {
-      return NextResponse.json({ error: "childId 필수" }, { status: 400 });
-    }
-
-    // ✨ 소유권 확인 (findUnique 사용)
-    const child = await prisma.child.findUnique({
-      where: { id: childId },
-      select: { userId: true },
-    });
-    if (!child || child.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "권한이 없습니다" },
-        { status: 403 }
-      );
-    }
+    const userId = await requireUserId();
+    const childId = new URL(request.url).searchParams.get("childId");
+    await requireChildOwner(childId, userId);
 
     const savedWords = await prisma.savedWord.findMany({
-      where: { childId },
+      where: { childId: childId! },
       orderBy: { savedAt: "desc" },
     });
 
     return NextResponse.json(savedWords);
   } catch (error) {
-    console.error("[SavedWords GET Error]:", error);
-    return NextResponse.json({ error: "조회 중 오류 발생" }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }
 
@@ -117,28 +72,13 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const userId = await requireUserId();
     const { childId } = await request.json();
-    if (!childId) {
-      return NextResponse.json({ error: "childId 필수" }, { status: 400 });
-    }
-
-    const child = await prisma.child.findUnique({
-      where: { id: childId },
-      select: { userId: true },
-    });
-    if (!child || child.userId !== session.user.id) {
-      return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 });
-    }
+    await requireChildOwner(childId, userId);
 
     const { count } = await prisma.savedWord.deleteMany({ where: { childId } });
     return NextResponse.json({ success: true, deleted: count });
   } catch (error) {
-    console.error("[SavedWords DELETE Error]:", error);
-    return NextResponse.json({ error: "삭제 중 오류 발생" }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }

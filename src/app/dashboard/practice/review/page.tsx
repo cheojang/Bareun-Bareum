@@ -3,14 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ReviewClient } from "./ReviewClient";
 import { getSelectedChildId } from "@/lib/child-cookie";
-
-// KST 기준 오늘 자정 (UTC로 변환)
-function getKstEndOfDay() {
-  const now = new Date();
-  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  kstNow.setUTCHours(23, 59, 59, 999);
-  return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
-}
+import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 // 음소 다양성을 갖춘 5개 선별 (어려운 단어 우선)
 function smartFilterReviews(
@@ -50,7 +43,7 @@ export default async function ReviewPage() {
   const savedId = await getSelectedChildId();
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
-  const kstEndOfDay = getKstEndOfDay();
+  const kstEndOfDay = getKSTEndOfDay();
 
   // 망각곡선(SM-2) 기반 오늘 복습 필요 단어
   const allReviewsDue = await prisma.reviewSchedule.findMany({
