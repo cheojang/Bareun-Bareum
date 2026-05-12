@@ -30,7 +30,7 @@ model Child {
   userId                String
   user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                  String
-  image                 String?           @db.Text
+  image                 String?
   birthDate             DateTime?
   mascotLevel           Int               @default(1)
   totalWords            Int               @default(0)

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin, STORAGE_BUCKET, CHILD_IMAGES_PATH } from "@/lib/supabase-admin";
 
-// PATCH /api/children/[id]/image — 아이 사진 저장 (base64 data URL)
+// PATCH /api/children/[id]/image — 아이 사진 업로드 (Supabase Storage)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,14 +16,12 @@ export async function PATCH(
   const { id } = await params;
   const { image } = await req.json();
 
-  // 빈 문자열은 삭제로 처리, data URL 형식만 허용
   if (typeof image !== "string") {
     return NextResponse.json({ error: "올바른 형식이 아니에요." }, { status: 400 });
   }
   if (image !== "" && !image.startsWith("data:image/")) {
     return NextResponse.json({ error: "이미지 파일만 업로드할 수 있어요." }, { status: 400 });
   }
-  // ~500KB 제한 (base64는 원본의 약 4/3배)
   if (image.length > 700_000) {
     return NextResponse.json({ error: "이미지가 너무 커요. 더 작은 이미지를 사용해주세요." }, { status: 400 });
   }
@@ -30,15 +29,44 @@ export async function PATCH(
   const child = await prisma.child.findFirst({
     where: { id, userId: session.user.id },
   });
-
   if (!child) {
     return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
   }
 
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "스토리지 설정이 필요합니다. 관리자에게 문의하세요." }, { status: 500 });
+  }
+
+  const storagePath = `${CHILD_IMAGES_PATH}/${id}.jpg`;
+  let imageUrl: string | null = null;
+
+  if (image) {
+    const base64 = image.split(",")[1];
+    const buffer = Buffer.from(base64, "base64");
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(storagePath, buffer, { contentType: "image/jpeg", upsert: true });
+
+    if (uploadError) {
+      console.error("[Storage] 업로드 실패:", uploadError.message);
+      return NextResponse.json({ error: "사진 업로드에 실패했어요. 다시 시도해주세요." }, { status: 500 });
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(storagePath);
+
+    imageUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+  } else {
+    await supabaseAdmin.storage.from(STORAGE_BUCKET).remove([storagePath]).catch(() => {});
+    imageUrl = null;
+  }
+
   await prisma.child.update({
     where: { id },
-    data: { image: image || null },
+    data: { image: imageUrl },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, url: imageUrl });
 }
