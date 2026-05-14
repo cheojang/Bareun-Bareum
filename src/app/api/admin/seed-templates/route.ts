@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       select: { phoneme: true, position: true, errorType: true },
     });
     const existingSet = new Set(
-      existing.map((e) => `${e.phoneme}|${e.position}|${e.errorType}`)
+      existing.map((e: { phoneme: string; position: string; errorType: string }) => `${e.phoneme}|${e.position}|${e.errorType}`)
     );
 
     // 미완료 항목 추출

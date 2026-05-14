@@ -26,8 +26,9 @@ export async function GET() {
       include: { _count: { select: { reads: true } } },
     });
 
+    type Row = (typeof announcements)[number];
     return NextResponse.json(
-      announcements.map((a) => ({
+      announcements.map((a: Row) => ({
         id: a.id,
         title: a.title,
         content: a.content,

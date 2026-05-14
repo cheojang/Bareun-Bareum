@@ -4,6 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { SEED_WORD_PAIRS } from "@/data/seed-word-pairs";
 import { isAdmin } from "@/lib/admin-auth";
 
+type WordPairKey = { targetWord: string; childPronunciation: string };
+type TplSelect = {
+  phoneme: string; position: string; errorType: string; errorCategory: string;
+  rootCause: string; trainingStep1: string; trainingStep2: string;
+  trainingStep3: string; trainingStep4: string; recommendedWords: string; parentHint: string;
+};
+
 /**
  * GET /api/admin/seed-word-pairs
  * WordPairCache 사전 시딩 진행 상황 조회
@@ -18,7 +25,7 @@ export async function GET(_: NextRequest) {
     select: { targetWord: true, childPronunciation: true },
   });
   const seededSet = new Set(
-    seededPairs.map((p) => `${p.targetWord}|${p.childPronunciation}`)
+    seededPairs.map((p: WordPairKey) => `${p.targetWord}|${p.childPronunciation}`)
   );
 
   const remaining = SEED_WORD_PAIRS.filter(
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest) {
       select: { targetWord: true, childPronunciation: true },
     });
     const existingSet = new Set(
-      existing.map((e) => `${e.targetWord}|${e.childPronunciation}`)
+      existing.map((e: WordPairKey) => `${e.targetWord}|${e.childPronunciation}`)
     );
 
     // 미완료 항목 추출
@@ -88,8 +95,8 @@ export async function POST(request: NextRequest) {
         parentHint: true,
       },
     });
-    const templateMap = new Map(
-      templates.map((t) => [`${t.phoneme}|${t.position}|${t.errorType}`, t])
+    const templateMap = new Map<string, TplSelect>(
+      templates.map((t: TplSelect) => [`${t.phoneme}|${t.position}|${t.errorType}`, t])
     );
 
     const stats = { fromTemplate: 0, skipped: 0, errors: [] as string[] };

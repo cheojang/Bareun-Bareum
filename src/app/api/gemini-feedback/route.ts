@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       console.log("[Cache-DB] 글로벌 HIT:", errorRecord.targetWord, `(총 ${globalCache.hitCount + 1}회)`);
       let recWords: string[] = [];
       try { recWords = JSON.parse(globalCache.recommendedWords); } catch {}
-      const result: WordPairResult = {
+      const result = {
         patternName:      errorRecord.errorPattern,
         rootCause:        globalCache.rootCause,
         trainingStep1:    globalCache.trainingStep1,

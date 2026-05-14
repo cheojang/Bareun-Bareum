@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import AdminNav from "./_components/AdminNav";
 
 export default async function AdminLayout({
   children,
@@ -23,16 +24,19 @@ export default async function AdminLayout({
     >
       {/* 관리자 상단 바 */}
       <header
-        className="sticky top-0 z-40 px-6 py-3 flex items-center gap-3"
+        className="sticky top-0 z-40"
         style={{
-          background: "rgba(253,250,245,0.92)",
+          background: "rgba(253,250,245,0.95)",
           backdropFilter: "blur(16px)",
           borderBottom: "1.5px solid #F0E8E0",
         }}
       >
-        <span className="text-lg">🛡️</span>
-        <p className="font-black text-[#3D3530]">관리자 패널</p>
-        <span className="text-xs text-[#C4B5A8] ml-auto">{session.user.email}</span>
+        <div className="px-6 py-3 flex items-center gap-3">
+          <span className="text-lg">🛡️</span>
+          <p className="font-black text-[#3D3530]">관리자 패널</p>
+          <span className="text-xs text-[#C4B5A8] ml-auto">{session.user.email}</span>
+        </div>
+        <AdminNav />
       </header>
       {children}
     </div>
