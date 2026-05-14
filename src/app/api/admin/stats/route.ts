@@ -26,6 +26,7 @@ export async function GET(_: NextRequest) {
     premiumSubsCount,
     totalChildren,
     childrenWithBirthDate,
+    genderGrouped,
     totalErrorRecords,
     totalGeminiFeedbacks,
     wordPairCacheAgg,
@@ -44,6 +45,10 @@ export async function GET(_: NextRequest) {
     prisma.child.findMany({
       select: { birthDate: true },
       where: { birthDate: { not: null } },
+    }),
+    prisma.child.groupBy({
+      by: ["gender"],
+      _count: { id: true },
     }),
     prisma.errorRecord.count(),
     prisma.geminiFeedback.count(),
@@ -173,6 +178,12 @@ export async function GET(_: NextRequest) {
     children: {
       total: totalChildren,
       ageDistribution,
+      genderDistribution: genderGrouped.map(
+        (g: { gender: string | null; _count: { id: number } }) => ({
+          label: g.gender ?? "미입력",
+          count: g._count.id,
+        })
+      ),
     },
     hourlyUsage,
     weekdayUsage,

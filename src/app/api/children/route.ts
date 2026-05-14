@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, birthDate } = await req.json();
+  const { name, birthDate, gender } = await req.json();
   if (!name?.trim()) {
     return NextResponse.json({ error: "이름을 입력해주세요" }, { status: 400 });
   }
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       name: name.trim(),
       birthDate: birthDate ? new Date(birthDate) : null,
+      gender: gender === "남아" || gender === "여아" ? gender : null,
     },
   });
 
@@ -44,7 +45,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id, name, birthDate } = await req.json();
+  const { id, name, birthDate, gender } = await req.json();
 
   const child = await prisma.child.findFirst({
     where: { id, userId: session.user.id },
@@ -56,7 +57,13 @@ export async function PATCH(req: NextRequest) {
 
   const updated = await prisma.child.update({
     where: { id },
-    data: { name, birthDate: birthDate ? new Date(birthDate) : null },
+    data: {
+      name,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      ...(gender !== undefined && {
+        gender: gender === "남아" || gender === "여아" ? gender : null,
+      }),
+    },
   });
 
   return NextResponse.json(updated);

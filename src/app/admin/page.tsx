@@ -21,6 +21,7 @@ interface AdminStats {
   children: {
     total: number;
     ageDistribution: { label: string; count: number }[];
+    genderDistribution: { label: string; count: number }[];
   };
   hourlyUsage: { hour: number; count: number }[];
   weekdayUsage: { day: string; count: number }[];
@@ -197,6 +198,13 @@ export default function AdminDashboardPage() {
   const { users, analysis, children, hourlyUsage, weekdayUsage, topCachedWords,
     errorCategories, errorTypes, weakPhonemes, dailySignups, generatedAt } = stats;
 
+  const boyCount  = children.genderDistribution.find((g) => g.label === "남아")?.count ?? 0;
+  const girlCount = children.genderDistribution.find((g) => g.label === "여아")?.count ?? 0;
+  const unknownCount = children.genderDistribution.find((g) => g.label === "미입력")?.count ?? 0;
+  const genderTotal = boyCount + girlCount + unknownCount;
+  const boyPct  = genderTotal > 0 ? Math.round((boyCount  / genderTotal) * 100) : 0;
+  const girlPct = genderTotal > 0 ? Math.round((girlCount / genderTotal) * 100) : 0;
+
   const maxHour = Math.max(...hourlyUsage.map((h) => h.count), 1);
   const maxDay  = Math.max(...weekdayUsage.map((d) => d.count), 1);
   const maxAge  = Math.max(...children.ageDistribution.map((a) => a.count), 1);
@@ -295,7 +303,7 @@ export default function AdminDashboardPage() {
         </div>
       </Card>
 
-      {/* ── 신규 가입 추이 + 아이 연령 분포 ───────────────────────── */}
+      {/* ── 신규 가입 추이 + 성별 분포 ───────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <SectionTitle>📈 신규 가입 추이 (최근 30일)</SectionTitle>
@@ -314,21 +322,76 @@ export default function AdminDashboardPage() {
         </Card>
 
         <Card>
-          <SectionTitle>👶 아이 연령 분포 (총 {children.total}명)</SectionTitle>
-          <div className="space-y-1.5">
-            {children.ageDistribution.map(({ label, count }) => (
-              <BarRow
-                key={label}
-                label={label}
-                count={count}
-                maxCount={maxAge}
-                color="#FFD4A3"
-                labelWidth="w-16"
-              />
-            ))}
-          </div>
+          <SectionTitle>👦👧 아이 성별 분포 (총 {children.total}명)</SectionTitle>
+          {genderTotal === 0 ? (
+            <p className="text-xs text-[#C4B5A8] py-4 text-center">데이터 없음</p>
+          ) : (
+            <div className="space-y-4">
+              {/* 게이지 바 */}
+              <div>
+                <div className="flex h-8 rounded-2xl overflow-hidden">
+                  {boyPct > 0 && (
+                    <div
+                      className="flex items-center justify-center text-xs font-black text-white transition-all"
+                      style={{ width: `${boyPct}%`, backgroundColor: "#8B7EFF" }}
+                    >
+                      {boyPct >= 15 && `${boyPct}%`}
+                    </div>
+                  )}
+                  {girlPct > 0 && (
+                    <div
+                      className="flex items-center justify-center text-xs font-black text-white transition-all"
+                      style={{ width: `${girlPct}%`, backgroundColor: "#FF8AB0" }}
+                    >
+                      {girlPct >= 15 && `${girlPct}%`}
+                    </div>
+                  )}
+                  {unknownCount > 0 && (
+                    <div
+                      className="flex-1 flex items-center justify-center text-xs font-bold text-[#8B7E74]"
+                      style={{ backgroundColor: "#F5F0EB" }}
+                    >
+                      미입력
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* 수치 */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-[#F5F3FF] rounded-2xl py-3">
+                  <p className="text-lg font-black text-[#8B7EFF]">{boyCount.toLocaleString()}</p>
+                  <p className="text-xs text-[#8B7E74] font-bold mt-0.5">👦 남아</p>
+                </div>
+                <div className="bg-[#FFF0F5] rounded-2xl py-3">
+                  <p className="text-lg font-black text-[#FF8AB0]">{girlCount.toLocaleString()}</p>
+                  <p className="text-xs text-[#8B7E74] font-bold mt-0.5">👧 여아</p>
+                </div>
+                <div className="bg-[#F5F0EB] rounded-2xl py-3">
+                  <p className="text-lg font-black text-[#C4B5A8]">{unknownCount.toLocaleString()}</p>
+                  <p className="text-xs text-[#8B7E74] font-bold mt-0.5">미입력</p>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
+
+      {/* ── 아이 연령 분포 ────────────────────────────────────────── */}
+      <Card>
+        <SectionTitle>👶 아이 연령 분포 (총 {children.total}명)</SectionTitle>
+        <div className="grid md:grid-cols-2 gap-x-8 gap-y-1.5">
+          {children.ageDistribution.map(({ label, count }) => (
+            <BarRow
+              key={label}
+              label={label}
+              count={count}
+              maxCount={maxAge}
+              color="#FFD4A3"
+              labelWidth="w-16"
+            />
+          ))}
+        </div>
+      </Card>
 
       {/* ── 시간대별 + 요일별 ────────────────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-4">

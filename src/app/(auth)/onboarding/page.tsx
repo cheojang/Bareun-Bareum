@@ -9,6 +9,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState<"남아" | "여아" | "">("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,7 +22,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/children", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), birthDate: birthDate || null }),
+        body: JSON.stringify({ name: name.trim(), birthDate: birthDate || null, gender: gender || null }),
       });
 
       if (res.ok) {
@@ -62,6 +63,30 @@ export default function OnboardingPage() {
               className="w-full rounded-[16px] border-2 border-[#F0E8E0] bg-white px-4 py-3 text-[#3D3530] placeholder-[#C4B5A8] focus:border-[#FFB38A] focus:outline-none transition-colors"
               maxLength={20}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#3D3530] mb-2">
+              성별 <span className="text-[#C4B5A8] font-normal">(선택)</span>
+            </label>
+            <div className="flex gap-2">
+              {(["남아", "여아"] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGender(gender === g ? "" : g)}
+                  className={`flex-1 py-3 rounded-[16px] border-2 font-bold text-sm transition-colors ${
+                    gender === g
+                      ? g === "남아"
+                        ? "bg-[#EEF3FF] border-[#8B7EFF] text-[#8B7EFF]"
+                        : "bg-[#FFF0F5] border-[#FF8AB0] text-[#FF8AB0]"
+                      : "bg-white border-[#F0E8E0] text-[#8B7E74]"
+                  }`}
+                >
+                  {g === "남아" ? "👦 남아" : "👧 여아"}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
