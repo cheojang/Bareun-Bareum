@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/admin-auth";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
   ]);
 
   const isPremium = subscription?.status === "active" && subscription?.plan === "premium";
+  const userIsAdmin = isAdmin(session?.user?.email);
 
   return (
     <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5">
@@ -91,6 +93,24 @@ export default async function SettingsPage() {
         </div>
 
       </BubbleCard>
+
+      {/* Admin (관리자만 노출) */}
+      {userIsAdmin && (
+        <BubbleCard>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🛡️</span>
+              <div>
+                <p className="font-bold text-[#3D3530]">관리자 대시보드</p>
+                <p className="text-xs text-[#8B7E74]">통계, 사용량, 시딩 등을 관리해요</p>
+              </div>
+            </div>
+            <Link href="/admin">
+              <BubbleButton variant="gray" size="sm">바로가기 →</BubbleButton>
+            </Link>
+          </div>
+        </BubbleCard>
+      )}
 
       {/* Sign out */}
       <BubbleCard>
