@@ -5,16 +5,25 @@ import { ReviewClient } from "./ReviewClient";
 import { getSelectedChildId } from "@/lib/child-cookie";
 import { getKSTEndOfDay } from "@/lib/kst-utils";
 
-// 음소 다양성을 갖춘 5개 선별 (어려운 단어 우선)
+// 음소 다양성을 갖춘 5개 선별 (어려운 단어 우선, 같은 목표 단어 중복 제거)
 function smartFilterReviews(
   items: { id: string; targetWord: string; childPronunciation: string; phoneme: string; errorPattern: string; reviewCount: number }[],
   maxCount: number
 ) {
-  const phonemeCount: Record<string, number> = {};
+  // 같은 목표 단어는 한 번만 — 입력 순서가 어려움 순(easeFactor asc)이므로 먼저 나온 것 유지
+  const deduped: typeof items = [];
+  const seenWord = new Set<string>();
   for (const item of items) {
+    if (seenWord.has(item.targetWord)) continue;
+    seenWord.add(item.targetWord);
+    deduped.push(item);
+  }
+
+  const phonemeCount: Record<string, number> = {};
+  for (const item of deduped) {
     phonemeCount[item.phoneme] = (phonemeCount[item.phoneme] ?? 0) + 1;
   }
-  const sorted = [...items].sort(
+  const sorted = [...deduped].sort(
     (a, b) => (phonemeCount[b.phoneme] ?? 0) - (phonemeCount[a.phoneme] ?? 0)
   );
   const result: typeof items = [];

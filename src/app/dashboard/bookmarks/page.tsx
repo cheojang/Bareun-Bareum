@@ -37,7 +37,7 @@ export default async function BookmarksPage() {
   // 오늘 복습 필요 개수 (복습하기 CTA용)
   const kstEndOfDay = getKSTEndOfDay();
 
-  const [reviewCount, savedWords, recentErrors] = await Promise.all([
+  const [reviewCount, savedWords, recentErrorsRaw] = await Promise.all([
     prisma.reviewSchedule.count({
       where: { childId: child.id, isLearned: false, nextReviewAt: { lte: kstEndOfDay } },
     }),
@@ -48,7 +48,7 @@ export default async function BookmarksPage() {
     prisma.errorRecord.findMany({
       where: { childId: child.id },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 30, // 중복 제거 전 여유분 — 같은 단어를 여러 번 분석한 경우 대비
       select: {
         id: true,
         targetWord: true,
@@ -59,6 +59,16 @@ export default async function BookmarksPage() {
       },
     }),
   ]);
+
+  // 같은 목표 단어는 가장 최근 기록 1개만 표시 (최대 5개)
+  const seenWords = new Set<string>();
+  const recentErrors = [] as typeof recentErrorsRaw;
+  for (const rec of recentErrorsRaw) {
+    if (seenWords.has(rec.targetWord)) continue;
+    seenWords.add(rec.targetWord);
+    recentErrors.push(rec);
+    if (recentErrors.length >= 5) break;
+  }
 
   const isEmpty = savedWords.length === 0 && recentErrors.length === 0 && reviewCount === 0;
 

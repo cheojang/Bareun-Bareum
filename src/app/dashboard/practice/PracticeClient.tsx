@@ -7,6 +7,7 @@ import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
+import { useTTS } from "@/lib/useTTS";
 import Link from "next/link";
 
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
@@ -103,60 +104,52 @@ function AuditoryBombardment({
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [done, setDone] = useState(false);
-  const calledRef = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(false); // 재생 중인지
+  const [hasStarted, setHasStarted] = useState(false); // 한 번이라도 시작했는지
+  const [speechWorked, setSpeechWorked] = useState<boolean | null>(null);
+  const cancelRef = useRef<AbortController | null>(null);
+  const { play, stop } = useTTS();
 
-  useEffect(() => {
-    if (calledRef.current || words.length === 0) return;
-    calledRef.current = true;
+  // 사용자 클릭으로 재생 시작 — 자동재생 차단(autoplay policy) 우회
+  const startPlaying = useCallback(async () => {
+    if (isPlaying || words.length === 0) return;
+    setHasStarted(true);
+    setIsPlaying(true);
+    setDone(false);
+    setActiveIdx(null);
 
-    let cancelled = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const utterances: SpeechSynthesisUtterance[] = [];
+    const controller = new AbortController();
+    cancelRef.current = controller;
+    let anyWorked = false;
 
-    async function playAll() {
-      for (let i = 0; i < words.length; i++) {
-        if (cancelled) return;
-        setActiveIdx(i);
-        await new Promise<void>((resolve) => {
-          if (cancelled) { resolve(); return; }
-          if (!window.speechSynthesis) {
-            const t = setTimeout(resolve, 600);
-            timers.push(t);
-            return;
-          }
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(words[i]);
-          u.lang = "ko-KR";
-          u.rate = 0.82;
-          u.pitch = 1.05;
-          const finish = (delay: number) => {
-            if (cancelled) { resolve(); return; }
-            const t = setTimeout(resolve, delay);
-            timers.push(t);
-          };
-          u.onend = () => finish(320);
-          u.onerror = () => finish(400);
-          utterances.push(u);
-          window.speechSynthesis.speak(u);
-        });
+    for (let i = 0; i < words.length; i++) {
+      if (controller.signal.aborted) break;
+      setActiveIdx(i);
+      try {
+        await play(words[i], { signal: controller.signal });
+        anyWorked = true;
+      } catch (err) {
+        if ((err as any)?.name === "AbortError") break;
+        // 한 단어 실패해도 다음 단어로 진행
       }
-      if (cancelled) return;
+      if (controller.signal.aborted) break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    if (!controller.signal.aborted) {
       setActiveIdx(null);
+      setSpeechWorked(anyWorked);
       setDone(true);
     }
+    setIsPlaying(false);
+  }, [isPlaying, words, play]);
 
-    // 짧은 딜레이 후 시작 (마운트 직후 바로 재생되면 브라우저가 막을 수 있음)
-    const start = setTimeout(playAll, 600);
-    timers.push(start);
-
+  // 언마운트 시 진행 중인 재생 정리
+  useEffect(() => {
     return () => {
-      cancelled = true;
-      timers.forEach(clearTimeout);
-      // utterance 콜백 해제 — 언마운트 후 setState 호출 차단
-      utterances.forEach((u) => { u.onend = null; u.onerror = null; });
-      window.speechSynthesis?.cancel();
+      cancelRef.current?.abort();
+      stop();
     };
-  }, [words]);
+  }, [stop]);
 
   return (
     <div
@@ -186,20 +179,49 @@ function AuditoryBombardment({
         ))}
       </div>
 
-      {!done ? (
-        <p className="text-xs text-[#C4B5A8] animate-pulse mt-2">재생 중...</p>
-      ) : (
-        <BubbleButton variant="peach" size="lg" onClick={onDone}>
-          연습 시작하기 →
-        </BubbleButton>
+      {/* 첫 진입 — 시작 / 넘어가기 버튼 나란히 (자동재생 정책 우회) */}
+      {!hasStarted && (
+        <div className="flex flex-col items-center gap-3 mt-2">
+          <div className="flex items-center gap-3">
+            <BubbleButton variant="peach" size="lg" onClick={startPlaying}>
+              ▶️ 듣기 시작
+            </BubbleButton>
+            <BubbleButton variant="gray" size="lg" onClick={onDone}>
+              넘어가기 →
+            </BubbleButton>
+          </div>
+          <p className="text-[11px] text-[#C4B5A8] mt-1">듣기 시작을 누르면 단어를 차례로 들려줘요</p>
+        </div>
       )}
 
-      <button
-        onClick={onDone}
-        className="text-xs text-[#C4B5A8] underline mt-1"
-      >
-        건너뛰기
-      </button>
+      {/* 재생 중 */}
+      {hasStarted && isPlaying && (
+        <div className="flex flex-col items-center gap-3 mt-2">
+          <p className="text-xs text-[#C4B5A8] animate-pulse">재생 중...</p>
+          <BubbleButton variant="gray" size="lg" onClick={onDone}>
+            건너뛰기 →
+          </BubbleButton>
+        </div>
+      )}
+
+      {/* 재생 완료 */}
+      {done && !isPlaying && (
+        <div className="flex flex-col items-center gap-3">
+          {speechWorked === false && (
+            <p className="text-xs text-[#C4B5A8] text-center max-w-xs leading-relaxed">
+              💡 음성이 안 들렸어요. 다시 듣기를 눌러보거나 건너뛰기를 누르세요.
+            </p>
+          )}
+          <div className="flex items-center gap-3">
+            <BubbleButton variant="gray" size="lg" onClick={startPlaying}>
+              🔊 다시 듣기
+            </BubbleButton>
+            <BubbleButton variant="peach" size="lg" onClick={onDone}>
+              연습 시작하기 →
+            </BubbleButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -295,9 +317,18 @@ function toQuality(goodCount: number): number {
 function CarTrack({ progress, childImage }: { progress: number; childImage?: string | null }) {
   const pct = Math.max(0, Math.min(1, progress));
   const leftPct = 5 + pct * 88; // 5%~93% — 도로(inset-x-5) 범위에 맞춤
+  const pctDisplay = Math.round(pct * 100);
 
   return (
-    <div className="relative w-full h-12 select-none">
+    <div className="w-full select-none">
+      {/* 라벨 — 무엇을 의미하는지 명확히 */}
+      <div className="flex items-center justify-between mb-1.5 px-1">
+        <span className="text-xs font-bold text-[#8B7E74] flex items-center gap-1">
+          🏁 오늘의 진도
+        </span>
+        <span className="text-xs font-black text-[#FFB38A]">{pctDisplay}%</span>
+      </div>
+      <div className="relative w-full h-12">
       {/* 도로 */}
       <div className="absolute inset-x-5 bottom-2 h-3 bg-[#F0E8E0] rounded-full overflow-hidden shadow-inner">
         {/* 차선 (점선) */}
@@ -347,6 +378,7 @@ function CarTrack({ progress, childImage }: { progress: number; childImage?: str
             🚗
           </span>
         )}
+      </div>
       </div>
     </div>
   );
@@ -459,6 +491,34 @@ export function PracticeClient({
   const isSlotsFull = filledCount >= MAX_DOTS;
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
+
+  // ── 단어 자동 재생 + 다시 듣기 버튼용 TTS ──────────────────────────────────────
+  const { play: playWord, stop: stopWord } = useTTS();
+
+  useEffect(() => {
+    const text = currentItem?.text;
+    if (!text || stage3Loading) return;
+    // 문장(3단계)은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
+    if (currentItem?.kind === "sentence") return;
+    // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
+    // → phase가 "practice"로 바뀐 직후(사용자 클릭 이후)에 첫 단어 재생
+    if (phase !== "practice") return;
+
+    let cancelled = false;
+    const t = setTimeout(() => {
+      if (!cancelled) playWord(text).catch(() => {});
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      stopWord();
+    };
+  }, [currentItem?.text, currentItem?.kind, stage3Loading, phase, playWord, stopWord]);
+
+  const handleReplay = useCallback(() => {
+    const text = currentItem?.text;
+    if (text) playWord(text).catch(() => {});
+  }, [currentItem?.text, playWord]);
 
   // ── 자동차 진행률: 전체 단계(복습+1+2+3단계) 통합 기준으로 계산 ─────────────────
   // 3단계는 AI 동적 생성이라, 진입 전엔 추정값(5개), 진입 후엔 실제 items.length 사용
@@ -991,6 +1051,29 @@ export function PracticeClient({
               </button>
             </div>
 
+            {/* 🔊 단어 다시 듣기 버튼 (단어 전용) / 문장은 부모님 안내 */}
+            {!stage3Loading && currentItem?.text && currentItem?.kind !== "sentence" && (
+              <div className="flex justify-center pb-3">
+                <button
+                  type="button"
+                  onClick={handleReplay}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF5EE] hover:bg-[#FFE8D6] border border-[#FFD9B8] text-[#FFB38A] font-bold text-sm transition-all active:scale-95"
+                  aria-label="단어 다시 듣기"
+                >
+                  <span className="text-base">🔊</span>
+                  다시 듣기
+                </button>
+              </div>
+            )}
+            {!stage3Loading && currentItem?.kind === "sentence" && (
+              <div className="flex justify-center pb-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
+                  <span className="text-base">📖</span>
+                  부모님이 읽어주세요
+                </div>
+              </div>
+            )}
+
             {/* 훈련 팁 (2단계 처방전) — 단어 영역 아래에 별도 배치 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
@@ -1002,26 +1085,35 @@ export function PracticeClient({
           {/* 🚗 자동차 트랙 */}
           <CarTrack progress={carProgress} childImage={childImage} />
 
-          {/* 반복 카운터 */}
-          <div className="w-full flex items-center gap-2.5 px-1">
-            <span className="text-xs text-[#8B7E74] flex-shrink-0 font-semibold">반복</span>
-            <div className="flex-1 h-2 bg-[#F0E8E0] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, (totalReps / REP_TARGET) * 100)}%`,
-                  background: totalReps >= REP_TARGET
-                    ? "linear-gradient(90deg,#7EDFD0,#2ECC71)"
-                    : "linear-gradient(90deg,#FFD4B8,#FFB38A)",
-                }}
-              />
+          {/* 반복 카운터 — 학습 효과 측정 (50회 이상 반복해야 뇌가 자동화) */}
+          <div className="w-full bg-[#FAF7F4] rounded-xl px-3 py-2.5 border border-[#F0E8E0]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-[#8B7E74] flex-shrink-0 font-bold flex items-center gap-1">
+                🔁 발음 연습 횟수
+              </span>
+              <div className="flex-1 h-1.5 bg-white rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, (totalReps / REP_TARGET) * 100)}%`,
+                    background: totalReps >= REP_TARGET
+                      ? "linear-gradient(90deg,#7EDFD0,#2ECC71)"
+                      : "linear-gradient(90deg,#C4B5A8,#8B7E74)",
+                  }}
+                />
+              </div>
+              <span
+                className="text-xs font-black flex-shrink-0 min-w-[44px] text-right"
+                style={{ color: totalReps >= REP_TARGET ? "#0D9488" : "#8B7E74" }}
+              >
+                {totalReps >= REP_TARGET ? "🎯 " : ""}{totalReps}/{REP_TARGET}
+              </span>
             </div>
-            <span
-              className="text-xs font-black flex-shrink-0 min-w-[42px] text-right"
-              style={{ color: totalReps >= REP_TARGET ? "#0D9488" : "#FFB38A" }}
-            >
-              {totalReps >= REP_TARGET ? "🎯" : ""}{totalReps}/{REP_TARGET}
-            </span>
+            <p className="text-[10px] text-[#C4B5A8] mt-1.5 leading-tight pl-0.5">
+              {totalReps >= REP_TARGET
+                ? "✨ 목표 달성! 같은 음소를 충분히 연습했어요"
+                : "같은 음소가 들어간 단어들이 모두 누적돼요 · 50회면 뇌가 발음을 자동화해요"}
+            </p>
           </div>
 
           {/* 도트 (5개) */}

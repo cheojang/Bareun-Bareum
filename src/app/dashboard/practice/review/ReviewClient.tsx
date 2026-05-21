@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+import { useTTS } from "@/lib/useTTS";
 
 interface ReviewWord {
   id: string;
@@ -141,6 +142,24 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
 
   const currentItem = items[currentIndex];
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
+
+  // ── 단어 자동 재생 + 다시 듣기 ─────────────────────────────────────────────
+  const { play: playWord, stop: stopWord } = useTTS();
+  const lastPlayedRef = useRef<string>("");
+
+  useEffect(() => {
+    const text = currentItem?.targetWord;
+    if (!text) return;
+    if (lastPlayedRef.current === text) return;
+    lastPlayedRef.current = text;
+    const t = setTimeout(() => { playWord(text).catch(() => {}); }, 250);
+    return () => { clearTimeout(t); stopWord(); };
+  }, [currentItem?.targetWord, playWord, stopWord]);
+
+  const handleReplay = useCallback(() => {
+    const text = currentItem?.targetWord;
+    if (text) playWord(text).catch(() => {});
+  }, [currentItem?.targetWord, playWord]);
   const filledCount = currentSlots.filter((s) => s !== null).length;
   const isSlotsFull = filledCount >= MAX_DOTS;
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
@@ -334,6 +353,19 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
                 </div>
               );
             })()}
+
+            {/* 🔊 단어 다시 듣기 — 글자 못 읽는 아이도 소리로 확인 가능 */}
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                onClick={handleReplay}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F0FAF8] hover:bg-[#D8EFEA] border border-[#7EDFD0] text-[#0D9488] font-bold text-sm transition-all active:scale-95"
+                aria-label="단어 다시 듣기"
+              >
+                <span className="text-base">🔊</span>
+                다시 듣기
+              </button>
+            </div>
 
             <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed">
               💡 {currentItem.reviewCount}회째 복습이에요

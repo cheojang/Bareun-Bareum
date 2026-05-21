@@ -13,9 +13,9 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex flex-col min-h-dvh">
-      {/* 탭 바 — 엑셀 스타일, 상단 고정 */}
+      {/* 탭 바 — 헤더 바로 아래에 sticky (헤더 높이만큼 top 오프셋) */}
       <div
-        className="sticky top-0 z-30 flex border-b border-[#F0E8E0]"
+        className="sticky top-[80px] md:top-[72px] z-20 flex border-b border-[#F0E8E0]"
         style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
       >
         {TABS.map((tab) => {
