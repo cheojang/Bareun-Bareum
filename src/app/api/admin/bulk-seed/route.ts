@@ -1,0 +1,287 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/admin-auth";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
+
+const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+// 패턴당 목표 단어쌍 수
+const PAIRS_PER_PATTERN = 100;
+// Vercel 60s 타임아웃 감안 — 한 번 호출당 최대 처리 패턴 수
+const MAX_PATTERNS_PER_CALL = 3;
+
+// ─── Gemini 헬퍼 ─────────────────────────────────────────────────
+
+function getGenAI() {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY 없음");
+  return new GoogleGenerativeAI(key);
+}
+
+async function generateWithFallback(genai: GoogleGenerativeAI, prompt: string): Promise<string> {
+  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
+    const modelName = MODEL_FALLBACK[i];
+    try {
+      if (i > 0) console.log(`[BulkSeed] 폴백 모델: ${modelName}`);
+      const model = genai.getGenerativeModel({ model: modelName });
+      const raw = await model.generateContent(prompt);
+      return raw.response.text();
+    } catch (e: any) {
+      const is503 = e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
+      if (is503 && i < MODEL_FALLBACK.length - 1) {
+        console.warn(`[BulkSeed] ${modelName} 503 → 폴백`);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("모든 Gemini 모델이 503 상태입니다");
+}
+
+function buildPrompt(combo: TemplateCombination): string {
+  return `당신은 15년 경력의 한국 아동 언어재활사(SLP)입니다.
+
+아래 조음 오류 패턴에 대해 두 가지를 동시에 생성하세요:
+① 가정 내 훈련법 (Home Training)
+② 이 오류가 실제로 나타나는 단어쌍 ${PAIRS_PER_PATTERN}개
+
+[오류 패턴]
+- 음소: ${combo.phoneme}
+- 위치: ${combo.position}
+- 오류유형: ${combo.errorType} (${combo.errorCategory})
+- 예시: ${combo.exampleTarget} → ${combo.exampleChild}
+
+[훈련법 규칙]
+- rootCause: 조음 발달 원인 + 신체 감각 설명 (200~300자)
+- trainingStep1~4: 각 2~3문장, 부모가 바로 실행 가능한 구체적 활동
+- parentHint: 부모가 아이에게 바로 말할 수 있는 한 줄 (30자 이내)
+- recommendedWords: 같은 오류 패턴이 포함된 연습 단어 10개
+
+[단어쌍 규칙]
+- targetWord: 2~7세 아동이 일상에서 자주 쓰는 단어 (명사 위주)
+- childPronunciation: ${combo.errorType} 오류가 정확히 적용된 발음
+  → 다른 음소는 변형 없이 그대로 유지
+  → 예시와 동일한 오류 변환 규칙을 100개 단어에 일관 적용
+- 100개 전부 서로 다른 단어, 실제 아동 어휘 범위 내에서
+
+[출력 형식]
+순수 JSON만 출력하세요. 마크다운 코드블록 없이.
+{
+  "training": {
+    "parentHint": "...",
+    "rootCause": "...",
+    "trainingStep1": "【1단계: 조음 감각 깨우기】...",
+    "trainingStep2": "【2단계: 소리 느끼기】...",
+    "trainingStep3": "【3단계: 음절/단어로 연결하기】...",
+    "trainingStep4": "【4단계: 일상에서 적용하기】...",
+    "recommendedWords": ["단어1", "단어2", "단어3", "단어4", "단어5", "단어6", "단어7", "단어8", "단어9", "단어10"]
+  },
+  "wordPairs": [
+    { "targetWord": "${combo.exampleTarget}", "childPronunciation": "${combo.exampleChild}" },
+    { "targetWord": "...", "childPronunciation": "..." }
+  ]
+}`;
+}
+
+// ─── GET — 진행 상황 조회 ─────────────────────────────────────────
+
+export async function GET(_: NextRequest) {
+  const session = await auth();
+  if (!isAdmin(session?.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const [doneTemplates, totalWordPairs] = await Promise.all([
+    prisma.phonemeTemplate.findMany({
+      select: { phoneme: true, position: true, errorType: true },
+    }),
+    prisma.wordPairCache.count(),
+  ]);
+
+  const doneSet = new Set(
+    doneTemplates.map(
+      (t: { phoneme: string; position: string; errorType: string }) =>
+        `${t.phoneme}|${t.position}|${t.errorType}`
+    )
+  );
+
+  const pending = PHONEME_COMBINATIONS.filter(
+    (c) => !doneSet.has(`${c.phoneme}|${c.position}|${c.errorType}`)
+  );
+
+  return NextResponse.json({
+    totalPatterns: PHONEME_COMBINATIONS.length,
+    donePatterns: doneTemplates.length,
+    remainingPatterns: pending.length,
+    totalWordPairs,
+    targetWordPairs: PHONEME_COMBINATIONS.length * PAIRS_PER_PATTERN,
+    nextBatch: pending.slice(0, MAX_PATTERNS_PER_CALL).map((c) => ({
+      phoneme: c.phoneme,
+      position: c.position,
+      errorType: c.errorType,
+    })),
+  });
+}
+
+// ─── POST — 배치 처리 ────────────────────────────────────────────
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!isAdmin(session?.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const limit: number = Math.min(Number(body.limit) || MAX_PATTERNS_PER_CALL, MAX_PATTERNS_PER_CALL);
+
+  // 완료된 패턴 조회
+  const doneTemplates = await prisma.phonemeTemplate.findMany({
+    select: { phoneme: true, position: true, errorType: true },
+  });
+  const doneSet = new Set(
+    doneTemplates.map(
+      (t: { phoneme: string; position: string; errorType: string }) =>
+        `${t.phoneme}|${t.position}|${t.errorType}`
+    )
+  );
+
+  const pending = PHONEME_COMBINATIONS.filter(
+    (c) => !doneSet.has(`${c.phoneme}|${c.position}|${c.errorType}`)
+  ).slice(0, limit);
+
+  if (pending.length === 0) {
+    const totalWordPairs = await prisma.wordPairCache.count();
+    return NextResponse.json({
+      message: "모든 패턴이 완료됐습니다",
+      donePatterns: doneTemplates.length,
+      totalWordPairs,
+    });
+  }
+
+  const genai = getGenAI();
+  const results = {
+    success: 0,
+    failed: 0,
+    wordPairsCreated: 0,
+    errors: [] as string[],
+  };
+
+  for (const combo of pending) {
+    const patternKey = `${combo.phoneme}/${combo.position}/${combo.errorType}`;
+    try {
+      // ── Gemini 호출 ──────────────────────────────────────────
+      const raw = (await generateWithFallback(genai, buildPrompt(combo)))
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "")
+        .trim();
+
+      const parsed = JSON.parse(raw) as {
+        training: {
+          parentHint: string;
+          rootCause: string;
+          trainingStep1: string;
+          trainingStep2: string;
+          trainingStep3: string;
+          trainingStep4: string;
+          recommendedWords: string[];
+        };
+        wordPairs: { targetWord: string; childPronunciation: string }[];
+      };
+
+      const t = parsed.training;
+      const pairs = Array.isArray(parsed.wordPairs) ? parsed.wordPairs : [];
+
+      // ── PhonemeTemplate upsert ────────────────────────────────
+      await prisma.phonemeTemplate.upsert({
+        where: {
+          phoneme_position_errorType: {
+            phoneme: combo.phoneme,
+            position: combo.position,
+            errorType: combo.errorType,
+          },
+        },
+        create: {
+          phoneme:         combo.phoneme,
+          position:        combo.position,
+          errorType:       combo.errorType,
+          errorCategory:   combo.errorCategory,
+          exampleTarget:   combo.exampleTarget,
+          exampleChild:    combo.exampleChild,
+          parentHint:      String(t.parentHint    ?? ""),
+          rootCause:       String(t.rootCause     ?? ""),
+          trainingStep1:   String(t.trainingStep1 ?? ""),
+          trainingStep2:   String(t.trainingStep2 ?? ""),
+          trainingStep3:   String(t.trainingStep3 ?? ""),
+          trainingStep4:   String(t.trainingStep4 ?? ""),
+          recommendedWords: JSON.stringify(
+            Array.isArray(t.recommendedWords) ? t.recommendedWords : []
+          ),
+        },
+        update: {},
+      });
+
+      // ── WordPairCache bulk upsert ────────────────────────────
+      let pairsCreated = 0;
+      for (const pair of pairs) {
+        if (!pair.targetWord || !pair.childPronunciation) continue;
+        try {
+          await prisma.wordPairCache.upsert({
+            where: {
+              targetWord_childPronunciation: {
+                targetWord: String(pair.targetWord),
+                childPronunciation: String(pair.childPronunciation),
+              },
+            },
+            create: {
+              targetWord:         String(pair.targetWord),
+              childPronunciation: String(pair.childPronunciation),
+              errorType:          combo.errorType,
+              errorCategory:      combo.errorCategory,
+              rootCause:          String(t.rootCause     ?? ""),
+              trainingStep1:      String(t.trainingStep1 ?? ""),
+              trainingStep2:      String(t.trainingStep2 ?? ""),
+              trainingStep3:      String(t.trainingStep3 ?? ""),
+              trainingStep4:      String(t.trainingStep4 ?? ""),
+              recommendedWords:   JSON.stringify(
+                Array.isArray(t.recommendedWords) ? t.recommendedWords : []
+              ),
+              parentMessage:      String(t.parentHint ?? ""),
+              hitCount:           0,
+            },
+            update: {},
+          });
+          pairsCreated++;
+        } catch {
+          // 중복 충돌 등 개별 오류는 무시하고 계속
+        }
+      }
+
+      results.success++;
+      results.wordPairsCreated += pairsCreated;
+      console.log(`[BulkSeed] ✓ ${patternKey} — 단어쌍 ${pairsCreated}개`);
+    } catch (err) {
+      results.failed++;
+      const msg = `${patternKey}: ${(err as Error).message}`;
+      results.errors.push(msg);
+      console.error(`[BulkSeed] ✗ ${msg}`);
+    }
+  }
+
+  const [totalDoneTemplates, totalWordPairs] = await Promise.all([
+    prisma.phonemeTemplate.count(),
+    prisma.wordPairCache.count(),
+  ]);
+
+  return NextResponse.json({
+    processed: pending.length,
+    success: results.success,
+    failed: results.failed,
+    wordPairsCreated: results.wordPairsCreated,
+    errors: results.errors,
+    totalDonePatterns: totalDoneTemplates,
+    remainingPatterns: PHONEME_COMBINATIONS.length - totalDoneTemplates,
+    totalWordPairs,
+    targetWordPairs: PHONEME_COMBINATIONS.length * PAIRS_PER_PATTERN,
+  });
+}

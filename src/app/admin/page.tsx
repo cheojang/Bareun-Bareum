@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── 타입 ────────────────────────────────────────────────────────
 interface AdminStats {
@@ -547,7 +547,10 @@ export default function AdminDashboardPage() {
         )}
       </Card>
 
-      {/* ── 시딩 바로가기 ────────────────────────────────────────── */}
+      {/* ── DB 대량 시딩 ─────────────────────────────────────────── */}
+      <BulkSeedPanel />
+
+      {/* ── 관리 바로가기 ─────────────────────────────────────────── */}
       <Card className="border-dashed">
         <SectionTitle>⚙️ 관리 작업</SectionTitle>
         <div className="flex flex-wrap gap-2">
@@ -563,86 +566,190 @@ export default function AdminDashboardPage() {
               {label}
             </a>
           ))}
-          <SeedingButtons />
         </div>
       </Card>
     </div>
   );
 }
 
-// ─── 시딩 버튼 ───────────────────────────────────────────────────
-function SeedingButtons() {
-  const [tmplStatus, setTmplStatus] = useState<{ done: number; remaining: number } | null>(null);
-  const [wordStatus, setWordStatus] = useState<{ seeded: number; remaining: number } | null>(null);
-  const [running, setRunning] = useState<"tmpl" | "word" | null>(null);
-  const [msg, setMsg] = useState("");
+// ─── 대량 시딩 패널 ──────────────────────────────────────────────
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/seed-templates").then((r) => r.json()),
-      fetch("/api/admin/seed-word-pairs").then((r) => r.json()),
-    ]).then(([t, w]) => {
-      setTmplStatus({ done: t.done, remaining: t.remaining });
-      setWordStatus({ seeded: w.seeded, remaining: w.remaining });
-    }).catch(() => {});
+interface BulkStatus {
+  totalPatterns: number;
+  donePatterns: number;
+  remainingPatterns: number;
+  totalWordPairs: number;
+  targetWordPairs: number;
+  nextBatch: { phoneme: string; position: string; errorType: string }[];
+}
+
+function BulkSeedPanel() {
+  const [status, setStatus] = useState<BulkStatus | null>(null);
+  const [running, setRunning] = useState(false);
+  const [autoLoop, setAutoLoop] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const autoLoopRef = useRef(false);
+
+  const fetchStatus = useCallback(async () => {
+    const res = await fetch("/api/admin/bulk-seed");
+    if (res.ok) setStatus(await res.json());
   }, []);
 
-  async function runSeed(type: "tmpl" | "word") {
-    setRunning(type);
-    setMsg("");
-    try {
-      const url = type === "tmpl"
-        ? "/api/admin/seed-templates"
-        : "/api/admin/seed-word-pairs";
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: 20 }),
-      });
-      const data = await res.json();
-      if (type === "tmpl") {
-        setMsg(`음소 템플릿: ${data.success ?? 0}개 생성 완료 (남은 수: ${data.totalRemaining ?? "?"})`);
-        setTmplStatus({ done: data.totalDone ?? 0, remaining: data.totalRemaining ?? 0 });
-      } else {
-        setMsg(`단어쌍: ${data.fromTemplate ?? 0}개 시딩 완료 (남은 수: ${data.totalRemaining ?? "?"})`);
-        setWordStatus({ seeded: data.totalSeeded ?? 0, remaining: data.totalRemaining ?? 0 });
-      }
-    } catch {
-      setMsg("실행 중 오류가 발생했어요.");
-    } finally {
-      setRunning(null);
+  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+
+  const runOnce = useCallback(async (): Promise<boolean> => {
+    const res = await fetch("/api/admin/bulk-seed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ limit: 3 }),
+    });
+    const data = await res.json();
+    const ts = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    if (data.message) {
+      setLog((prev) => [`[${ts}] ✅ 완료 — 전체 패턴 ${data.donePatterns}개, 단어쌍 ${data.totalWordPairs?.toLocaleString()}개`, ...prev]);
+      await fetchStatus();
+      return false; // 더 이상 할 것 없음
     }
-  }
+
+    setLog((prev) => [
+      `[${ts}] ✓ ${data.success}패턴 처리 · 단어쌍 +${data.wordPairsCreated}개 · 누적 ${data.totalWordPairs?.toLocaleString()}개 (남은 패턴: ${data.remainingPatterns})`,
+      ...(data.errors?.length > 0 ? [`[${ts}] ⚠️ 오류: ${data.errors.join(" | ")}`] : []),
+      ...prev,
+    ].slice(0, 50));
+    await fetchStatus();
+    return data.remainingPatterns > 0;
+  }, [fetchStatus]);
+
+  const handleStart = useCallback(async () => {
+    if (running) return;
+    setRunning(true);
+    autoLoopRef.current = autoLoop;
+
+    try {
+      let hasMore = await runOnce();
+      while (hasMore && autoLoopRef.current) {
+        await new Promise((r) => setTimeout(r, 1500)); // 서버 부하 방지 딜레이
+        hasMore = await runOnce();
+      }
+    } finally {
+      setRunning(false);
+    }
+  }, [running, autoLoop, runOnce]);
+
+  const handleStop = () => { autoLoopRef.current = false; };
+
+  if (!status) return null;
+
+  const patternPct = status.totalPatterns > 0
+    ? Math.round((status.donePatterns / status.totalPatterns) * 100) : 0;
+  const pairPct = status.targetWordPairs > 0
+    ? Math.round((status.totalWordPairs / status.targetWordPairs) * 100) : 0;
+  const isDone = status.remainingPatterns === 0;
 
   return (
-    <>
-      <button
-        onClick={() => runSeed("tmpl")}
-        disabled={running !== null}
-        className="px-4 py-2 rounded-2xl text-sm font-bold text-[#8B7EFF] bg-[#F5F3FF] hover:bg-[#EDE9FE] transition-colors disabled:opacity-50"
-      >
-        {running === "tmpl" ? "생성 중..." : `🧬 음소 템플릿 시딩`}
-        {tmplStatus && (
-          <span className="ml-1 text-[10px] font-normal opacity-70">
-            ({tmplStatus.done}/{tmplStatus.done + tmplStatus.remaining})
+    <Card>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <SectionTitle>🚀 단어쌍 + 발음교정 DB 대량 시딩</SectionTitle>
+          <p className="text-xs text-[#8B7E74] -mt-2">
+            패턴당 Gemini 1회 호출 → 훈련법 1개 + 단어쌍 100개 동시 생성
+          </p>
+        </div>
+        {isDone && (
+          <span className="text-xs font-black px-3 py-1 bg-[#F0FAF8] text-[#0D9488] rounded-full">
+            ✅ 완료
           </span>
         )}
-      </button>
-      <button
-        onClick={() => runSeed("word")}
-        disabled={running !== null}
-        className="px-4 py-2 rounded-2xl text-sm font-bold text-[#0D9488] bg-[#F0FAF8] hover:bg-[#CCFBF1] transition-colors disabled:opacity-50"
-      >
-        {running === "word" ? "시딩 중..." : `📚 단어쌍 캐시 시딩`}
-        {wordStatus && (
-          <span className="ml-1 text-[10px] font-normal opacity-70">
-            ({wordStatus.seeded}/{wordStatus.seeded + wordStatus.remaining})
-          </span>
-        )}
-      </button>
-      {msg && (
-        <p className="w-full text-xs text-[#0D9488] font-semibold mt-1">{msg}</p>
+      </div>
+
+      {/* 진행 현황 */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-[#F5F3FF] rounded-2xl p-4">
+          <p className="text-2xl font-black text-[#8B7EFF]">
+            {status.donePatterns} <span className="text-base font-bold">/ {status.totalPatterns}</span>
+          </p>
+          <p className="text-xs text-[#8B7E74] font-bold mt-1">발음교정 패턴 완료</p>
+          <div className="mt-2 h-2 bg-white rounded-full overflow-hidden">
+            <div className="h-full bg-[#8B7EFF] rounded-full transition-all" style={{ width: `${patternPct}%` }} />
+          </div>
+          <p className="text-[10px] text-[#C4B5A8] mt-1">{patternPct}% · 남은 패턴 {status.remainingPatterns}개</p>
+        </div>
+        <div className="bg-[#F0FAF8] rounded-2xl p-4">
+          <p className="text-2xl font-black text-[#0D9488]">
+            {status.totalWordPairs.toLocaleString()} <span className="text-base font-bold">/ {status.targetWordPairs.toLocaleString()}</span>
+          </p>
+          <p className="text-xs text-[#8B7E74] font-bold mt-1">단어쌍 캐시 생성</p>
+          <div className="mt-2 h-2 bg-white rounded-full overflow-hidden">
+            <div className="h-full bg-[#0D9488] rounded-full transition-all" style={{ width: `${pairPct}%` }} />
+          </div>
+          <p className="text-[10px] text-[#C4B5A8] mt-1">{pairPct}% · 목표 {status.targetWordPairs.toLocaleString()}쌍</p>
+        </div>
+      </div>
+
+      {/* 다음 배치 미리보기 */}
+      {!isDone && status.nextBatch.length > 0 && (
+        <div className="mb-4 bg-[#FFF5EE] rounded-2xl px-4 py-3">
+          <p className="text-xs font-bold text-[#8B7E74] mb-1.5">다음 처리 배치 ({status.nextBatch.length}개 패턴)</p>
+          <div className="flex flex-wrap gap-1.5">
+            {status.nextBatch.map((b) => (
+              <span key={`${b.phoneme}|${b.position}|${b.errorType}`}
+                className="text-[11px] bg-white border border-[#FFD9B8] text-[#FFB38A] font-bold px-2 py-0.5 rounded-full">
+                {b.phoneme} {b.position} {b.errorType}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
-    </>
+
+      {/* 버튼 */}
+      {!isDone && (
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={running ? handleStop : handleStart}
+            className={`px-6 py-3 rounded-2xl font-black text-sm text-white transition-all ${
+              running
+                ? "bg-[#EF4444] hover:bg-[#DC2626]"
+                : "bg-[#FFB38A] hover:bg-[#FF9A6C]"
+            }`}
+          >
+            {running ? "⏹ 중지" : "▶ 시딩 실행 (3패턴)"}
+          </button>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={autoLoop}
+              onChange={(e) => setAutoLoop(e.target.checked)}
+              disabled={running}
+              className="w-4 h-4 accent-[#FFB38A]"
+            />
+            <span className="text-sm font-bold text-[#8B7E74]">자동 반복 ({status.remainingPatterns}패턴 끝까지)</span>
+          </label>
+          {running && (
+            <div className="flex items-center gap-1.5 text-xs text-[#FFB38A] font-bold">
+              <div className="w-3 h-3 rounded-full border-2 border-[#FFB38A] border-t-transparent animate-spin" />
+              처리 중...
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 실행 로그 */}
+      {log.length > 0 && (
+        <div className="bg-[#1A1A1A] rounded-2xl p-3 max-h-36 overflow-y-auto">
+          {log.map((line, i) => (
+            <p key={i} className="text-[11px] font-mono text-[#7EDFD0] leading-relaxed">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* 예상 비용 안내 */}
+      <p className="text-[10px] text-[#C4B5A8] mt-3 leading-relaxed">
+        💡 패턴당 약 2,000~3,000 토큰 사용 · 296패턴 완료 시 약 70~90만 토큰 (Gemini Flash 기준 ~$0.10 이하)
+      </p>
+    </Card>
   );
 }
+
