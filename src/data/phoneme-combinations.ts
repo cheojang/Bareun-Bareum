@@ -147,6 +147,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅊ", position:"초성", errorType:"기음감소",   errorCategory:"대치", exampleTarget:"치마",  exampleChild:"지마"  },
   { phoneme:"ㅊ", position:"초성", errorType:"경음화",     errorCategory:"대치", exampleTarget:"차",    exampleChild:"짜"    },
   { phoneme:"ㅊ", position:"초성", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"충치",  exampleChild:"둥디"  },
+  { phoneme:"ㅊ", position:"초성", errorType:"기음파열음화", errorCategory:"대치", exampleTarget:"김치",  exampleChild:"김티"  },
   { phoneme:"ㅊ", position:"초성", errorType:"마찰음화",   errorCategory:"대치", exampleTarget:"채소",  exampleChild:"새소"  },
   { phoneme:"ㅊ", position:"어중", errorType:"기음감소",   errorCategory:"대치", exampleTarget:"코치",  exampleChild:"코지"  },
   { phoneme:"ㅊ", position:"어중", errorType:"경음화",     errorCategory:"대치", exampleTarget:"기차",  exampleChild:"기짜"  },
