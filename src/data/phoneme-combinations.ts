@@ -104,6 +104,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅅ", position:"초성", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"사과",  exampleChild:"아과"  },
   { phoneme:"ㅅ", position:"초성", errorType:"경음화",     errorCategory:"대치", exampleTarget:"사과",  exampleChild:"싸과"  },
   { phoneme:"ㅅ", position:"초성", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"사과",  exampleChild:"다과"  },
+  { phoneme:"ㅅ", position:"초성", errorType:"경음파열음화", errorCategory:"대치", exampleTarget:"사과",  exampleChild:"따과"  },
   { phoneme:"ㅅ", position:"초성", errorType:"파찰음화",   errorCategory:"대치", exampleTarget:"사자",  exampleChild:"자자"  },
   { phoneme:"ㅅ", position:"초성", errorType:"후방화",     errorCategory:"대치", exampleTarget:"소",    exampleChild:"호"    },
   { phoneme:"ㅅ", position:"초성", errorType:"양순음화",   errorCategory:"대치", exampleTarget:"소방차", exampleChild:"보방차" },
