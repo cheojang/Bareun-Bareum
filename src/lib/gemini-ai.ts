@@ -8,9 +8,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PhonemeError } from '@/types/phonetics';
-
-// 503 과부하 시 3단계 폴백 (Flash 2개 → Pro)
-const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+import { callWithFallback } from './gemini-client';
 
 let genai: GoogleGenerativeAI | null = null;
 
@@ -19,10 +17,6 @@ function getGenAI() {
     genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   }
   return genai;
-}
-
-function is503(e: any) {
-  return e?.message?.includes('503') || e?.message?.includes('Service Unavailable');
 }
 
 const SYSTEM_INSTRUCTION = `당신은 아동 언어치료 전문가입니다.
@@ -78,29 +72,14 @@ ${errorDescriptions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
   "geminiConfidence": 4
 }`;
 
-    let responseText = '';
-    for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-      const modelName = MODEL_FALLBACK[i];
-      try {
-        if (i > 0) console.log(`[Gemini Guidance] 폴백 모델 사용: ${modelName}`);
-        const model = ai.getGenerativeModel({
-          model: modelName,
-          systemInstruction: SYSTEM_INSTRUCTION
-        });
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' }
-        });
-        responseText = result.response.text();
-        break;
-      } catch (e: any) {
-        if (is503(e) && i < MODEL_FALLBACK.length - 1) {
-          console.warn(`[Gemini Guidance] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
-          continue;
-        }
-        throw e;
-      }
-    }
+    const responseText = await callWithFallback('Gemini Guidance', async (modelName) => {
+      const model = ai.getGenerativeModel({ model: modelName, systemInstruction: SYSTEM_INSTRUCTION });
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      });
+      return result.response.text();
+    });
     try {
       const parsed = JSON.parse(responseText);
 
@@ -146,22 +125,10 @@ export async function generateWordRecommendationContext(errorPatterns: string[])
     const prompt = `아이가 자주 어려워하는 발음: ${errorPatterns.join(', ')}
 이 발음들을 연습하기 좋은 짧은 응원 메시지를 한 문장으로 써주세요.`;
 
-    for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-      const modelName = MODEL_FALLBACK[i];
-      try {
-        if (i > 0) console.log(`[Gemini WordRec] 폴백 모델 사용: ${modelName}`);
-        const model = ai.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        return result.response.text() || '';
-      } catch (e: any) {
-        if (is503(e) && i < MODEL_FALLBACK.length - 1) {
-          console.warn(`[Gemini WordRec] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
-          continue;
-        }
-        throw e;
-      }
-    }
-    return '';
+    return await callWithFallback('Gemini WordRec', async (modelName) => {
+      const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      return result.response.text() || '';
+    });
   } catch (error) {
     console.error('[Gemini API Error in generateWordRecommendationContext]', {
       errorPatternCount: errorPatterns?.length || 0,
@@ -194,25 +161,11 @@ export async function generateSessionBriefing(topErrorPhonemes: string[]): Promi
 이번 연습 전에 부모에게 오늘 집중할 포인트와 격려 메시지를 2문장으로 주세요.`
         : `아이의 발음 연습 세션을 시작하기 전에 부모에게 격려와 연습 팁을 2문장으로 주세요.`;
 
-    for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-      const modelName = MODEL_FALLBACK[i];
-      try {
-        if (i > 0) console.log(`[Gemini Briefing] 폴백 모델 사용: ${modelName}`);
-        const model = ai.getGenerativeModel({
-          model: modelName,
-          systemInstruction: BRIEFING_SYSTEM_INSTRUCTION
-        });
-        const result = await model.generateContent(prompt);
-        return result.response.text() || buildFallbackBriefing(topErrorPhonemes);
-      } catch (e: any) {
-        if (is503(e) && i < MODEL_FALLBACK.length - 1) {
-          console.warn(`[Gemini Briefing] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
-          continue;
-        }
-        throw e;
-      }
-    }
-    return buildFallbackBriefing(topErrorPhonemes);
+    return await callWithFallback('Gemini Briefing', async (modelName) => {
+      const model = ai.getGenerativeModel({ model: modelName, systemInstruction: BRIEFING_SYSTEM_INSTRUCTION });
+      const result = await model.generateContent(prompt);
+      return result.response.text() || buildFallbackBriefing(topErrorPhonemes);
+    });
   } catch (error) {
     console.error('[Gemini API Error in generateSessionBriefing]', {
       phonemeCount: topErrorPhonemes?.length || 0,

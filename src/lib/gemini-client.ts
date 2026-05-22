@@ -39,6 +39,30 @@ function is503(e: any) {
   return e?.message?.includes('503') || e?.message?.includes('Service Unavailable');
 }
 
+/**
+ * MODEL_FALLBACK 순서로 fn을 시도. 503이면 다음 모델로 폴백, 그 외 에러는 즉시 throw.
+ * gemini-ai.ts 등에서 공유 사용.
+ */
+export async function callWithFallback<T>(
+  label: string,
+  fn: (modelName: string) => Promise<T>
+): Promise<T> {
+  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
+    const modelName = MODEL_FALLBACK[i];
+    try {
+      if (i > 0) console.warn(`[${label}] 폴백 모델 사용: ${modelName}`);
+      return await fn(modelName);
+    } catch (e: any) {
+      if (is503(e) && i < MODEL_FALLBACK.length - 1) {
+        console.warn(`[${label}] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error(`[${label}] 모든 Gemini 모델이 503 상태입니다`);
+}
+
 function buildSystemInstruction() {
   return `당신은 15년 경력의 아동 언어발달 전문가(언어재활사)입니다.
 부모가 아동의 '오답 발음'을 입력하면, 이를 음운학적으로 분석하고, 가정 내 훈련법(Home-T)을 제공합니다.
@@ -107,29 +131,13 @@ export async function getGeminiFeedbackStream(
   const childAge = calcChildAge(child);
   const userPrompt = buildUserPrompt(targetWord, childPronunciation, errorType, errorCategory, childAge);
 
-  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-    const modelName = MODEL_FALLBACK[i];
-    try {
-      if (i > 0) console.log(`[Gemini Stream] 폴백 모델 사용: ${modelName}`);
-      const model = ai.getGenerativeModel({
-        model: modelName,
-        systemInstruction: buildSystemInstruction(),
-      });
-
-      return await model.generateContentStream({
+  return callWithFallback('Gemini Stream', (modelName) =>
+    ai.getGenerativeModel({ model: modelName, systemInstruction: buildSystemInstruction() })
+      .generateContentStream({
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
         generationConfig: { responseMimeType: 'application/json' },
-      });
-    } catch (e: any) {
-      if (is503(e) && i < MODEL_FALLBACK.length - 1) {
-        console.warn(`[Gemini Stream] ${modelName} 503 과부하, ${MODEL_FALLBACK[i + 1]}로 폴백`);
-        continue;
-      }
-      throw e;
-    }
-  }
-
-  throw new Error('모든 Gemini 모델이 503 상태입니다');
+      })
+  );
 }
 
 /**
@@ -153,22 +161,13 @@ export async function generateWeakPhonemeReport(
   const safeName = sanitizePromptInput(childName, 20);
   const prompt = `${safeName}의 발음 교정 약점 분석:\n\n${phonemeList}\n\n이 약점들을 종합하여 부모에게 도움이 될 만한 조언을 3~4문장으로 해주세요.`;
 
-  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-    const modelName = MODEL_FALLBACK[i];
-    try {
-      if (i > 0) console.log(`[Gemini Report] 폴백 모델 사용: ${modelName}`);
-      const model = ai.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
+  try {
+    return await callWithFallback('Gemini Report', async (modelName) => {
+      const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
       return result.response.text();
-    } catch (error: any) {
-      if (is503(error) && i < MODEL_FALLBACK.length - 1) {
-        console.warn(`[Gemini Report] ${modelName} 503 과부하, ${MODEL_FALLBACK[i + 1]}로 폴백`);
-        continue;
-      }
-      console.error('[Gemini API Error]', error);
-      return null;
-    }
+    });
+  } catch (error) {
+    console.error('[Gemini Report Error]', error);
+    return null;
   }
-
-  return null;
 }
