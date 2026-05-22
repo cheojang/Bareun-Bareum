@@ -261,6 +261,7 @@ interface PracticeItem {
   trainingTip?: string;      // 단어별 2단계 처방전 (오류 패턴과 매칭)
   similarTo?: string;        // 2단계: 어떤 원본 분석 단어와 유사 패턴인지
   childPron?: string;        // 1단계 오답 단어에서 아이 발음 표시용
+  scheduleId?: string;       // 복습 아이템: SM-2 ReviewSchedule ID
 }
 
 const MAX_DOTS = 5;
@@ -867,7 +868,7 @@ export function PracticeClient({
   }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
-  const meta = STAGE_META[stage as string];
+  const meta = STAGE_META[String(stage)];
   const masteryInfo = currentMastery ? getMasteryLabel(currentMastery) : null;
   const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
   const goodCount = currentSlots.filter((s) => s === "good").length;
@@ -918,7 +919,7 @@ export function PracticeClient({
       {/* 스텝 인디케이터 */}
       <div className="max-w-lg mx-auto w-full flex justify-center gap-2 mb-1">
         {stageSteps.map((s, i) => {
-          const sMeta = STAGE_META[s.key as string];
+          const sMeta = STAGE_META[String(s.key)];
           const isPast = i < stageIdx;
           const isCurrent = i === stageIdx;
           return (
