@@ -4,14 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sanitizePromptInput } from "@/lib/gemini-client";
-
-// 503 과부하 시 3단계 폴백
-const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
-
-function is503(e: any) {
-  return e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
-}
+import { sanitizePromptInput, callWithFallback } from "@/lib/gemini-client";
 
 interface WeakPhonemeInput {
   phoneme: string;
@@ -147,33 +140,19 @@ ${categorySummary || "데이터 없음"}
     const genai = new GoogleGenerativeAI(apiKey);
 
     let streamResult;
-    let lastErr: unknown = null;
-    for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-      const modelName = MODEL_FALLBACK[i];
-      try {
-        if (i > 0) console.log(`[ComprehensiveAnalysis] 폴백 모델 사용: ${modelName}`);
-        const model = genai.getGenerativeModel({ model: modelName });
-        streamResult = await model.generateContentStream(prompt);
-        break;
-      } catch (geminiErr: unknown) {
-        lastErr = geminiErr;
-        if (is503(geminiErr) && i < MODEL_FALLBACK.length - 1) {
-          console.warn(`[ComprehensiveAnalysis] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
-          continue;
-        }
-        break;
-      }
-    }
-
-    if (!streamResult) {
-      const msg = lastErr instanceof Error ? lastErr.message : "";
+    try {
+      streamResult = await callWithFallback("ComprehensiveAnalysis", (modelName) =>
+        genai.getGenerativeModel({ model: modelName }).generateContentStream(prompt)
+      );
+    } catch (geminiErr: unknown) {
+      const msg = geminiErr instanceof Error ? geminiErr.message : "";
       if (msg.includes("429") || msg.includes("quota") || msg.includes("Resource")) {
         return NextResponse.json(
           { error: "오늘 AI 분석 한도를 모두 사용했어요", isQuotaError: true },
           { status: 429 }
         );
       }
-      console.error("[ComprehensiveAnalysis Gemini Error]:", lastErr);
+      console.error("[ComprehensiveAnalysis Gemini Error]:", geminiErr);
       return NextResponse.json({ error: "서버 오류가 발생했어요" }, { status: 500 });
     }
 

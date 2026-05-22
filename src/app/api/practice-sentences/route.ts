@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { decomposeChar } from "@/lib/jamo-analysis";
 import { sanitizePromptInput } from "@/lib/gemini-client";
 
-// 503 과부하 시 3단계 폴백 (2.0/1.5는 deprecated)
+// 문장 생성용 모델 순서: lite(저렴) → pro(고품질 보조)
 const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
 
 // ── 문장 무결성 검증 ────────────────────────────────────────────────────────
@@ -41,8 +41,9 @@ function isValidSentence(s: string, words: string[]): boolean {
   return true;
 }
 
-function is503(e: any) {
-  return e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
+function is503(e: unknown) {
+  const msg = e instanceof Error ? e.message : "";
+  return msg.includes("503") || msg.includes("Service Unavailable");
 }
 
 // 🎯 목표 발음 하이라이팅: 문장에서 목표 발음이 있는 글자 위치 찾기
@@ -189,7 +190,7 @@ ${safeErrorPattern ? `교정 중인 발음 패턴: ${safeErrorPattern}` : ""}
         const result = await model.generateContent(prompt);
         text = result.response.text();
         break;
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (is503(e) && i < MODEL_FALLBACK.length - 1) {
           console.warn(`[Sentences] ${modelName} 503 → ${MODEL_FALLBACK[i + 1]}로 폴백`);
           continue;
