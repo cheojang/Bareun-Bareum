@@ -57,6 +57,16 @@ export class RateLimiter {
   }
 }
 
+/**
+ * 요청에서 클라이언트 IP를 추출.
+ * Vercel/프록시 뒤에서는 x-forwarded-for를 신뢰 (Next.js가 신뢰 가능 헤더로 인증).
+ */
+export function getClientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
 // ── 사전 정의된 리미터들 ──────────────────────────────────────────────────────
 
 /** Gemini AI 분석: 사용자당 분당 10건, 버스트 10건 */
@@ -69,4 +79,22 @@ export const geminiLimiter = new RateLimiter({
 export const heavyAnalysisLimiter = new RateLimiter({
   capacity: 2,
   refillPerSecond: 5 / 3600, // 1시간에 5건
+});
+
+/** TTS: 사용자당 분당 30건 — Google TTS 비용 방어 */
+export const ttsLimiter = new RateLimiter({
+  capacity: 30,
+  refillPerSecond: 30 / 60,
+});
+
+/** 이메일 인증코드 발송 (IP 기준): 분당 3건 */
+export const verificationIpLimiter = new RateLimiter({
+  capacity: 3,
+  refillPerSecond: 3 / 60,
+});
+
+/** 이메일 인증코드 발송 (이메일 기준): 시간당 5건 */
+export const verificationEmailLimiter = new RateLimiter({
+  capacity: 5,
+  refillPerSecond: 5 / 3600,
 });

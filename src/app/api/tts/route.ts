@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { synthesizeGoogleTTS, type GoogleVoice } from "@/lib/google-tts";
+import { auth } from "@/lib/auth";
+import { ttsLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * GET /api/tts?word=사과&voice=ko-KR-Neural2-A
@@ -22,6 +24,21 @@ const VALID_VOICES: GoogleVoice[] = [
 ];
 
 export async function GET(request: NextRequest) {
+  // 인증 — 게스트 세션도 허용하되 익명 호출은 차단
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 레이트리밋 — 게스트는 IP 기반, 회원은 user.id 기반
+  const limitKey = session.user.isGuest ? `ip:${getClientIp(request)}` : session.user.id;
+  if (!ttsLimiter.allow(limitKey)) {
+    return NextResponse.json(
+      { error: "요청이 너무 많아요. 잠시 후 다시 시도해주세요." },
+      { status: 429 }
+    );
+  }
+
   const url = new URL(request.url);
   const word = url.searchParams.get("word")?.trim();
   const voiceParam = url.searchParams.get("voice");

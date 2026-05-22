@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { analyzeError } from '@/lib/jamo-analysis';
 import { auth } from '@/lib/auth';
@@ -52,15 +53,17 @@ async function recalculateWeakPhonemes(childId: string, latestTargetJamo?: strin
     }
   }
 
-  for (const [phoneme, errorCount] of Object.entries(phonemeCounts)) {
+  // 모든 음소를 단일 트랜잭션으로 병렬 upsert — 직렬 await 보다 N배 빠름
+  const upserts = Object.entries(phonemeCounts).map(([phoneme, errorCount]) => {
     const errorRate = (errorCount / totalRecords) * 100;
     const weaknessLevel = getWeaknessLevel(errorRate, totalRecords);
-    await prisma.weakPhoneme.upsert({
+    return prisma.weakPhoneme.upsert({
       where: { childId_phoneme: { childId, phoneme } },
       create: { childId, phoneme, totalAttempts: totalRecords, errorCount, errorRate, weaknessLevel },
       update: { totalAttempts: totalRecords, errorCount, errorRate, weaknessLevel },
     });
-  }
+  });
+  if (upserts.length > 0) await prisma.$transaction(upserts);
 }
 
 /**
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
     const localAnalysisTyped = localAnalysis as Record<string, unknown>;
 
     // ── 게스트: 분석만 반환, DB 저장 안 함 ──────────────────────────────────
-    const isGuest = session.user.id === "guest";
+    const isGuest = session.user.isGuest === true;
     if (isGuest) {
       return NextResponse.json({
         success: true,
@@ -156,20 +159,26 @@ export async function POST(request: NextRequest) {
     const targetJamo = localAnalysisTyped.targetJamo as string | undefined;
     const phoneme = targetJamo && targetJamo !== "(없음)" ? targetJamo : "미분류";
 
-    Promise.allSettled([
-      recalculateWeakPhonemes(childId, targetJamo),
-      prisma.reviewSchedule.create({
-        data: {
-          childId,
-          errorRecordId: errorRecord.id,
-          targetWord,
-          childPronunciation,
-          phoneme,
-          errorPattern: errorRecord.errorPattern,
-          nextReviewAt: new Date(),
-        },
-      }),
-    ]);
+    // 응답 전송 후에도 백그라운드 작업 보장 — serverless 컨테이너 종료 방지
+    after(async () => {
+      const results = await Promise.allSettled([
+        recalculateWeakPhonemes(childId, targetJamo),
+        prisma.reviewSchedule.create({
+          data: {
+            childId,
+            errorRecordId: errorRecord.id,
+            targetWord,
+            childPronunciation,
+            phoneme,
+            errorPattern: errorRecord.errorPattern,
+            nextReviewAt: new Date(),
+          },
+        }),
+      ]);
+      for (const r of results) {
+        if (r.status === "rejected") console.error("[error-analysis bg]", r.reason);
+      }
+    });
 
     // 로컬 분석 결과만 즉시 반환
     return NextResponse.json({

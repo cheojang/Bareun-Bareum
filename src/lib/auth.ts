@@ -81,8 +81,9 @@ const guestProvider = Credentials({
   name: "비회원",
   credentials: {},
   async authorize() {
-    // DB에 저장하지 않는 임시 세션 — JWT만 발급
-    return { id: "guest", email: "guest@temp", name: "비회원" };
+    // 세션마다 고유 UUID — 고정 "guest" ID 공유 시 데이터 섞임 방지
+    const { randomUUID } = await import("crypto");
+    return { id: `guest:${randomUUID()}`, email: "guest@temp", name: "비회원" };
   },
 });
 
@@ -134,7 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const userId = user?.id ?? (token?.id as string);
       if (session.user && userId) {
         session.user.id = userId;
-        if (userId === "guest") {
+        if (userId?.startsWith("guest:")) {
           session.user.isGuest = true;
           session.user.role = "parent";
         } else {

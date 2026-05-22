@@ -92,79 +92,6 @@ function calcChildAge(child: any): number {
 }
 
 /**
- * Gemini 모델을 통한 오류 분석 및 훈련법 생성 (비스트리밍)
- */
-export async function getGeminiFeedback(
-  targetWord: string,
-  childPronunciation: string,
-  errorType: string,
-  errorCategory: string,
-  child: any,
-  isUnknownPattern = false,
-  localParentHint = "",
-  localDescription = ""
-) {
-  const ai = getGenAI();
-  if (!ai) {
-    console.warn('Gemini API 키가 설정되지 않았습니다');
-    return null;
-  }
-
-  const childAge = calcChildAge(child);
-  const userPrompt = buildUserPrompt(targetWord, childPronunciation, errorType, errorCategory, childAge);
-
-  for (let i = 0; i < MODEL_FALLBACK.length; i++) {
-    const modelName = MODEL_FALLBACK[i];
-    try {
-      if (i > 0) console.log(`[Gemini] 폴백 모델 사용: ${modelName}`);
-      const model = ai.getGenerativeModel({
-        model: modelName,
-        systemInstruction: buildSystemInstruction(),
-      });
-
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      });
-
-      const responseText = result.response.text()
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/, "")
-        .trim();
-
-      try {
-        let parsed = JSON.parse(responseText);
-        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-
-        return {
-          success: true,
-          patternName: parsed.patternName,
-          rootCause: parsed.rootCause,
-          trainingStep1: parsed.trainingStep1,
-          trainingStep2: parsed.trainingStep2,
-          trainingStep3: parsed.trainingStep3,
-          trainingStep4: parsed.trainingStep4,
-          recommendedWords: parsed.recommendedWords || [],
-          parentMessage: parsed.parentMessage,
-          geminiConfidence: parsed.geminiConfidence || 5,
-          isIndividualHabit: false,
-        };
-      } catch {
-        return buildFallbackGuidance([], childPronunciation, "응답 파싱 에러");
-      }
-    } catch (error: any) {
-      if (is503(error) && i < MODEL_FALLBACK.length - 1) {
-        console.warn(`[Gemini] ${modelName} 503 과부하, ${MODEL_FALLBACK[i + 1]}로 폴백`);
-        continue;
-      }
-      return buildFallbackGuidance([], childPronunciation, error.message);
-    }
-  }
-
-  return buildFallbackGuidance([], childPronunciation, "모든 모델 503");
-}
-
-/**
  * Gemini 스트리밍 분석 (503 시 Pro 모델로 자동 폴백)
  */
 export async function getGeminiFeedbackStream(
@@ -172,10 +99,7 @@ export async function getGeminiFeedbackStream(
   childPronunciation: string,
   errorType: string,
   errorCategory: string,
-  child: any,
-  isUnknownPattern = false,
-  localParentHint = "",
-  localDescription = ""
+  child: any
 ) {
   const ai = getGenAI();
   if (!ai) throw new Error('Gemini API 키가 설정되지 않았습니다');
@@ -206,25 +130,6 @@ export async function getGeminiFeedbackStream(
   }
 
   throw new Error('모든 Gemini 모델이 503 상태입니다');
-}
-
-/**
- * Fallback 가이드 생성
- */
-function buildFallbackGuidance(errors: any[], childPronunciation: string, actualError?: string) {
-  return {
-    success: false,
-    errorMessage: actualError,
-    rootCause: actualError || "분석 중 오류가 발생했습니다.",
-    trainingStep1: "AI 분석 실패",
-    trainingStep2: "AI 분석 실패",
-    trainingStep3: "AI 분석 실패",
-    trainingStep4: "AI 분석 실패",
-    recommendedWords: [],
-    parentMessage: "잠시 후 다시 시도해주세요.",
-    geminiConfidence: 1,
-    isIndividualHabit: false,
-  };
 }
 
 /**

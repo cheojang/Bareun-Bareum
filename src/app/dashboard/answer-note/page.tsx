@@ -8,7 +8,7 @@ export default async function AnswerNotePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const isGuest = session.user.id === "guest";
+  const isGuest = session.user.isGuest === true;
 
   // ── 게스트: 아이 등록 없이 바로 분석 화면 ─────────────────────────────────
   if (isGuest) {

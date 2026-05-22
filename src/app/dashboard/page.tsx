@@ -10,7 +10,7 @@ import { getKSTDateString } from "@/lib/kst-utils";
 export default async function DashboardHome() {
   const session = await auth();
   const userId = session!.user!.id!;
-  const isGuest = userId === "guest";
+  const isGuest = session?.user?.isGuest === true;
 
   // ── 게스트: 발음 분석으로 바로 안내 ───────────────────────────────────────
   if (isGuest) {

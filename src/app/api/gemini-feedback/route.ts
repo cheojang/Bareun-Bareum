@@ -158,8 +158,6 @@ export async function POST(request: NextRequest) {
     // ─── jamoBreakdown 파싱 → 음소 + 위치 추출 ──────────────────────────────
     let phoneme = "";
     let position = "초성";
-    let parentHint = "";
-    let description = "";
 
     if (errorRecord.localAnalysis?.jamoBreakdown) {
       try {
@@ -167,8 +165,6 @@ export async function POST(request: NextRequest) {
           analysis?: {
             targetJamo?: string;
             affectedSyllable?: number;
-            parentHint?: string;
-            description?: string;
           };
         };
         phoneme = bd.analysis?.targetJamo ?? "";
@@ -176,33 +172,13 @@ export async function POST(request: NextRequest) {
           errorRecord.errorType,
           bd.analysis?.affectedSyllable ?? 0
         );
-        parentHint = bd.analysis?.parentHint ?? "";
-        description = bd.analysis?.description ?? "";
       } catch { /* skip */ }
     }
 
-    // ─── 1순위: GeminiFeedback DB 캐시 확인 ──────────────────────────────────
-    // 1) 현재 기록에 캐시가 있는지 먼저 확인
-    let cachedFeedback = errorRecord.geminiFeedback;
-
-    // 2) 현재 기록에 없다면 동일 아이의 동일 단어/발음 조합 중 결과가 있는 것 검색
-    if (!cachedFeedback) {
-      const existingRecord = await prisma.errorRecord.findFirst({
-        where: {
-          childId: errorRecord.childId,
-          targetWord: errorRecord.targetWord,
-          childPronunciation: errorRecord.childPronunciation,
-          geminiFeedback: { isNot: null }
-        },
-        include: { geminiFeedback: true },
-        orderBy: { createdAt: 'desc' }
-      });
-      if (existingRecord?.geminiFeedback) {
-        cachedFeedback = existingRecord.geminiFeedback;
-        console.log("[Cache] 동일 패턴 과거 기록 캐시 HIT:", errorRecord.targetWord);
-      }
-    }
-
+    // ─── 1순위: 현재 기록의 GeminiFeedback 캐시 확인 ─────────────────────────
+    // 동일 (targetWord, childPronunciation) 쌍은 위의 globalCache(WordPairCache)에서
+    // 이미 처리되므로 추가 findFirst는 불필요.
+    const cachedFeedback = errorRecord.geminiFeedback;
     if (cachedFeedback) {
       const cached = cachedFeedback;
       let recWords: string[] = [];
@@ -229,7 +205,7 @@ export async function POST(request: NextRequest) {
       hashGuestIp, getClientIp, getGuestMonthlyUsage, incrementGuestUsage,
     } = await import("@/lib/usage-limit");
 
-    const isGuest = session.user.id === "guest";
+    const isGuest = session.user.isGuest === true;
     let guestIpHash: string | null = null;
 
     if (isGuest) {
@@ -272,10 +248,7 @@ export async function POST(request: NextRequest) {
         errorRecord.childPronunciation,
         errorRecord.errorType,
         errorRecord.errorCategory,
-        errorRecord.child,
-        false,
-        parentHint,
-        description
+        errorRecord.child
       );
     } catch (geminiErr: any) {
       console.error("[Gemini] 스트림 시작 실패:", geminiErr.message);
@@ -358,18 +331,20 @@ export async function POST(request: NextRequest) {
                     data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
                   });
                 }
-                await prisma.geminiFeedback.deleteMany({ where: { errorRecordId } });
-                await prisma.geminiFeedback.create({
-                  data: {
-                    errorRecordId,
-                    rootCause:        parsed.rootCause ?? "",
-                    trainingStep1:    parsed.trainingStep1 ?? "",
-                    trainingStep2:    parsed.trainingStep2 ?? "",
-                    trainingStep3:    parsed.trainingStep3 ?? "",
-                    trainingStep4:    parsed.trainingStep4 ?? "",
-                    recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-                    parentMessage:    parsed.parentMessage ?? "",
-                  },
+                // errorRecordId가 @unique이므로 upsert 단일 호출로 race 제거
+                const feedbackData = {
+                  rootCause:        parsed.rootCause ?? "",
+                  trainingStep1:    parsed.trainingStep1 ?? "",
+                  trainingStep2:    parsed.trainingStep2 ?? "",
+                  trainingStep3:    parsed.trainingStep3 ?? "",
+                  trainingStep4:    parsed.trainingStep4 ?? "",
+                  recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+                  parentMessage:    parsed.parentMessage ?? "",
+                };
+                await prisma.geminiFeedback.upsert({
+                  where: { errorRecordId },
+                  create: { errorRecordId, ...feedbackData },
+                  update: feedbackData,
                 });
 
                 if (phoneme && phoneme !== "(없음)") {

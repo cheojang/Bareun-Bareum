@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const isGuest = session.user.id === "guest";
+  const isGuest = session.user.isGuest === true;
 
   const childList = isGuest
     ? []

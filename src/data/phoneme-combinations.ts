@@ -51,7 +51,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㄷ", position:"종성", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"받침",   exampleChild:"바침"  },
   { phoneme:"ㄷ", position:"종성", errorType:"비음화",     errorCategory:"대치", exampleTarget:"끝",     exampleChild:"끈"    },
   { phoneme:"ㄷ", position:"종성", errorType:"마찰음화",   errorCategory:"대치", exampleTarget:"밭",     exampleChild:"밧"    },
-  { phoneme:"ㄷ", position:"어중", errorType:"유성음화",   errorCategory:"대치", exampleTarget:"아동",   exampleChild:"아동"  },
+  { phoneme:"ㄷ", position:"어중", errorType:"유성음화",   errorCategory:"대치", exampleTarget:"어두운",  exampleChild:"어루운"  },
 
   // ════════════════════════════════════════════════
   // ㄹ (유음) — 15개 ← 임상 빈도 1위
@@ -61,7 +61,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㄹ", position:"초성", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"리본",  exampleChild:"디본"  },
   { phoneme:"ㄹ", position:"초성", errorType:"마찰음화",   errorCategory:"대치", exampleTarget:"라디오", exampleChild:"사디오" },
   { phoneme:"ㄹ", position:"초성", errorType:"파찰음화",   errorCategory:"대치", exampleTarget:"리본",  exampleChild:"지본"  },
-  { phoneme:"ㄹ", position:"어중", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"바나나", exampleChild:"바나나" },
+  { phoneme:"ㄹ", position:"어중", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"달리기", exampleChild:"다이기" },
   { phoneme:"ㄹ", position:"어중", errorType:"비음화",     errorCategory:"대치", exampleTarget:"바리",  exampleChild:"바니"  },
   { phoneme:"ㄹ", position:"어중", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"아리",  exampleChild:"아디"  },
   { phoneme:"ㄹ", position:"어중", errorType:"연속오류",   errorCategory:"대치", exampleTarget:"나라",  exampleChild:"나나"  },
@@ -70,7 +70,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㄹ", position:"종성", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"물",    exampleChild:"묻"    },
   { phoneme:"ㄹ", position:"종성", errorType:"후방화비음", errorCategory:"대치", exampleTarget:"갈",    exampleChild:"강"    },
   { phoneme:"ㄹ", position:"종성", errorType:"탈락후첨가", errorCategory:"첨가", exampleTarget:"발",    exampleChild:"바ㄴ"  },
-  { phoneme:"ㄹ", position:"어중", errorType:"경음화",     errorCategory:"대치", exampleTarget:"아리랑", exampleChild:"아리랑" },
+  { phoneme:"ㄹ", position:"어중", errorType:"경음화",     errorCategory:"대치", exampleTarget:"아리랑", exampleChild:"아디랑" },
 
   // ════════════════════════════════════════════════
   // ㅁ (양순 비음) — 8개
@@ -96,7 +96,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅂ", position:"종성", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"입",    exampleChild:"이"    },
   { phoneme:"ㅂ", position:"종성", errorType:"비음화",     errorCategory:"대치", exampleTarget:"집",    exampleChild:"짐"    },
   { phoneme:"ㅂ", position:"종성", errorType:"연구개화",   errorCategory:"대치", exampleTarget:"입",    exampleChild:"익"    },
-  { phoneme:"ㅂ", position:"어중", errorType:"유성음화",   errorCategory:"대치", exampleTarget:"아버지", exampleChild:"아버지" },
+  { phoneme:"ㅂ", position:"어중", errorType:"유성음화",   errorCategory:"대치", exampleTarget:"아버지", exampleChild:"아머지" },
 
   // ════════════════════════════════════════════════
   // ㅅ (치경 마찰음) — 12개 ← 임상 빈도 2위
@@ -242,7 +242,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅉ", position:"초성", errorType:"기음화",     errorCategory:"대치", exampleTarget:"찌개",  exampleChild:"치개"  },
   { phoneme:"ㅉ", position:"초성", errorType:"탈락",       errorCategory:"탈락", exampleTarget:"짜",    exampleChild:"아"    },
   { phoneme:"ㅉ", position:"초성", errorType:"파열음화",   errorCategory:"대치", exampleTarget:"쭈꾸미", exampleChild:"두꾸미" },
-  { phoneme:"ㅉ", position:"어중", errorType:"이완화",     errorCategory:"대치", exampleTarget:"아줌마", exampleChild:"아줌마" },
+  { phoneme:"ㅉ", position:"어중", errorType:"이완화",     errorCategory:"대치", exampleTarget:"아줌마", exampleChild:"아좀마" },
 
   // ════════════════════════════════════════════════
   // 동화 오류 — 순음화 (목표 자음 → 양순음) 12개
@@ -257,7 +257,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅊ", position:"초성", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"채소",  exampleChild:"패소"  },
   { phoneme:"ㅋ", position:"초성", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"코뿔소", exampleChild:"보뿔소" },
   { phoneme:"ㅌ", position:"초성", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"타박상", exampleChild:"바박상" },
-  { phoneme:"ㄱ", position:"어중", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"아버지", exampleChild:"아버지" },
+  { phoneme:"ㄱ", position:"어중", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"보기",   exampleChild:"보비"   },
   { phoneme:"ㄷ", position:"어중", errorType:"순음화동화", errorCategory:"동화", exampleTarget:"모두",  exampleChild:"모부"  },
 
   // ════════════════════════════════════════════════
@@ -308,7 +308,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅎ", position:"초성", errorType:"치경음화동화", errorCategory:"동화", exampleTarget:"하늘",  exampleChild:"다늘"  },
   { phoneme:"ㅁ", position:"초성", errorType:"치경음화동화", errorCategory:"동화", exampleTarget:"마늘",  exampleChild:"나늘"  },
   { phoneme:"ㄱ", position:"어중", errorType:"치경음화동화", errorCategory:"동화", exampleTarget:"가능",  exampleChild:"다능"  },
-  { phoneme:"ㅂ", position:"어중", errorType:"치경음화동화", errorCategory:"동화", exampleTarget:"간단",  exampleChild:"간단"  },
+  { phoneme:"ㅂ", position:"어중", errorType:"치경음화동화", errorCategory:"동화", exampleTarget:"신발",  exampleChild:"신달"  },
 
   // ════════════════════════════════════════════════
   // 자음 첨가 오류 — 10개
@@ -359,7 +359,7 @@ export const PHONEME_COMBINATIONS: TemplateCombination[] = [
   { phoneme:"ㅚ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"최고",  exampleChild:"체고"  },
   { phoneme:"ㅟ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"귀",    exampleChild:"기"    },
   { phoneme:"ㅢ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"의자",  exampleChild:"이자"  },
-  { phoneme:"ㅙ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"봐",    exampleChild:"봐"    },
+  { phoneme:"ㅙ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"봐",    exampleChild:"바"    },
   { phoneme:"ㅝ",    position:"중성", errorType:"모음단순화", errorCategory:"대치", exampleTarget:"원숭이", exampleChild:"언숭이" },
   { phoneme:"ㅛ/ㅗ", position:"중성", errorType:"모음혼동",   errorCategory:"대치", exampleTarget:"요",    exampleChild:"오"    },
   { phoneme:"ㅠ/ㅜ", position:"중성", errorType:"모음혼동",   errorCategory:"대치", exampleTarget:"유리",  exampleChild:"우리"  },
