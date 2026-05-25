@@ -104,43 +104,109 @@
 
 ---
 
+## ✅ Phase 3+ 완료 (2026-04-13 ~ 2026-05-25)
+
+이후 점진적으로 추가된 주요 기능들:
+
+**기능 확장**
+- [x] 홈화면 활동 캘린더 (미션 카드 제거)
+- [x] 반복 카운터, 청각 폭격, 부모 코칭 (SLP 기반 3종)
+- [x] 최소대립쌍 훈련 진입 경로
+- [x] AI 분석 월간 제한 + 가격 정책 적용
+- [x] 아이 사진 등록 (Base64 → Supabase Storage URL 전환)
+- [x] 비회원 체험 모드
+- [x] 이메일 회원가입/로그인 + 이메일 인증(OTP) + 회원 탈퇴
+- [x] 글로벌 WordPairCache (Gemini 중복 호출 방지)
+- [x] PhonemeTemplate 기반 시딩 어드민 엔드포인트
+- [x] **관리자 통계 대시보드** (KPI/차트/Top 10, `/admin`)
+- [x] **아이 성별 필드** + 어드민 성별 분포
+
+**런칭 준비**
+- [x] Vercel 배포 준비 (prisma schema url, vercel.json, .env.example)
+- [x] 바른발음 런칭 마케팅 계획서
+- [x] Flutter 모바일 앱 확장 로드맵 문서화
+
+---
+
+## ✅ Phase 4 — Google TTS + UX 대대적 개선 (2026-05-25)
+
+### 🎙️ Google Cloud TTS 도입
+- [x] `src/lib/google-tts.ts` — Google Cloud TTS API 호출 (Neural2-A 한국어 여성)
+- [x] `src/app/api/tts/route.ts` — `/api/tts?word=X` 엔드포인트 + Supabase Storage 캐싱
+- [x] `src/lib/useTTS.ts` — 클라이언트 훅 (Google 우선, speechSynthesis 폴백)
+- [x] 같은 단어는 영구 캐시 → 매번 무료 재생 (월 100만 자 무료 한도)
+- [x] 속도 0.7, 단어 간 간격 1000ms (아이 학습 최적화)
+- [x] 음성 캐시 버킷: `tts-cache` (Public, 50MB+ 충분)
+
+### 🔊 음성 재생 통합
+- [x] **분석단어 훈련** — 단어 자동재생 + 🔊 다시 듣기 버튼
+- [x] **복습하기** — 단어 자동재생 + 🔊 다시 듣기 버튼
+- [x] **청각 폭격** — "▶️ 듣기 시작" 버튼 (자동재생 차단 우회)
+- [x] **3단계 문장** — TTS 제거 + "📖 부모님이 읽어주세요" 안내
+
+### 🛠️ 버그 수정
+- [x] 분석단어 훈련 첫 단어 소리 안 나는 버그 (phase deps 누락)
+- [x] 청각 폭격 자동재생 차단 (Chrome autoplay policy)
+- [x] React 개발모드 이중 마운트로 인한 첫 재생 차단 (lastPlayedRef 제거)
+- [x] gemini-2.0-flash deprecated 대응 → 2.5 시리즈로 폴백 갱신
+
+### 📝 문장 생성 강화
+- [x] 프롬프트 개선: 좋은/나쁜 예시 명시, 조사/서술어 필수
+- [x] `isValidSentence` 검증 함수 — 길이/서술어/조사/단어 포함 체크
+- [x] 검증 실패 문장은 폴백 템플릿으로 보충
+
+### 🎨 UX 개선
+- [x] 진행바 UX: 🏁 "오늘의 진도" + 🔁 "발음 연습 횟수" (부연 설명 포함)
+- [x] 자동차 트랙에 진행률 % 표시
+- [x] 복습 중복 제거: 같은 단어 한 번만 (bookmarks, review 모두)
+- [x] 연습 화면 sticky 탭 위치 조정 (헤더와 겹침 해소)
+- [x] 모든 액션 버튼 `BubbleButton size="lg"` 로 일관성 통일
+- [x] 청각 폭격: ▶️ 듣기 시작 / 건너뛰기 / 🔊 다시 듣기 / 연습 시작하기 — 색만 다르게 (주황=메인, 회색=보조)
+
+### 🛡️ 관리자 접근성
+- [x] 설정 페이지에 "🛡️ 관리자 대시보드" 카드 추가 (관리자 이메일만 노출)
+- [x] `.env.local`에 `ADMIN_EMAILS="dev@test.com"` 설정
+
+---
+
 ## 🔴 다음 세션에서 할 일
 
 ### 우선순위 1 — 단어 데이터베이스 계속 확장
 - [ ] 311개 → 600개 (ㄹ/ㅅ/ㅈ 계열 심화)
 - [ ] 600개 → 1000개
 - [ ] 1000개 → 2000개 (목표)
-- 방법: `src/lib/word-database.ts` 배열에 계속 추가
 
-### 우선순위 2 — DB 마이그레이션 (로컬 환경에서 실행)
-- [ ] `.env.local` 파일에 `DATABASE_URL` 설정
-- [ ] `npx prisma migrate dev --name add_practice_improvements`
-- [ ] 변경 내용: `SavedWord.@@unique([childId, word])`, `GeminiFeedback.parentMessage`
-- DB 옵션: 로컬 PostgreSQL 또는 Supabase 무료 플랜
+### 우선순위 2 — 다른 화면에도 TTS 적용 검토
+- [ ] 오답노트 분석 결과 카드 단어
+- [ ] 복습목록의 저장한 단어들
+- [ ] 최소대립쌍 훈련 단어
 
-### 우선순위 3 — 실제 테스트
-- [ ] DB 연결 후 오답 입력 → 분석 → 저장 전체 흐름 테스트
-- [ ] Gemini API 키 설정 후 AI 분석 테스트
-- [ ] 아이연습 3단계 실제 동작 확인
+### 우선순위 3 — 실제 사용자 테스트
+- [ ] 부모-아이 실사용 (5분 시연)
+- [ ] 음성 품질, 속도 만족도 체크
+- [ ] 문장 생성 품질 평가 (10개 표본)
 
-### 우선순위 4 — 배포 준비
-- [ ] Vercel 배포 (DB는 Supabase 권장)
-- [ ] 환경변수 설정 (DATABASE_URL, GEMINI_API_KEY, AUTH_SECRET 등)
+### 우선순위 4 — Vercel 배포
+- [ ] 환경변수 전부 Vercel 대시보드에 등록
+  - DATABASE_URL, AUTH_SECRET, GEMINI_API_KEY
+  - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+  - GOOGLE_TTS_API_KEY, ADMIN_EMAILS
+  - GOOGLE_CLIENT_ID/SECRET, KAKAO_CLIENT_ID/SECRET
+- [ ] NEXTAUTH_URL을 프로덕션 도메인으로 변경
+- [ ] OAuth 콜백 URL 등록 (Google, Kakao)
+- [ ] 도메인 연결
 
-### 우선순위 5 — PWA 설정 (모바일 앱처럼 설치 가능하게)
-- [ ] `next-pwa` 패키지 설치 및 설정
-- [ ] `manifest.json` 작성 (앱 이름, 아이콘, 테마 색상)
-- [ ] 스플래시 화면 / 홈스크린 아이콘 이미지 준비
-- [ ] iOS Safari "홈 화면에 추가" + Android Chrome 설치 배너 동작 확인
-- [ ] 오프라인 캐시 전략 설정 (Service Worker)
-- 목적: App Store 없이 스마트폰에 앱처럼 설치, 빠른 로딩, 향후 Expo 전환 전 단계
+### 우선순위 5 — PWA 설정
+- [ ] `next-pwa` 패키지 설치
+- [ ] `manifest.json` (앱 이름, 아이콘, 테마 색)
+- [ ] 스플래시 / 홈스크린 아이콘
+- [ ] iOS Safari "홈 화면에 추가" + Android Chrome 설치 배너
+- [ ] Service Worker 오프라인 캐시
 
-### 우선순위 6 — 반응형 디자인 개선 (태블릿 / PC 대응)
-- [ ] 현재 `max-w-lg` 고정 레이아웃 → 브레이크포인트별 대응
-- [ ] PC (1200px+): 사이드바 + 메인 콘텐츠 2단 레이아웃
-- [ ] 태블릿 (768px): 상단 탭 + 2컬럼 카드 레이아웃
-- [ ] 모바일: 현재 레이아웃 유지
-- 목적: 스마트폰 외 태블릿·노트북·PC에서도 자연스러운 UI 제공
+### 우선순위 6 — 반응형 디자인 개선
+- [ ] PC (1200px+): 사이드바 + 콘텐츠 2단 (현재 일부 구현됨)
+- [ ] 태블릿 (768px): 상단 탭 + 2컬럼 카드
+- [ ] 모바일: 현재 유지
 
 ---
 
@@ -149,8 +215,19 @@
 | 이슈 | 해결 방법 |
 |------|-----------|
 | @google/generative-ai 미설치 | `npm install @google/generative-ai` |
+| @supabase/supabase-js 미설치 | `npm install @supabase/supabase-js` |
 | Prisma 클라이언트 미생성 | `npx prisma generate` |
-| PrismaClient 직접 import 타입 오류 | 공유 `prisma` 인스턴스 (`@/lib/prisma`) 사용으로 교체 |
+| Prisma 마이그레이션 P3018 (기존 테이블 충돌) | `prisma migrate resolve --applied <name>` 로 표시 후 `migrate deploy` |
+| Supabase 무료 플랜 자동 일시중지 | 대시보드에서 "Resume project" 클릭 |
+| Supabase 신형 sb_secret_ 키 (legacy service_role 대체) | supabase-js v2.105+ 에서 자연 호환 |
+| Google TTS 자동재생 차단 (Chrome autoplay policy) | "▶️ 듣기 시작" 명시적 클릭 + setTimeout 250ms 단축 |
+| React strict mode 이중 마운트로 첫 재생 차단 | `lastPlayedRef` 제거 + `cancelled` 플래그 패턴 |
+| 청각폭격 → 메인 연습 첫 단어 안 들림 | `useEffect deps`에 `phase` 추가 |
+| gemini-2.0-flash 404 deprecated | MODEL_FALLBACK을 2.5 시리즈로 갱신 |
+| 헤더와 sticky 탭 겹침 | top-[68px] md:top-[60px] 오프셋 |
+| 복습 목록 같은 단어 중복 | targetWord 기준 dedupe (Set 활용) |
+| 문장 조사/서술어 누락 | `isValidSentence` 검증 함수 + 프롬프트 강화 |
+| ADMIN_EMAILS 미설정으로 /admin 접근 불가 | `.env.local`에 추가 + 설정 페이지에 진입 카드 노출 |
 | implicit any TypeScript 오류 (다수) | 콜백 매개변수에 명시적 타입 추가 |
 | 자모 분석 ㅇ 초성 오판정 | child.choseong === 'ㅇ' → 초성탈락 특수처리 |
 | 아이 발음 자동 판정 불가 | 부모가 직접 "잘 됐어요 ✓" 버튼으로 판정하는 방식으로 변경 |
@@ -164,27 +241,39 @@ src/
 ├── app/
 │   ├── page.tsx                    ← 랜딩 페이지
 │   ├── dashboard/
-│   │   ├── page.tsx                ← 대시보드 홈
-│   │   ├── answer-note/            ← 오답노트
-│   │   ├── practice/               ← 아이연습 3단계
-│   │   ├── bookmarks/              ← 복습 목록
+│   │   ├── page.tsx                ← 대시보드 홈 (활동 캘린더)
+│   │   ├── answer-note/            ← 오답노트 (발음 분석)
+│   │   ├── practice/               ← 분석단어 훈련 (3단계)
+│   │   │   ├── layout.tsx          ← 탭 (분석단어/복습하기)
+│   │   │   ├── PracticeClient.tsx  ← 청각폭격 + 메인 연습 ⭐
+│   │   │   ├── review/             ← 복습하기 (망각곡선)
+│   │   │   └── minimal-pairs/      ← 최소대립쌍 훈련
+│   │   ├── bookmarks/              ← 복습 목록 (저장 단어)
 │   │   ├── progress/               ← 성장 기록
-│   │   └── settings/               ← 설정
+│   │   └── settings/               ← 설정 (관리자 카드 포함)
+│   ├── admin/                      ← 관리자 통계 대시보드 ⭐
 │   ├── api/
 │   │   ├── error-analysis/         ← 핵심 분석 API
+│   │   ├── tts/                    ← Google TTS 캐싱 ⭐ NEW
 │   │   ├── saved-words/            ← 복습 단어 저장
-│   │   ├── practice-sentences/     ← 문장 생성 (Gemini)
-│   │   └── weak-phonemes/          ← 약점 음소
+│   │   ├── practice-sentences/     ← 문장 생성 (Gemini + 검증)
+│   │   ├── gemini-feedback/        ← AI 피드백 + WordPairCache
+│   │   ├── weak-phonemes/          ← 약점 음소
+│   │   └── admin/                  ← 통계, 시딩, 센터 관리
 │   └── subscribe/                  ← 구독 + TossPayments
 ├── lib/
 │   ├── jamo-analysis.ts            ← 한글 자모 분석 엔진 ⭐
 │   ├── gemini-client.ts            ← Gemini AI 클라이언트 ⭐
-│   ├── word-database.ts            ← 단어 DB (311개) ⭐
+│   ├── google-tts.ts               ← Google Cloud TTS ⭐ NEW
+│   ├── useTTS.ts                   ← 클라이언트 음성 훅 ⭐ NEW
+│   ├── supabase-admin.ts           ← Supabase Storage (사진+음성)
+│   ├── word-database.ts            ← 단어 DB (311개)
+│   ├── admin-auth.ts               ← 관리자 권한 체크
 │   └── prisma.ts                   ← DB 연결
 └── components/
-    └── ui/                         ← BubbleCard, PastelBadge 등
+    └── ui/                         ← BubbleCard, BubbleButton, PastelBadge
 ```
 
 ---
 
-**마지막 수정:** 2026-04-13 | 빌드 성공 ✓ | 단어 311개 | 25개 페이지 생성 완료
+**마지막 수정:** 2026-05-25 | TTS 도입 완료 ✓ | 관리자 진입 경로 추가 ✓ | 모든 변경 푸시 완료 (커밋 `73a257b`)
