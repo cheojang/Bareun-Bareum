@@ -821,7 +821,21 @@ export function PracticeClient({
           <BubbleButton
             variant="peach"
             size="xl"
-            onClick={() => {
+            onClick={async () => {
+              // 세션 저장 — 홈 "최근 연습"에 반영됨
+              const completedWords = [
+                ...stage1Words.map((e) => e.word),
+                ...stage2Words.map((w) => w.word),
+              ];
+              try {
+                await fetch("/api/sessions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ childId, words: completedWords }),
+                });
+              } catch {
+                // 저장 실패해도 완료 화면은 정상 표시
+              }
               setShowSentenceReview(false);
               setAllDone(true);
             }}

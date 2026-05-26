@@ -47,23 +47,79 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { childId } = await req.json();
+    const { childId, words = [] } = await req.json();
     if (!childId) {
       return NextResponse.json({ error: "childId is required" }, { status: 400 });
     }
 
-    // ✨ Pro Fix 3: findFirst 대신 findUnique로 인덱스 스캔 속도 극대화
     const child = await prisma.child.findUnique({
       where: { id: childId },
-      select: { userId: true }
+      select: { userId: true, lastPractice: true, streakDays: true },
     });
 
     if (!child || child.userId !== session.user.id) {
       return NextResponse.json({ error: "Child not found or forbidden" }, { status: 404 });
     }
 
-    const practiceSession = await prisma.practiceSession.create({
-      data: { userId: session.user.id, childId },
+    // 연습한 단어 목록 (string[] 또는 {text:string}[])
+    const wordList: string[] = Array.isArray(words)
+      ? words
+          .map((w: unknown) => (typeof w === "string" ? w : (w as { text: string }).text))
+          .filter(Boolean)
+      : [];
+
+    // streakDays 계산
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const lastStr = child.lastPractice?.toISOString().split("T")[0] ?? "";
+    const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
+
+    let newStreak = child.streakDays;
+    if (lastStr === todayStr) {
+      newStreak = child.streakDays; // 오늘 이미 연습함 — 유지
+    } else if (lastStr === yesterdayStr) {
+      newStreak = child.streakDays + 1; // 어제 연습 → 연속 +1
+    } else {
+      newStreak = 1; // 오래됐거나 첫 연습 → 1일로 리셋
+    }
+
+    // 트랜잭션으로 세션 + 단어기록 + 아이 통계 한번에 저장
+    const practiceSession = await prisma.$transaction(async (tx) => {
+      const ps = await tx.practiceSession.create({
+        data: {
+          userId: session.user.id,
+          childId,
+          endedAt: now,
+        },
+      });
+
+      if (wordList.length > 0) {
+        await tx.wordRecord.createMany({
+          data: wordList.map((word) => ({
+            sessionId: ps.id,
+            targetWord: word,
+            heardWord: word,
+            isCorrect: true,
+            practicedAt: now,
+          })),
+        });
+
+        await tx.child.update({
+          where: { id: childId },
+          data: {
+            totalWords: { increment: wordList.length },
+            lastPractice: now,
+            streakDays: newStreak,
+          },
+        });
+      } else {
+        await tx.child.update({
+          where: { id: childId },
+          data: { lastPractice: now, streakDays: newStreak },
+        });
+      }
+
+      return ps;
     });
 
     return NextResponse.json(practiceSession, { status: 201 });
