@@ -5,8 +5,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 import { isAdmin } from "@/lib/admin-auth";
 
-// 503 과부하 시 3단계 폴백
-const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+// 503 과부하 시 3단계 폴백 (2.0/1.5 계열 폐기 — 2.5 계열만 사용)
+const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
 
 function is503(e: any) {
   return e?.message?.includes("503") || e?.message?.includes("Service Unavailable");

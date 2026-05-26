@@ -20,10 +20,9 @@ export function sanitizePromptInput(value: unknown, maxLen = 50): string {
     .trim();
 }
 
-// 503 과부하 시 3단계 폴백
-// 1순위: 2.5-flash (저렴·빠름) → 2순위: 2.0-flash (가격 동일·다른 인프라)
-// → 3순위: 1.5-pro (비싸지만 안정적, 마지막 보루)
-const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+// 503 과부하 시 3단계 폴백 (2.0/1.5 계열 모두 폐기됨 — 2.5 계열만 사용)
+// 1순위: 2.5-flash (저렴·빠름) → 2순위: 2.5-flash-lite (초경량) → 3순위: 2.5-pro (고품질)
+const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 
 // Gemini AI 인스턴스 (싱글톤)
 let genai: GoogleGenerativeAI | null = null;
