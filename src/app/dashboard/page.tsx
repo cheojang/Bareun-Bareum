@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+
+// 항상 최신 DB 데이터를 가져옴 (캐시 비활성화)
+export const dynamic = "force-dynamic";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { ActivityCalendar } from "@/components/dashboard/ActivityCalendar";
 import { getKSTDateString } from "@/lib/kst-utils";
