@@ -1160,7 +1160,13 @@ export function PracticeClient({
         {!isSlotsFull && !stage3Loading && (
           <div className="flex gap-3">
             <button
-              onClick={() => fillDot("bad")}
+              onClick={() => {
+                fillDot("bad");
+                // 단어 단계에서만 TTS 재생 — 아이에게 올바른 발음 다시 들려주기
+                if (currentItem?.kind !== "sentence" && currentItem?.text) {
+                  play(currentItem.text);
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{
                 backgroundColor: "#FDF2F8",
@@ -1171,7 +1177,13 @@ export function PracticeClient({
               아직 어려워요 🔄
             </button>
             <button
-              onClick={() => fillDot("good")}
+              onClick={() => {
+                fillDot("good");
+                // 단어 단계에서만 TTS 재생 — 성공한 발음을 다시 한번 들려주기
+                if (currentItem?.kind !== "sentence" && currentItem?.text) {
+                  play(currentItem.text);
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{
                 backgroundColor: "#F0FAF8",
