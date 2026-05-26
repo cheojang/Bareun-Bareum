@@ -1052,20 +1052,6 @@ export function PracticeClient({
               </button>
             </div>
 
-            {/* 🔊 단어 다시 듣기 버튼 (단어 전용) / 문장은 부모님 안내 */}
-            {!stage3Loading && currentItem?.text && currentItem?.kind !== "sentence" && (
-              <div className="flex justify-center pb-3">
-                <button
-                  type="button"
-                  onClick={handleReplay}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF5EE] hover:bg-[#FFE8D6] border border-[#FFD9B8] text-[#FFB38A] font-bold text-sm transition-all active:scale-95"
-                  aria-label="단어 다시 듣기"
-                >
-                  <span className="text-base">🔊</span>
-                  다시 듣기
-                </button>
-              </div>
-            )}
             {!stage3Loading && currentItem?.kind === "sentence" && (
               <div className="flex justify-center pb-3">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
@@ -1162,9 +1148,9 @@ export function PracticeClient({
             <button
               onClick={() => {
                 fillDot("bad");
-                // 단어 단계에서만 TTS 재생 — 아이에게 올바른 발음 다시 들려주기
-                if (currentItem?.kind !== "sentence" && currentItem?.text) {
-                  play(currentItem.text);
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
+                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.text);
                 }
               }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
@@ -1179,9 +1165,9 @@ export function PracticeClient({
             <button
               onClick={() => {
                 fillDot("good");
-                // 단어 단계에서만 TTS 재생 — 성공한 발음을 다시 한번 들려주기
-                if (currentItem?.kind !== "sentence" && currentItem?.text) {
-                  play(currentItem.text);
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생
+                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.text);
                 }
               }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
