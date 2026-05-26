@@ -435,7 +435,7 @@ export default async function ComprehensivePage({
                     <p className="text-xs text-[#3D3530] leading-relaxed mb-2 pl-8">{t.rootCause}</p>
                     <div className="bg-white/60 rounded-xl px-3 py-2 ml-8">
                       <p className="text-[10px] font-bold text-[#FFB38A] mb-1">첫 번째 연습 단계</p>
-                      <p className="text-xs text-[#3D3530] leading-relaxed">{t.trainingStep1}</p>
+                      <p className="text-xs text-[#3D3530] leading-relaxed">{t.trainingStep1?.replace(/^【[^】]*】\s*/, "")}</p>
                     </div>
                     {words.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2 ml-8">

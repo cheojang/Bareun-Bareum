@@ -352,7 +352,7 @@ function CurrentAnalysisCard({
                   </div>
                   <div className="flex-1 pb-1">
                     <span className={`text-xs font-bold ${meta.textColor} mb-1 block`}>{meta.label}</span>
-                    <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step}</p>
+                    <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step.replace(/^【[^】]*】\s*/, "")}</p>
                   </div>
                 </div>
               );
