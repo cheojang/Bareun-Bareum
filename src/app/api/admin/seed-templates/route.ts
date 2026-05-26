@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const limit: number = Math.min(Number(body.limit) || 20, 50);
+    // force: true 이면 기존 레코드도 덮어씀 (훈련법 고도화 재생성용)
+    const force: boolean = body.force === true;
 
     const genai = getGenAI();
 
@@ -117,12 +119,14 @@ export async function POST(request: NextRequest) {
       existing.map((e: { phoneme: string; position: string; errorType: string }) => `${e.phoneme}|${e.position}|${e.errorType}`)
     );
 
-    // 미완료 항목 추출
-    const pending = PHONEME_COMBINATIONS.filter(
-      (c) => !existingSet.has(`${c.phoneme}|${c.position}|${c.errorType}`)
+    // force 모드: 전체 대상 / 일반 모드: 미완료만
+    const pending = (
+      force
+        ? PHONEME_COMBINATIONS  // 전체 재생성
+        : PHONEME_COMBINATIONS.filter((c) => !existingSet.has(`${c.phoneme}|${c.position}|${c.errorType}`))
     ).slice(0, limit);
 
-    if (pending.length === 0) {
+    if (!force && pending.length === 0) {
       return NextResponse.json({ message: "모든 템플릿이 이미 생성되어 있습니다", done: existing.length });
     }
 
@@ -136,6 +140,22 @@ export async function POST(request: NextRequest) {
           .trim();
         const parsed = JSON.parse(text);
 
+        // 생성된 텍스트에서 혹시 남은 【...】 제거
+        const stripBracket = (s: string) =>
+          String(s ?? "").replace(/^【[^】]*】\s*/, "").trim();
+
+        const fields = {
+          parentHint:      stripBracket(parsed.parentHint),
+          rootCause:       stripBracket(parsed.rootCause),
+          trainingStep1:   stripBracket(parsed.trainingStep1),
+          trainingStep2:   stripBracket(parsed.trainingStep2),
+          trainingStep3:   stripBracket(parsed.trainingStep3),
+          trainingStep4:   stripBracket(parsed.trainingStep4),
+          recommendedWords: JSON.stringify(
+            Array.isArray(parsed.recommendedWords) ? parsed.recommendedWords : []
+          ),
+        };
+
         await prisma.phonemeTemplate.upsert({
           where: {
             phoneme_position_errorType: {
@@ -145,23 +165,15 @@ export async function POST(request: NextRequest) {
             },
           },
           create: {
-            phoneme:         combo.phoneme,
-            position:        combo.position,
-            errorType:       combo.errorType,
-            errorCategory:   combo.errorCategory,
-            exampleTarget:   combo.exampleTarget,
-            exampleChild:    combo.exampleChild,
-            parentHint:      String(parsed.parentHint    ?? ""),
-            rootCause:       String(parsed.rootCause     ?? ""),
-            trainingStep1:   String(parsed.trainingStep1 ?? ""),
-            trainingStep2:   String(parsed.trainingStep2 ?? ""),
-            trainingStep3:   String(parsed.trainingStep3 ?? ""),
-            trainingStep4:   String(parsed.trainingStep4 ?? ""),
-            recommendedWords: JSON.stringify(
-              Array.isArray(parsed.recommendedWords) ? parsed.recommendedWords : []
-            ),
+            phoneme:       combo.phoneme,
+            position:      combo.position,
+            errorType:     combo.errorType,
+            errorCategory: combo.errorCategory,
+            exampleTarget: combo.exampleTarget,
+            exampleChild:  combo.exampleChild,
+            ...fields,
           },
-          update: {},
+          update: fields,   // force 여부 무관, 항상 최신 내용으로 업데이트
         });
         results.success++;
       } catch (err) {
@@ -170,14 +182,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const totalDone = existing.length + results.success;
+    const totalDone = (await prisma.phonemeTemplate.count());
     return NextResponse.json({
       processed: pending.length,
       success: results.success,
       failed: results.failed,
       errors: results.errors,
       totalDone,
-      totalRemaining: PHONEME_COMBINATIONS.length - totalDone,
+      totalRemaining: Math.max(0, PHONEME_COMBINATIONS.length - totalDone),
+      mode: force ? "force-update" : "fill-missing",
     });
   } catch (error) {
     console.error("[seed-templates]", error);
