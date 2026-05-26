@@ -104,7 +104,17 @@ export default async function DashboardHome() {
     calendarMap[date] = (calendarMap[date] ?? 0) + 1;
   }
   const calendarData = Object.entries(calendarMap).map(([date, count]) => ({ date, count }));
-  const totalPracticeDays = Object.keys(calendarMap).length;
+
+  // ── 전체 연습일 수 (기간 제한 없이 고유 날짜 카운트) ─────────────────────────
+  const allSessions = await prisma.practiceSession.findMany({
+    where: { childId: child.id },
+    select: { startedAt: true },
+  });
+  const practiceDateSet = new Set<string>();
+  for (const s of allSessions) {
+    practiceDateSet.add(getKSTDateString(s.startedAt));
+  }
+  const totalPracticeDays = practiceDateSet.size;
 
   return (
     <div className="px-5 pt-6 md:pt-8 md:px-8 max-w-lg md:max-w-5xl mx-auto">
