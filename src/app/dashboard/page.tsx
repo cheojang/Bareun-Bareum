@@ -149,13 +149,13 @@ export default async function DashboardHome() {
             <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
               <p className="font-bold text-[#3D3530]">📅 연습 기록 (2주)</p>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#F0E8E0" }} />
-                  <span className="text-[10px] text-[#C4B5A8]">미출석</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold text-[#C4B5A8]" style={{ backgroundColor: "#F0E8E0" }}>5</div>
+                  <span className="text-[10px] text-[#C4B5A8]">미연습</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#FFB38A" }} />
-                  <span className="text-[10px] text-[#C4B5A8]">출석</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: "#FFB38A" }}>5</div>
+                  <span className="text-[10px] text-[#C4B5A8]">연습</span>
                 </div>
               </div>
             </div>
