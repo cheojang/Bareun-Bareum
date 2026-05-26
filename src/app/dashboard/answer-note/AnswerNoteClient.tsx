@@ -283,10 +283,6 @@ function CurrentAnalysisCard({
             <p className="text-xs text-[#8B7E74]">{childName} 발음</p>
             <p className="text-xl font-black text-[#FCA5A5]">{childPronunciation}</p>
           </div>
-          <div className="ml-auto text-right">
-            <p className="text-xs text-[#8B7E74]">신뢰도</p>
-            <p className="text-sm font-bold text-[#3D3530]">{localResult.localAnalysis.confidence}%</p>
-          </div>
         </div>
       </BubbleCard>
 
