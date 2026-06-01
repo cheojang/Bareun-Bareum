@@ -104,13 +104,58 @@
 
 ---
 
+## ✅ Phase 3 — 대량 시딩 시스템 (2026-04 ~ 05)
+
+**단어쌍 + 발음교정 DB 대량 시딩**
+- [x] Python 음운규칙 기반 무비용 시딩 파이프라인 구축
+- [x] `scripts/generate_seed_v2.py` — Supabase Management API로 직접 적재
+- [x] `scripts/phoneme-combinations.json` — **297개** 음소 오류 패턴 정의
+- [x] `scripts/training_templates.py` — SLP 수준 4단계 훈련 템플릿
+- 적재 결과: **PhonemeTemplate 297개 + WordPairCache 5,842개**
+
+**음운 패턴 추가**
+- [x] ㅅ→ㄸ 경음파열음화 (사과 → 따과)
+- [x] ㅊ→ㅌ 기음파열음화 (김치 → 김티)
+
+**단어 DB**
+- [x] 311개 → **681개**로 확장
+
+---
+
+## ✅ Phase 4 — 보안·효율성·데이터 정합성 전면 개선 (2026-05)
+
+**보안 강화**
+- [x] AUTH_SECRET 플레이스홀더 → 실제 시크릿 교체
+- [x] TTS API 인증 + 레이트리밋 (회원 30/분, 게스트 IP 기반)
+- [x] 이메일 인증 throttle (IP 3/분, 이메일 5/시간) + 이메일 열거 공격 방지
+- [x] 게스트 세션 고유 UUID 격리 (`guest:${uuid}`) — 데이터 혼선 방지
+- [x] Supabase RLS 9개 테이블 적용 (`auth.uid()` 기반 행 단위 보안)
+
+**효율성**
+- [x] `recalculateWeakPhonemes` 직렬 upsert → `$transaction` 병렬화
+- [x] fire-and-forget → `after()` 백그라운드 보장 실행 (서버리스 대응)
+- [x] 죽은 쿼리/함수 제거, `deleteMany+create` → `upsert` 전환
+- [x] `recommendations.ts` 모듈 로드 시 Map 인덱스 (O(n)→O(1))
+- [x] `callWithFallback<T>` 헬퍼로 Gemini 503 폴백 로직 6곳 통합
+
+**데이터 정합성**
+- [x] 🚨 jamo-analysis 중성(JUNGSEONG) 치명 버그 수정 — ㅛ/ㅜ/ㅠ/ㅡ/ㅣ 누락 (우유·기린·다리 등 오분해)
+- [x] jamo 테이블을 단일 소스로 통합 (korean-phonetics 중복 제거)
+- [x] phoneme-combinations 플레이스홀더 데이터 8건 수정 (target==child 오류)
+- [x] 테스트용 임시 파일 6개 정리
+
+---
+
 ## 🔴 다음 세션에서 할 일
 
 ### 우선순위 1 — 단어 데이터베이스 계속 확장
-- [ ] 311개 → 600개 (ㄹ/ㅅ/ㅈ 계열 심화)
-- [ ] 600개 → 1000개
+- [ ] 681개 → 1000개 (ㄹ/ㅅ/ㅈ 계열 심화)
 - [ ] 1000개 → 2000개 (목표)
 - 방법: `src/lib/word-database.ts` 배열에 계속 추가
+
+### ⚠️ 사용자 직접 처리 필요 — DB 비밀번호 로테이션
+- [ ] Supabase 대시보드에서 DB 비밀번호 교체 (기존 값이 git 이력에 노출됨)
+- [ ] 교체 후 `.env.local`의 `DATABASE_URL` 갱신
 
 ### 우선순위 2 — DB 마이그레이션 (로컬 환경에서 실행)
 - [ ] `.env.local` 파일에 `DATABASE_URL` 설정
@@ -178,8 +223,9 @@ src/
 │   └── subscribe/                  ← 구독 + TossPayments
 ├── lib/
 │   ├── jamo-analysis.ts            ← 한글 자모 분석 엔진 ⭐
-│   ├── gemini-client.ts            ← Gemini AI 클라이언트 ⭐
-│   ├── word-database.ts            ← 단어 DB (311개) ⭐
+│   ├── gemini-client.ts            ← Gemini AI 클라이언트 (callWithFallback) ⭐
+│   ├── word-database.ts            ← 단어 DB (681개) ⭐
+│   ├── rate-limit.ts               ← 레이트리밋 (TTS/이메일 인증)
 │   └── prisma.ts                   ← DB 연결
 └── components/
     └── ui/                         ← BubbleCard, PastelBadge 등
@@ -187,4 +233,4 @@ src/
 
 ---
 
-**마지막 수정:** 2026-04-13 | 빌드 성공 ✓ | 단어 311개 | 25개 페이지 생성 완료
+**마지막 수정:** 2026-06-01 | 단어 681개 | 음소 패턴 297개 | WordPairCache 5,842개 | 보안·효율성 개선 완료 ✓
