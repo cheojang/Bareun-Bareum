@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSelectedChildId } from "@/lib/child-cookie";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
@@ -38,13 +39,15 @@ export default async function DashboardHome() {
     );
   }
 
-  const children = await prisma.child.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const { getSelectedChildId } = await import("@/lib/child-cookie");
-  const savedId = await getSelectedChildId();
+  // 아이 목록 + 선택 ID 병렬 조회
+  const [children, savedId] = await Promise.all([
+    prisma.child.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, mascotLevel: true, image: true, streakDays: true, totalWords: true },
+    }),
+    getSelectedChildId(),
+  ]);
 
   if (children.length === 0) {
     return (
@@ -61,38 +64,39 @@ export default async function DashboardHome() {
 
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
-  // ── 오늘 복습 개수 (SM-2) ────────────────────────────────────────────────────
+  // 3개 독립 쿼리 병렬 실행
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
-  const reviewDueCount = await prisma.reviewSchedule.count({
-    where: { childId: child.id, isLearned: false, nextReviewAt: { lte: todayEnd } },
-  });
-
-  // ── 최근 연습 기록 (5개) — 현재 선택된 아이만 ───────────────────────────────
-  const recentSessions = await prisma.practiceSession.findMany({
-    where: { userId, childId: child.id },
-    orderBy: { startedAt: "desc" },
-    take: 5,
-    include: {
-      child: { select: { name: true } },
-      wordRecords: {
-        select: { targetWord: true },
-        orderBy: { practicedAt: "asc" },
-      },
-    },
-  });
-
-  // ── 활동 캘린더 데이터 (2주) ───────────────────────────────────────────────
   const calendarStart = new Date();
-  calendarStart.setDate(calendarStart.getDate() - 2 * 7);
+  calendarStart.setDate(calendarStart.getDate() - 14);
 
-  const calendarRecords = await prisma.wordRecord.findMany({
-    where: {
-      session: { childId: child.id },
-      practicedAt: { gte: calendarStart },
-    },
-    select: { practicedAt: true },
-  });
+  const [reviewDueCount, recentSessions, calendarRecords] = await Promise.all([
+    // ── 오늘 복습 개수 (SM-2)
+    prisma.reviewSchedule.count({
+      where: { childId: child.id, isLearned: false, nextReviewAt: { lte: todayEnd } },
+    }),
+    // ── 최근 연습 기록 (5개)
+    prisma.practiceSession.findMany({
+      where: { userId, childId: child.id },
+      orderBy: { startedAt: "desc" },
+      take: 5,
+      include: {
+        child: { select: { name: true } },
+        wordRecords: {
+          select: { targetWord: true },
+          orderBy: { practicedAt: "asc" },
+        },
+      },
+    }),
+    // ── 활동 캘린더 데이터 (2주)
+    prisma.wordRecord.findMany({
+      where: {
+        session: { childId: child.id },
+        practicedAt: { gte: calendarStart },
+      },
+      select: { practicedAt: true },
+    }),
+  ]);
 
   // UTC+9(KST) 기준으로 날짜별 카운트 집계
   const calendarMap: Record<string, number> = {};

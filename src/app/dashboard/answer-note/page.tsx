@@ -22,16 +22,18 @@ export default async function AnswerNotePage() {
     );
   }
 
-  // ── 회원: 기존 로직 ───────────────────────────────────────────────────────
-  const children = await prisma.child.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, userId: true },
-  });
+  // ── 회원: 아이 목록 + 선택 ID 병렬 조회 ─────────────────────────────────
+  const [children, savedId] = await Promise.all([
+    prisma.child.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, userId: true },
+    }),
+    getSelectedChildId(),
+  ]);
 
   if (children.length === 0) redirect("/onboarding");
 
-  const savedId = await getSelectedChildId();
   const targetChild = children.find((c) => c.id === savedId) ?? children[0];
 
   const pastRecords = await prisma.errorRecord.findMany({

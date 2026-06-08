@@ -18,26 +18,27 @@ export default async function DashboardLayout({
 
   const isGuest = session.user.isGuest === true;
 
-  const childList = isGuest
-    ? []
-    : await prisma.child.findMany({
-        where: { userId: session.user.id! },
-        orderBy: { createdAt: "asc" },
-        select: { id: true, name: true, mascotLevel: true, image: true },
-      });
-
-  const savedId = isGuest ? "" : await getSelectedChildId();
+  // 세 쿼리를 병렬 실행 — 각각 독립적이므로 순차 await 불필요
+  const [childList, savedId, unreadCount] = await Promise.all([
+    isGuest
+      ? Promise.resolve<{ id: string; name: string; mascotLevel: number; image: string | null }[]>([])
+      : prisma.child.findMany({
+          where: { userId: session.user.id! },
+          orderBy: { createdAt: "asc" },
+          select: { id: true, name: true, mascotLevel: true, image: true },
+        }),
+    isGuest ? Promise.resolve("") : getSelectedChildId(),
+    isGuest
+      ? Promise.resolve(0)
+      : prisma.announcement.count({
+          where: {
+            isPublished: true,
+            reads: { none: { userId: session.user.id! } },
+          },
+        }),
+  ]);
   const validId =
     childList.find((c) => c.id === savedId)?.id ?? childList[0]?.id ?? "";
-
-  const unreadCount = isGuest
-    ? 0
-    : await prisma.announcement.count({
-        where: {
-          isPublished: true,
-          reads: { none: { userId: session.user.id! } },
-        },
-      });
 
   // 상담소 기능 2단계에서 활성화 예정 — 현재 비활성화
   const hasTherapistLink = false;

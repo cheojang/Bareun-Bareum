@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "🏠", label: "홈" },
-  { href: "/dashboard/answer-note", icon: "📝", label: "발음 분석" },
-  { href: "/dashboard/practice", icon: "🎯", label: "발음 연습" },
-  { href: "/dashboard/bookmarks", icon: "⭐", label: "저장 단어" },
+  { href: "/dashboard/answer-note", icon: "📝", label: "발음분석" },
+  { href: "/dashboard/practice", icon: "🎯", label: "발음연습" },
+  { href: "/dashboard/bookmarks", icon: "⭐", label: "저장단어" },
   { href: "/dashboard/settings", icon: "⚙️", label: "설정" },
 ];
 
