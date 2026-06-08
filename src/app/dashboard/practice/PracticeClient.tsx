@@ -821,7 +821,21 @@ export function PracticeClient({
           <BubbleButton
             variant="peach"
             size="xl"
-            onClick={() => {
+            onClick={async () => {
+              // 세션 저장 — 홈 "최근 연습"에 반영됨
+              const completedWords = [
+                ...stage1Words.map((e) => e.word),
+                ...stage2Words.map((w) => w.word),
+              ];
+              try {
+                await fetch("/api/sessions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ childId, words: completedWords }),
+                });
+              } catch {
+                // 저장 실패해도 완료 화면은 정상 표시
+              }
               setShowSentenceReview(false);
               setAllDone(true);
             }}
@@ -1052,20 +1066,6 @@ export function PracticeClient({
               </button>
             </div>
 
-            {/* 🔊 단어 다시 듣기 버튼 (단어 전용) / 문장은 부모님 안내 */}
-            {!stage3Loading && currentItem?.text && currentItem?.kind !== "sentence" && (
-              <div className="flex justify-center pb-3">
-                <button
-                  type="button"
-                  onClick={handleReplay}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF5EE] hover:bg-[#FFE8D6] border border-[#FFD9B8] text-[#FFB38A] font-bold text-sm transition-all active:scale-95"
-                  aria-label="단어 다시 듣기"
-                >
-                  <span className="text-base">🔊</span>
-                  다시 듣기
-                </button>
-              </div>
-            )}
             {!stage3Loading && currentItem?.kind === "sentence" && (
               <div className="flex justify-center pb-3">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
@@ -1160,7 +1160,13 @@ export function PracticeClient({
         {!isSlotsFull && !stage3Loading && (
           <div className="flex gap-3">
             <button
-              onClick={() => fillDot("bad")}
+              onClick={() => {
+                fillDot("bad");
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
+                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.text);
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{
                 backgroundColor: "#FDF2F8",
@@ -1171,7 +1177,13 @@ export function PracticeClient({
               아직 어려워요 🔄
             </button>
             <button
-              onClick={() => fillDot("good")}
+              onClick={() => {
+                fillDot("good");
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생
+                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.text);
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{
                 backgroundColor: "#F0FAF8",

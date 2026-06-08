@@ -5,7 +5,7 @@ import { isAdmin } from "@/lib/admin-auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 
-const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
 // 패턴당 목표 단어쌍 수
 const PAIRS_PER_PATTERN = 100;
 // Vercel 60s 타임아웃 감안 — 한 번 호출당 최대 처리 패턴 수
@@ -53,10 +53,14 @@ function buildPrompt(combo: TemplateCombination): string {
 - 예시: ${combo.exampleTarget} → ${combo.exampleChild}
 
 [훈련법 규칙]
-- rootCause: 조음 발달 원인 + 신체 감각 설명 (200~300자)
-- trainingStep1~4: 각 2~3문장, 부모가 바로 실행 가능한 구체적 활동
-- parentHint: 부모가 아이에게 바로 말할 수 있는 한 줄 (30자 이내)
+- rootCause: 조음 발달 원인 + 혀·입술·공기 흐름 메커니즘 설명 (200~300자)
+- parentHint: 부모가 아이에게 바로 말할 수 있는 한 줄 힌트 (30자 이내, 예: "혀를 숨기고 스- 소리부터 내요")
+- trainingStep1(조음 감각 깨우기): 거울·종이·손바닥·촛불·비눗방울 등 소품 또는 뱀 소리·가글 같은 놀이 활용. 해당 음소의 신체 감각을 처음 느끼게 유도. 단계 제목 없이 2~4문장
+- trainingStep2(소리 느끼기): 시각·청각·촉각 멀티센서리 피드백 필수. "종이가 흔들리는지", "손바닥에 바람이 닿는지", "목에 진동 느끼기" 등 구체적 체험. 단계 제목 없이 2~4문장
+- trainingStep3(음절/단어로 연결하기): 연장발음법("스---아")·선행음법·참았다 터뜨리기 등 구체적 음성학적 기법 사용. 소리→음절→단어 단계적 확장. 단계 제목 없이 2~4문장
+- trainingStep4(일상에서 적용하기): 부모의 구체적 수신호(검지를 입술 앞에 대기, 목 가리키기 등)·언어 힌트 포함. 아이 오류 시 부모 행동 지침. 단계 제목 없이 2~4문장
 - recommendedWords: 같은 오류 패턴이 포함된 연습 단어 10개
+- 절대 금지: 단계 제목(【1단계: ...】) 포함 금지, 막연한 지시("거울을 보세요") 단독 사용 금지
 
 [단어쌍 규칙]
 - targetWord: 2~7세 아동이 일상에서 자주 쓰는 단어 (명사 위주)
@@ -71,10 +75,10 @@ function buildPrompt(combo: TemplateCombination): string {
   "training": {
     "parentHint": "...",
     "rootCause": "...",
-    "trainingStep1": "【1단계: 조음 감각 깨우기】...",
-    "trainingStep2": "【2단계: 소리 느끼기】...",
-    "trainingStep3": "【3단계: 음절/단어로 연결하기】...",
-    "trainingStep4": "【4단계: 일상에서 적용하기】...",
+    "trainingStep1": "소품·놀이 활용 조음 위치 인지 훈련 내용만 (단계 제목 없이)",
+    "trainingStep2": "멀티센서리 피드백 체험 내용만 (단계 제목 없이)",
+    "trainingStep3": "연장발음법 등 구체적 기법 내용만 (단계 제목 없이)",
+    "trainingStep4": "부모 수신호·힌트 포함 일상 적용 내용만 (단계 제목 없이)",
     "recommendedWords": ["단어1", "단어2", "단어3", "단어4", "단어5", "단어6", "단어7", "단어8", "단어9", "단어10"]
   },
   "wordPairs": [

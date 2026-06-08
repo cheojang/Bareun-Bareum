@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { LRUCache } from "@/lib/lru-cache";
-import { sanitizePromptInput } from "@/lib/gemini-client";
+import { sanitizePromptInput, withFastConfig } from "@/lib/gemini-client";
 
 interface CoachingCardsResult {
   cards: { context: string; phrases: string[] }[];
@@ -71,7 +71,10 @@ JSON으로만 응답:
   ]
 }`;
 
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: withFastConfig("gemini-2.5-flash", {}),
+    });
     const text = result.response.text().replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(text) as CoachingCardsResult;
     if (parsed?.cards?.length) coachingLRU.set(cacheKey, parsed);

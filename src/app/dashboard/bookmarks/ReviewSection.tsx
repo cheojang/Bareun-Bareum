@@ -140,7 +140,7 @@ export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
                                 {STEP_LABELS[i]}
                               </span>
                               <p className="text-[11px] text-[#5C5047] leading-snug">
-                                {truncate(step, 50)}
+                                {truncate(step.replace(/^【[^】]*】\s*/, ""), 50)}
                               </p>
                             </div>
                           ) : null

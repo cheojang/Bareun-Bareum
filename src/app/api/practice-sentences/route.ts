@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { decomposeChar } from "@/lib/jamo-analysis";
-import { sanitizePromptInput } from "@/lib/gemini-client";
+import { sanitizePromptInput, withFastConfig } from "@/lib/gemini-client";
 
 // 문장 생성용 모델 순서: lite(저렴) → pro(고품질 보조)
 const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
@@ -187,7 +187,10 @@ ${safeErrorPattern ? `교정 중인 발음 패턴: ${safeErrorPattern}` : ""}
       try {
         if (i > 0) console.log(`[Sentences] 폴백 모델 사용: ${modelName}`);
         const model = genai.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: withFastConfig(modelName, {}),
+        });
         text = result.response.text();
         break;
       } catch (e: unknown) {

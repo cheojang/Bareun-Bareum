@@ -283,10 +283,6 @@ function CurrentAnalysisCard({
             <p className="text-xs text-[#8B7E74]">{childName} 발음</p>
             <p className="text-xl font-black text-[#FCA5A5]">{childPronunciation}</p>
           </div>
-          <div className="ml-auto text-right">
-            <p className="text-xs text-[#8B7E74]">신뢰도</p>
-            <p className="text-sm font-bold text-[#3D3530]">{localResult.localAnalysis.confidence}%</p>
-          </div>
         </div>
       </BubbleCard>
 
@@ -352,7 +348,7 @@ function CurrentAnalysisCard({
                   </div>
                   <div className="flex-1 pb-1">
                     <span className={`text-xs font-bold ${meta.textColor} mb-1 block`}>{meta.label}</span>
-                    <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step}</p>
+                    <p className="text-sm text-[#3D3530] leading-relaxed whitespace-pre-line">{step.replace(/^【[^】]*】\s*/, "")}</p>
                   </div>
                 </div>
               );
@@ -521,7 +517,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
         } else if (err?.isMonthlyLimitReached) {
           setGeminiError("이번 달 AI 분석 횟수(10회)를 모두 사용했어요.\n다음 달 1일에 자동 초기화돼요.\n프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요!");
         } else if (err?.isQuotaError) {
-          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요.");
+          setGeminiError("⏳ AI 서버 일일 사용량이 가득 찼어요.\n내일 오전에 자동으로 초기화돼요.\n발음 오류 유형은 이미 분석됐으니 바로 연습을 시작할 수 있어요!");
         } else if (err?.isServiceBusy || geminiRes.status === 503) {
           setGeminiError("🕐 AI 서버가 잠시 바빠요. '분석하기'를 다시 눌러주세요.");
         } else if (geminiRes.status === 429) {
@@ -619,7 +615,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
 
       if (streamError) {
         if (streamError.quota) {
-          setGeminiError("⏳ 오늘 AI 분석 한도를 모두 사용했어요.\n잠시 후 다시 시도해 주세요. 하루가 지나면 자동으로 초기화돼요.");
+          setGeminiError("⏳ AI 서버 일일 사용량이 가득 찼어요.\n내일 오전에 자동으로 초기화돼요.\n발음 오류 유형은 이미 분석됐으니 바로 연습을 시작할 수 있어요!");
         } else if (streamError.serviceBusy) {
           setGeminiError("🕐 AI 서버가 잠시 바빠요. '분석하기'를 다시 눌러주세요.");
         } else {

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sanitizePromptInput, callWithFallback } from "@/lib/gemini-client";
+import { sanitizePromptInput, callWithFallback, withFastConfig } from "@/lib/gemini-client";
 
 interface WeakPhonemeInput {
   phoneme: string;
@@ -142,7 +142,10 @@ ${categorySummary || "데이터 없음"}
     let streamResult;
     try {
       streamResult = await callWithFallback("ComprehensiveAnalysis", (modelName) =>
-        genai.getGenerativeModel({ model: modelName }).generateContentStream(prompt)
+        genai.getGenerativeModel({ model: modelName }).generateContentStream({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: withFastConfig(modelName, {}),
+        })
       );
     } catch (geminiErr: unknown) {
       const msg = geminiErr instanceof Error ? geminiErr.message : "";

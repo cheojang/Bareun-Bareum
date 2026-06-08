@@ -550,6 +550,9 @@ export default function AdminDashboardPage() {
       {/* ── DB 대량 시딩 ─────────────────────────────────────────── */}
       <BulkSeedPanel />
 
+      {/* ── 훈련법 고도화 재생성 ──────────────────────────────────── */}
+      <RegenerateTemplatesPanel />
+
       {/* ── 관리 바로가기 ─────────────────────────────────────────── */}
       <Card className="border-dashed">
         <SectionTitle>⚙️ 관리 작업</SectionTitle>
@@ -581,6 +584,124 @@ interface BulkStatus {
   totalWordPairs: number;
   targetWordPairs: number;
   nextBatch: { phoneme: string; position: string; errorType: string }[];
+}
+
+// ─── 훈련법 고도화 재생성 패널 ──────────────────────────────────────────────
+function RegenerateTemplatesPanel() {
+  const [total, setTotal] = useState<number | null>(null);
+  const [done, setDone] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const stopRef = useRef(false);
+
+  useEffect(() => {
+    fetch("/api/admin/seed-templates")
+      .then((r) => r.json())
+      .then((d) => setTotal(d.total ?? d.done + d.remaining));
+  }, []);
+
+  const runBatch = useCallback(async () => {
+    const res = await fetch("/api/admin/seed-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ limit: 20, force: true }),
+    });
+    return res.ok ? await res.json() : null;
+  }, []);
+
+  const handleStart = useCallback(async () => {
+    if (running) return;
+    setRunning(true);
+    stopRef.current = false;
+    setDone(0);
+    setLog([]);
+
+    let processed = 0;
+    const totalCount = total ?? 325;
+
+    while (processed < totalCount && !stopRef.current) {
+      const data = await runBatch();
+      if (!data) break;
+      processed += data.success ?? 0;
+      const pct = Math.round((processed / totalCount) * 100);
+      const ts = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      setDone(processed);
+      setLog((prev) => [
+        `[${ts}] ✓ ${data.success}개 업데이트 · 누적 ${processed}/${totalCount} (${pct}%)${data.failed > 0 ? ` · 실패 ${data.failed}개` : ""}`,
+        ...prev,
+      ].slice(0, 50));
+      if (data.success === 0) break; // 더 없으면 종료
+      await new Promise((r) => setTimeout(r, 1000)); // API 부하 방지
+    }
+
+    setRunning(false);
+    if (!stopRef.current) {
+      setLog((prev) => [`✅ 전체 재생성 완료 (총 ${processed}개)`, ...prev]);
+    }
+  }, [running, total, runBatch]);
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <SectionTitle>🧠 훈련법 고도화 재생성</SectionTitle>
+          <p className="text-xs text-[#8B7E74] -mt-2">
+            DB의 PhonemeTemplate {total ?? "…"}개를 멀티센서리·소품·부모신호 기반으로 전부 업데이트
+          </p>
+        </div>
+        {done > 0 && !running && (
+          <span className="text-xs font-black px-3 py-1 bg-[#F0FAF8] text-[#0D9488] rounded-full">
+            ✅ {done}개 완료
+          </span>
+        )}
+      </div>
+
+      {/* 진행바 */}
+      {total !== null && (
+        <div className="mb-4">
+          <div className="flex justify-between text-[11px] text-[#8B7E74] mb-1">
+            <span>{done} / {total}개</span>
+            <span>{Math.round((done / total) * 100)}%</span>
+          </div>
+          <div className="h-3 bg-[#F0E8E0] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#C4B5FD] to-[#8B7EFF] rounded-full transition-all duration-500"
+              style={{ width: `${Math.round((done / total) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={running ? () => { stopRef.current = true; } : handleStart}
+          className={`px-6 py-3 rounded-2xl font-black text-sm text-white transition-all ${
+            running ? "bg-[#EF4444] hover:bg-[#DC2626]" : "bg-[#8B7EFF] hover:bg-[#7C6FCD]"
+          }`}
+        >
+          {running ? "⏹ 중지" : "🔄 전체 재생성 시작"}
+        </button>
+        {running && (
+          <div className="flex items-center gap-1.5 text-xs text-[#8B7EFF] font-bold">
+            <div className="w-3 h-3 rounded-full border-2 border-[#8B7EFF] border-t-transparent animate-spin" />
+            재생성 중… (20개씩 자동 처리)
+          </div>
+        )}
+      </div>
+
+      <p className="text-[10px] text-[#C4B5A8] mb-3 leading-relaxed">
+        💡 325개 기준 약 16~17회 호출 · 완료까지 약 5~10분 소요 · Gemini Flash 기준 ~$0.05 이하
+      </p>
+
+      {log.length > 0 && (
+        <div className="bg-[#1A1A1A] rounded-2xl p-3 max-h-36 overflow-y-auto">
+          {log.map((line, i) => (
+            <p key={i} className="text-[11px] font-mono text-[#C4B5FD] leading-relaxed">{line}</p>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
 }
 
 function BulkSeedPanel() {

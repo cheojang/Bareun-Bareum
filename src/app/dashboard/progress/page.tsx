@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
+
+export const dynamic = "force-dynamic";
 import { GrassCalendar } from "@/components/progress/GrassCalendar";
 import { getSelectedChildId } from "@/lib/child-cookie";
 

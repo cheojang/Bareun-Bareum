@@ -1,10 +1,15 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "바른발음 <noreply@bareunbareum.com>";
 
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY가 설정되지 않았습니다");
+  return new Resend(key);
+}
+
 export async function sendVerificationEmail(email: string, code: string) {
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: email,
     subject: "[바른발음] 이메일 인증번호",

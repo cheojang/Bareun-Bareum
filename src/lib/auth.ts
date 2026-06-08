@@ -6,10 +6,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 
-// dev 로그인: NODE_ENV=development AND 명시적 opt-in(ALLOW_DEV_LOGIN=1) 모두 충족 시에만 활성
-// production 서버에서 NODE_ENV가 잘못 설정된 사고를 대비한 이중 가드
-const IS_DEV_LOGIN_ENABLED =
-  process.env.NODE_ENV === "development" && process.env.ALLOW_DEV_LOGIN === "1";
+// dev 로그인: ALLOW_DEV_LOGIN=1 이면 활성 (로컬 및 스테이징 테스트용)
+const IS_DEV_LOGIN_ENABLED = process.env.ALLOW_DEV_LOGIN === "1";
 
 const devProvider = IS_DEV_LOGIN_ENABLED
   ? [
@@ -19,7 +17,7 @@ const devProvider = IS_DEV_LOGIN_ENABLED
           credentials: { email: { label: "Email", type: "text" } },
           async authorize(credentials) {
             // 런타임 재검증 (런타임에 env가 바뀌었거나 빌드 타임 평가 우회 방지)
-            if (process.env.NODE_ENV !== "development" || process.env.ALLOW_DEV_LOGIN !== "1") {
+            if (process.env.ALLOW_DEV_LOGIN !== "1") {
               return null;
             }
             const email = (credentials?.email as string) ?? "dev@test.com";

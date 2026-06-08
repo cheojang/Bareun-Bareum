@@ -203,8 +203,8 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* 개발용 빠른 로그인 */}
-        {process.env.NODE_ENV === "development" && (
+        {/* 개발용 빠른 로그인 (NEXT_PUBLIC_ALLOW_DEV_LOGIN=1 일 때만 노출) */}
+        {process.env.NEXT_PUBLIC_ALLOW_DEV_LOGIN === "1" && (
           <DevLoginButtons />
         )}
       </BubbleCard>

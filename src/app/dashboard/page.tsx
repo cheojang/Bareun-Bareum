@@ -4,6 +4,9 @@ import { getSelectedChildId } from "@/lib/child-cookie";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+
+// 항상 최신 DB 데이터를 가져옴 (캐시 비활성화)
+export const dynamic = "force-dynamic";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { ActivityCalendar } from "@/components/dashboard/ActivityCalendar";
 import { getKSTDateString } from "@/lib/kst-utils";
@@ -105,7 +108,17 @@ export default async function DashboardHome() {
     calendarMap[date] = (calendarMap[date] ?? 0) + 1;
   }
   const calendarData = Object.entries(calendarMap).map(([date, count]) => ({ date, count }));
-  const totalPracticeDays = Object.keys(calendarMap).length;
+
+  // ── 전체 연습일 수 (기간 제한 없이 고유 날짜 카운트) ─────────────────────────
+  const allSessions = await prisma.practiceSession.findMany({
+    where: { childId: child.id },
+    select: { startedAt: true },
+  });
+  const practiceDateSet = new Set<string>();
+  for (const s of allSessions) {
+    practiceDateSet.add(getKSTDateString(s.startedAt));
+  }
+  const totalPracticeDays = practiceDateSet.size;
 
   return (
     <div className="px-5 pt-6 md:pt-8 md:px-8 max-w-lg md:max-w-5xl mx-auto">
@@ -140,13 +153,13 @@ export default async function DashboardHome() {
             <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
               <p className="font-bold text-[#3D3530]">📅 연습 기록 (2주)</p>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#F0E8E0" }} />
-                  <span className="text-[10px] text-[#C4B5A8]">미출석</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 rounded-md" style={{ backgroundColor: "#F0E8E0" }} />
+                  <span className="text-[10px] text-[#C4B5A8]">미연습</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#FFB38A" }} />
-                  <span className="text-[10px] text-[#C4B5A8]">출석</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 rounded-md" style={{ backgroundColor: "#FFB38A" }} />
+                  <span className="text-[10px] text-[#C4B5A8]">연습</span>
                 </div>
               </div>
             </div>
