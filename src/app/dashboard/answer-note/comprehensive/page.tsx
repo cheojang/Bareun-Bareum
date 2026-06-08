@@ -308,13 +308,19 @@ export default async function ComprehensivePage({
             {categoryStats.map((cat, i) => (
               <div key={cat.key} className={`rounded-2xl p-3 ${i === 0 ? "bg-[#FFF5EE] border border-[#FFE4D8]" : "bg-[#FAFAF8]"}`}>
                 {/* 제목 행 */}
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    {i === 0 && <span className="text-[10px] font-black bg-[#FFB38A] text-white px-2 py-0.5 rounded-full">가장 많아요</span>}
-                    <span className="text-sm font-bold text-[#3D3530]">{cat.parentLabel}</span>
-                    <span className="text-xs text-[#8B7E74]">— {cat.label}</span>
+                <div className="flex items-start justify-between mb-1 gap-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {i === 0 && (
+                        <span className="text-[10px] font-black bg-[#FFB38A] text-white px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                          가장 많아요
+                        </span>
+                      )}
+                      <span className="text-sm font-bold text-[#3D3530] whitespace-nowrap">{cat.parentLabel}</span>
+                    </div>
+                    <span className="text-xs text-[#8B7E74] whitespace-nowrap">— {cat.label}</span>
                   </div>
-                  <span className="text-sm font-black text-[#3D3530]">{cat.pct}%</span>
+                  <span className="text-sm font-black text-[#3D3530] flex-shrink-0 ml-1">{cat.pct}%</span>
                 </div>
                 {/* 바 */}
                 <div className="h-2.5 bg-white/60 rounded-full overflow-hidden mb-2">
