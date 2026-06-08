@@ -259,9 +259,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "AI 서버가 바빠요. 잠시 후 다시 눌러주세요.", isServiceBusy: true }, { status: 503 });
       }
       if (geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')) {
+        const isPrepayDepleted = geminiErr.message?.includes('prepayment') || geminiErr.message?.includes('credits are depleted');
         return NextResponse.json({
-          error: "AI 분석 일일 한도에 도달했습니다. 내일 다시 시도해 주세요.",
-          isQuotaError: true
+          error: isPrepayDepleted
+            ? "AI 크레딧이 소진됐어요. AI Studio에서 크레딧을 충전해 주세요."
+            : "AI 분석 일일 한도에 도달했습니다. 내일 다시 시도해 주세요.",
+          isQuotaError: true,
+          isPrepayDepleted,
         }, { status: 429 });
       }
       return NextResponse.json({ error: "AI 분석 중 오류가 발생했습니다" }, { status: 500 });

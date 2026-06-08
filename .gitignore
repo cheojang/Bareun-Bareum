@@ -44,3 +44,5 @@ next-env.d.ts
 
 /src/generated/prisma
 gemini_error_debug.log
+
+.env*

@@ -39,6 +39,18 @@ function is503(e: any) {
 }
 
 /**
+ * generationConfig에 thinking 비활성화 옵션을 추가한다.
+ * gemini-2.5-flash/flash-lite는 thinkingBudget:0으로 "생각 단계"를 꺼서
+ * 응답 속도를 크게 높인다(구조화 JSON 출력엔 thinking 불필요).
+ * 단, 2.5-pro는 thinking을 완전히 끌 수 없으므로 그대로 둔다.
+ * SDK 0.24.1 타입엔 thinkingConfig가 없지만, 설정 객체는 그대로 REST API로 전달된다.
+ */
+export function withFastConfig(modelName: string, base: Record<string, unknown>) {
+  if (modelName.includes('pro')) return base as any;
+  return { ...base, thinkingConfig: { thinkingBudget: 0 } } as any;
+}
+
+/**
  * MODEL_FALLBACK 순서로 fn을 시도. 503이면 다음 모델로 폴백, 그 외 에러는 즉시 throw.
  * gemini-ai.ts 등에서 공유 사용.
  */
@@ -153,7 +165,7 @@ export async function getGeminiFeedbackStream(
     ai.getGenerativeModel({ model: modelName, systemInstruction: buildSystemInstruction() })
       .generateContentStream({
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
+        generationConfig: withFastConfig(modelName, { responseMimeType: 'application/json' }),
       })
   );
 }
@@ -181,7 +193,10 @@ export async function generateWeakPhonemeReport(
 
   try {
     return await callWithFallback('Gemini Report', async (modelName) => {
-      const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      const result = await ai.getGenerativeModel({ model: modelName }).generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: withFastConfig(modelName, {}),
+      });
       return result.response.text();
     });
   } catch (error) {

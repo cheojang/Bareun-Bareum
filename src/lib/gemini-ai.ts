@@ -8,7 +8,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PhonemeError } from '@/types/phonetics';
-import { callWithFallback } from './gemini-client';
+import { callWithFallback, withFastConfig } from './gemini-client';
 
 let genai: GoogleGenerativeAI | null = null;
 
@@ -76,7 +76,7 @@ ${errorDescriptions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
       const model = ai.getGenerativeModel({ model: modelName, systemInstruction: SYSTEM_INSTRUCTION });
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
+        generationConfig: withFastConfig(modelName, { responseMimeType: 'application/json' }),
       });
       return result.response.text();
     });
@@ -126,7 +126,10 @@ export async function generateWordRecommendationContext(errorPatterns: string[])
 이 발음들을 연습하기 좋은 짧은 응원 메시지를 한 문장으로 써주세요.`;
 
     return await callWithFallback('Gemini WordRec', async (modelName) => {
-      const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      const result = await ai.getGenerativeModel({ model: modelName }).generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: withFastConfig(modelName, {}),
+      });
       return result.response.text() || '';
     });
   } catch (error) {
@@ -163,7 +166,10 @@ export async function generateSessionBriefing(topErrorPhonemes: string[]): Promi
 
     return await callWithFallback('Gemini Briefing', async (modelName) => {
       const model = ai.getGenerativeModel({ model: modelName, systemInstruction: BRIEFING_SYSTEM_INSTRUCTION });
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: withFastConfig(modelName, {}),
+      });
       return result.response.text() || buildFallbackBriefing(topErrorPhonemes);
     });
   } catch (error) {
