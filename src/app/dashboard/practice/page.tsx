@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getSelectedChildId } from "@/lib/child-cookie";
 import { PracticeClient } from "./PracticeClient";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +14,18 @@ export default async function PracticePage({
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const children = await prisma.child.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  // 아이 목록 + 선택 ID 병렬 조회, select로 불필요 컬럼 제외
+  const [children, savedId] = await Promise.all([
+    prisma.child.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, image: true, mascotLevel: true },
+    }),
+    getSelectedChildId(),
+  ]);
 
   if (children.length === 0) redirect("/onboarding");
 
-  const { getSelectedChildId } = await import("@/lib/child-cookie");
-  const savedId = await getSelectedChildId();
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
   const params = await searchParams;

@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "🏠", label: "홈" },
-  { href: "/dashboard/answer-note", icon: "📝", label: "발음 분석" },
-  { href: "/dashboard/practice", icon: "🎯", label: "발음 연습" },
-  { href: "/dashboard/bookmarks", icon: "⭐", label: "저장 단어" },
+  { href: "/dashboard/answer-note", icon: "📝", label: "발음분석" },
+  { href: "/dashboard/practice", icon: "🎯", label: "발음연습" },
+  { href: "/dashboard/bookmarks", icon: "⭐", label: "저장단어" },
   { href: "/dashboard/settings", icon: "⚙️", label: "설정" },
 ];
 
@@ -66,7 +66,7 @@ export function BottomNavItems() {
   const pathname = usePathname();
 
   return (
-    <div className="flex items-center justify-around px-2 py-3">
+    <div className="flex items-center justify-around px-1 py-2">
       {NAV_ITEMS.map((item) => {
         const active = isActive(pathname, item.href);
         return (
@@ -74,13 +74,13 @@ export function BottomNavItems() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`flex flex-col items-center gap-1 px-4 py-1 rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB38A] focus-visible:ring-offset-2 ${
+            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB38A] focus-visible:ring-offset-2 min-w-0 flex-1 ${
               active ? "bg-[#FFF5EE]" : "hover:bg-[#FFF5EE]"
             }`}
           >
-            <span className="text-2xl">{item.icon}</span>
+            <span className="text-xl">{item.icon}</span>
             <span
-              className={`text-xs font-semibold ${
+              className={`text-[10px] font-semibold whitespace-nowrap ${
                 active ? "text-[#FFB38A]" : "text-[#8B7E74]"
               }`}
             >

@@ -241,7 +241,57 @@ src/
 
 ---
 
+## ✅ Phase 3 — 대량 시딩 시스템 (2026-04 ~ 05)
+
+**단어쌍 + 발음교정 DB 대량 시딩**
+- [x] Python 음운규칙 기반 무비용 시딩 파이프라인 구축
+- [x] `scripts/generate_seed_v2.py` — Supabase Management API로 직접 적재
+- [x] `scripts/phoneme-combinations.json` — **297개** 음소 오류 패턴 정의
+- [x] `scripts/training_templates.py` — SLP 수준 4단계 훈련 템플릿
+- 적재 결과: **PhonemeTemplate 297개 + WordPairCache 5,842개**
+
+**음운 패턴 추가**
+- [x] ㅅ→ㄸ 경음파열음화 (사과 → 따과)
+- [x] ㅊ→ㅌ 기음파열음화 (김치 → 김티)
+
+**단어 DB**
+- [x] 311개 → **681개**로 확장
+
+---
+
+## ✅ Phase 4 — 보안·효율성·데이터 정합성 전면 개선 (2026-05)
+
+**보안 강화**
+- [x] AUTH_SECRET 플레이스홀더 → 실제 시크릿 교체
+- [x] TTS API 인증 + 레이트리밋 (회원 30/분, 게스트 IP 기반)
+- [x] 이메일 인증 throttle (IP 3/분, 이메일 5/시간) + 이메일 열거 공격 방지
+- [x] 게스트 세션 고유 UUID 격리 (`guest:${uuid}`) — 데이터 혼선 방지
+- [x] Supabase RLS 9개 테이블 적용 (`auth.uid()` 기반 행 단위 보안)
+
+**효율성**
+- [x] `recalculateWeakPhonemes` 직렬 upsert → `$transaction` 병렬화
+- [x] fire-and-forget → `after()` 백그라운드 보장 실행 (서버리스 대응)
+- [x] 죽은 쿼리/함수 제거, `deleteMany+create` → `upsert` 전환
+- [x] `recommendations.ts` 모듈 로드 시 Map 인덱스 (O(n)→O(1))
+- [x] `callWithFallback<T>` 헬퍼로 Gemini 503 폴백 로직 6곳 통합
+
+**데이터 정합성**
+- [x] 🚨 jamo-analysis 중성(JUNGSEONG) 치명 버그 수정 — ㅛ/ㅜ/ㅠ/ㅡ/ㅣ 누락 (우유·기린·다리 등 오분해)
+- [x] jamo 테이블을 단일 소스로 통합 (korean-phonetics 중복 제거)
+- [x] phoneme-combinations 플레이스홀더 데이터 8건 수정 (target==child 오류)
+- [x] 테스트용 임시 파일 6개 정리
+
+---
+
 ## 🔴 다음 세션에서 할 일
+
+### ✅ 완료 — 단어 데이터베이스 확장
+- [x] 681개 → 1000개 → 2000개 달성
+- [x] 25+ 카테고리 추가 (한국 전통문화, 음식, 동물, 스포츠, 기술, 우주, 공룡 등)
+
+### ⚠️ 사용자 직접 처리 필요 — DB 비밀번호 로테이션
+- [ ] Supabase 대시보드에서 DB 비밀번호 교체 (기존 값이 git 이력에 노출됨)
+- [ ] 교체 후 `.env.local`의 `DATABASE_URL` 갱신
 
 ### 우선순위 1 — 실제 사용자 테스트
 - [ ] 부모-아이 시나리오 5분 시연
@@ -335,4 +385,4 @@ ALLOW_DEV_LOGIN=1                # 개발자 로그인 활성화
 
 ---
 
-**마지막 점검:** 2026-05-25 | 전수 감사 완료 ✓ | 페이지·API·DB·라이브러리 실측 반영
+**마지막 수정:** 2026-06-08 | 단어 2000개 | 음소 패턴 297개 | 하단 내비 줄바꿈 수정 | DB 쿼리 병렬화 | loading.tsx 스켈레톤 추가 ✓
