@@ -31,7 +31,7 @@ export default async function SettingsPage() {
         <h2 className="text-2xl font-black text-[#3D3530]">설정 ⚙️</h2>
         <div className="text-right">
           <p className="text-xs font-semibold text-[#C4B5A8]">v1.2.0</p>
-          <p className="text-[10px] text-[#D4C8C0]">2026.06.10 업데이트</p>
+          <p className="text-[10px] text-[#D4C8C0]">2026.06.10 14:30 업데이트</p>
         </div>
       </div>
 
