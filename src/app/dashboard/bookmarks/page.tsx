@@ -17,11 +17,15 @@ export default async function BookmarksPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  // 헤더에서 선택한 아이 쿠키 우선, 없으면 첫 번째 아이
-  const children = await prisma.child.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  // 헤더에서 선택한 아이 쿠키 우선, 없으면 첫 번째 아이 (병렬 조회)
+  const [children, savedId] = await Promise.all([
+    prisma.child.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true },
+    }),
+    getSelectedChildId(),
+  ]);
 
   if (children.length === 0) {
     return (
@@ -31,7 +35,6 @@ export default async function BookmarksPage() {
     );
   }
 
-  const savedId = await getSelectedChildId();
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // 오늘 복습 필요 개수 (복습하기 CTA용)

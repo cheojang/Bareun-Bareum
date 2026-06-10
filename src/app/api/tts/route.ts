@@ -53,6 +53,10 @@ export async function GET(request: NextRequest) {
   if (word.length > 200) {
     return NextResponse.json({ error: "200자 이내로 입력해주세요" }, { status: 400 });
   }
+  // 한글 문장만 허용 — 임의 문자열로 TTS 캐시 오염/외부 API 남용 방지
+  if (!/^[가-힣ㄱ-ㅎㅏ-ㅣ0-9\s.,!?~'"()·-]+$/.test(word)) {
+    return NextResponse.json({ error: "한글 단어/문장만 변환할 수 있어요" }, { status: 400 });
+  }
 
   if (!supabaseAdmin) {
     return NextResponse.json(

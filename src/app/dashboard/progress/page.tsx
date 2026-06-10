@@ -12,38 +12,79 @@ export default async function ProgressPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const children = await prisma.child.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  // 아이 목록 + 선택 ID 병렬 조회
+  const [children, savedId] = await Promise.all([
+    prisma.child.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, mascotLevel: true, streakDays: true, totalWords: true },
+    }),
+    getSelectedChildId(),
+  ]);
 
   if (children.length === 0) redirect("/onboarding");
 
-  const savedId = await getSelectedChildId();
   const child = children.find((c) => c.id === savedId) ?? children[0];
 
   // Calendar data: last 12 weeks
   const since = new Date();
   since.setDate(since.getDate() - 84);
 
-  const sessions = await prisma.practiceSession.findMany({
-    where: { childId: child.id, startedAt: { gte: since } },
-    include: { _count: { select: { wordRecords: true } } },
-  });
+  // ── Weekly report 기준일 ───────────────────────────────────────────────────
+  const now = new Date();
+  // Start of this week (Monday)
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  thisMonday.setHours(0, 0, 0, 0);
+  // Start of last week
+  const lastMonday = new Date(thisMonday);
+  lastMonday.setDate(thisMonday.getDate() - 7);
+
+  // 7개 독립 쿼리 병렬 실행 (직렬 대비 원격 DB 왕복 6회 절약)
+  const [
+    sessions,
+    recentRecords,
+    weakPhonemes,
+    totalErrorRecords,
+    savedWordsCount,
+    thisWeekRecords,
+    lastWeekRecords,
+  ] = await Promise.all([
+    prisma.practiceSession.findMany({
+      where: { childId: child.id, startedAt: { gte: since } },
+      include: { _count: { select: { wordRecords: true } } },
+    }),
+    prisma.wordRecord.findMany({
+      where: { session: { childId: child.id } },
+      orderBy: { practicedAt: "desc" },
+      take: 50,
+      select: { errorPhonemes: true, isCorrect: true, practicedAt: true },
+    }),
+    prisma.weakPhoneme.findMany({
+      where: { childId: child.id },
+      orderBy: { errorCount: "desc" },
+      take: 6,
+    }),
+    prisma.errorRecord.count({ where: { childId: child.id } }),
+    prisma.savedWord.count({ where: { childId: child.id } }),
+    prisma.wordRecord.findMany({
+      where: { session: { childId: child.id }, practicedAt: { gte: thisMonday } },
+      select: { isCorrect: true, errorPhonemes: true },
+    }),
+    prisma.wordRecord.findMany({
+      where: {
+        session: { childId: child.id },
+        practicedAt: { gte: lastMonday, lt: thisMonday },
+      },
+      select: { isCorrect: true, errorPhonemes: true },
+    }),
+  ]);
 
   const calendarMap: Record<string, number> = {};
   for (const s of sessions) {
     const dateKey = s.startedAt.toISOString().split("T")[0];
     calendarMap[dateKey] = (calendarMap[dateKey] ?? 0) + s._count.wordRecords;
   }
-
-  // Phoneme errors (last 50 records)
-  const recentRecords = await prisma.wordRecord.findMany({
-    where: { session: { childId: child.id } },
-    orderBy: { practicedAt: "desc" },
-    take: 50,
-    select: { errorPhonemes: true, isCorrect: true, practicedAt: true },
-  });
 
   const phonemeCounts: Record<string, number> = {};
   let correctCount = 0;
@@ -63,44 +104,6 @@ export default async function ProgressPage() {
     recentRecords.length > 0
       ? Math.round((correctCount / recentRecords.length) * 100)
       : 0;
-
-  // ── 발음 분석 기반 약점 음소 (WeakPhoneme) ─────────────────────────────────
-  const weakPhonemes = await prisma.weakPhoneme.findMany({
-    where: { childId: child.id },
-    orderBy: { errorCount: "desc" },
-    take: 6,
-  });
-
-  const totalErrorRecords = await prisma.errorRecord.count({
-    where: { childId: child.id },
-  });
-
-  const savedWordsCount = await prisma.savedWord.count({
-    where: { childId: child.id },
-  });
-
-  // ── Weekly report ──────────────────────────────────────────────────────────
-  const now = new Date();
-  // Start of this week (Monday)
-  const thisMonday = new Date(now);
-  thisMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  thisMonday.setHours(0, 0, 0, 0);
-  // Start of last week
-  const lastMonday = new Date(thisMonday);
-  lastMonday.setDate(thisMonday.getDate() - 7);
-
-  const thisWeekRecords = await prisma.wordRecord.findMany({
-    where: { session: { childId: child.id }, practicedAt: { gte: thisMonday } },
-    select: { isCorrect: true, errorPhonemes: true },
-  });
-
-  const lastWeekRecords = await prisma.wordRecord.findMany({
-    where: {
-      session: { childId: child.id },
-      practicedAt: { gte: lastMonday, lt: thisMonday },
-    },
-    select: { isCorrect: true, errorPhonemes: true },
-  });
 
   const thisWeekTotal = thisWeekRecords.length;
   const lastWeekTotal = lastWeekRecords.length;

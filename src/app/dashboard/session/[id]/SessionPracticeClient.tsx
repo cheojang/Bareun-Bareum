@@ -9,7 +9,6 @@ import { WordImage } from "@/components/ui/WordImage";
 import { AnalysisResult } from "@/types/analysis";
 import { PhonemeError } from "@/types/phonetics";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
-import { getWordByText } from "@/lib/word-database";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -21,11 +20,18 @@ interface WordRecord {
   errorPhonemes: unknown;
 }
 
+interface WordInfo {
+  imageSlug?: string;
+  soundEffect?: string;
+  sampleSentence: string;
+}
+
 interface Props {
   sessionId: string;
   childId: string;
   childName: string;
   initialWords: string[];
+  wordInfos: Record<string, WordInfo>; // 서버에서 조회 — 단어 DB를 번들에 싣지 않음
   wordRecords: WordRecord[];
 }
 
@@ -191,6 +197,7 @@ export function SessionPracticeClient({
   childId,
   childName,
   initialWords,
+  wordInfos,
 }: Props) {
   const [wordQueue] = useState<string[]>(initialWords);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -213,7 +220,7 @@ export function SessionPracticeClient({
   const hasCorrectRef = useRef(false);
 
   const currentWord = wordQueue[currentIndex];
-  const wordInfo = currentWord ? getWordByText(currentWord) : null;
+  const wordInfo = currentWord ? wordInfos[currentWord] ?? null : null;
 
   const filledCount = dots.filter((d) => d !== "empty").length;
   const allFilled = filledCount >= MAX_ATTEMPTS;

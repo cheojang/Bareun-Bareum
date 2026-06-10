@@ -5,7 +5,6 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { WordImage } from "@/components/ui/WordImage";
-import { getWordByText } from "@/lib/word-database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +27,7 @@ type Phase = "reveal" | "respond" | "feedback" | "pair-done" | "all-done";
 
 interface Props {
   pairs: PairData[];
+  imageSlugs: Record<string, string>; // 서버에서 매칭 — 단어 DB를 번들에 싣지 않음
   childName: string;
 }
 
@@ -46,7 +46,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function MinimalPairsPracticeClient({ pairs, childName }: Props) {
+export function MinimalPairsPracticeClient({ pairs, imageSlugs, childName }: Props) {
   const [pairIndex, setPairIndex] = useState(0);
   const [trialIndex, setTrialIndex] = useState(0);
   const [trials, setTrials] = useState<Trial[]>([]);
@@ -243,7 +243,7 @@ export function MinimalPairsPracticeClient({ pairs, childName }: Props) {
               >
                 <WordImage
                   word={word}
-                  imageSlug={getWordByText(word)?.imageSlug}
+                  imageSlug={imageSlugs[word]}
                   size="lg"
                   className="mb-3"
                 />

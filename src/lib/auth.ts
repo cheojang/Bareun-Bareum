@@ -125,24 +125,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) token.id = user.id;
+      const userId = token.id as string | undefined;
+      // role을 JWT에 캐시 — 매 요청마다 DB 조회하던 것을 로그인 시 1회로 줄임
+      // (role 변경 시 session.update() 호출 또는 재로그인으로 갱신)
+      if (userId && (token.role === undefined || trigger === "update")) {
+        if (userId.startsWith("guest:")) {
+          token.role = "parent";
+        } else {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true },
+          });
+          token.role = dbUser?.role ?? "parent";
+        }
+      }
       return token;
     },
     async session({ session, user, token }) {
       const userId = user?.id ?? (token?.id as string);
       if (session.user && userId) {
         session.user.id = userId;
-        if (userId?.startsWith("guest:")) {
-          session.user.isGuest = true;
-          session.user.role = "parent";
-        } else {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { role: true },
-          });
-          session.user.role = dbUser?.role ?? "parent";
-        }
+        session.user.isGuest = userId.startsWith("guest:");
+        session.user.role = (token?.role as string) ?? "parent";
       }
       return session;
     },

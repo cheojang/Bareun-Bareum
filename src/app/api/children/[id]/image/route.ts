@@ -19,8 +19,13 @@ export async function PATCH(
   if (typeof image !== "string") {
     return NextResponse.json({ error: "올바른 형식이 아니에요." }, { status: 400 });
   }
-  if (image !== "" && !image.startsWith("data:image/")) {
-    return NextResponse.json({ error: "이미지 파일만 업로드할 수 있어요." }, { status: 400 });
+  // MIME 화이트리스트 — SVG 등 스크립트 실행 가능 포맷 차단
+  const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
+  if (image !== "") {
+    const mime = image.match(/^data:([^;,]+)[;,]/)?.[1] ?? "";
+    if (!ALLOWED_MIMES.includes(mime)) {
+      return NextResponse.json({ error: "JPEG/PNG/WebP 이미지만 업로드할 수 있어요." }, { status: 400 });
+    }
   }
   if (image.length > 700_000) {
     return NextResponse.json({ error: "이미지가 너무 커요. 더 작은 이미지를 사용해주세요." }, { status: 400 });

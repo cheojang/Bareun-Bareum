@@ -23,7 +23,8 @@ export type TherapistSession = {
 export async function getTherapistSession(): Promise<TherapistSession | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  if (session.user.role !== "therapist") return null;
+  // role은 JWT에 캐시되어 가입 직후엔 구식일 수 있음 — Therapist 테이블 조회가 권위 있는 판정
+  if (session.user.isGuest) return null;
 
   const therapist = await prisma.therapist.findUnique({
     where: { userId: session.user.id },
