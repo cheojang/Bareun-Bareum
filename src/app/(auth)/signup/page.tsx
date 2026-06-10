@@ -36,7 +36,7 @@ export default function SignupPage() {
 
   const canSubmitForm = terms && privacy;
   const pwMatch = password === confirmPw;
-  const pwLong = password.length >= 6;
+  const pwLong = password.length >= 8 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
   const fullCode = code.join("");
 
   // ── Step 1: 폼 제출 → 인증번호 발송 ──────────────────────────────────────
@@ -45,7 +45,7 @@ export default function SignupPage() {
     if (!name.trim() || !email.trim() || !password) {
       setError("모든 항목을 입력해주세요."); return;
     }
-    if (!pwLong) { setError("비밀번호는 6자 이상이어야 해요."); return; }
+    if (!pwLong) { setError("비밀번호는 8자 이상, 영문과 숫자를 포함해야 해요."); return; }
     if (!pwMatch) { setError("비밀번호가 일치하지 않아요."); return; }
     if (!canSubmitForm) { setError("약관에 동의해주세요."); return; }
 
@@ -187,11 +187,11 @@ export default function SignupPage() {
               <label className="block text-xs font-bold text-[#3D3530] mb-1.5">비밀번호</label>
               <input
                 type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="6자 이상"
+                placeholder="8자 이상, 영문+숫자"
                 className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] focus:border-[#FFB38A] outline-none text-sm text-[#3D3530] placeholder:text-[#C4B5A8] transition-colors"
               />
               {password.length > 0 && !pwLong && (
-                <p className="text-[11px] text-[#FCA5A5] mt-1">6자 이상 입력해주세요</p>
+                <p className="text-[11px] text-[#FCA5A5] mt-1">8자 이상, 영문과 숫자를 포함해주세요</p>
               )}
             </div>
 

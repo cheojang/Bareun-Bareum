@@ -3,25 +3,26 @@
 import { useState } from "react";
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
-import { WORD_DATABASE } from "@/lib/word-database";
 import { WordImage } from "@/components/ui/WordImage";
 import Link from "next/link";
+
+interface PlayWord {
+  word: string;
+  imageSlug?: string;
+  sampleSentence: string;
+}
 
 interface Props {
   childName: string;
   mascotLevel: number;
-  recentWords: string[];
+  playWords: PlayWord[]; // 서버에서 선정 — 단어 DB를 번들에 싣지 않음
 }
 
-export function ChildPlayClient({ childName, mascotLevel, recentWords }: Props) {
+export function ChildPlayClient({ childName, mascotLevel, playWords }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [score, setScore] = useState(0);
-
-  // Pick 8 words not recently practiced
-  const playWords = WORD_DATABASE.filter((w) => !recentWords.includes(w.word))
-    .slice(0, 8);
 
   const currentWord = playWords[currentIndex];
 
