@@ -27,7 +27,13 @@ export default async function SettingsPage() {
 
   return (
     <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5">
-      <h2 className="text-2xl font-black text-[#3D3530]">설정 ⚙️</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-black text-[#3D3530]">설정 ⚙️</h2>
+        <div className="text-right">
+          <p className="text-xs font-semibold text-[#C4B5A8]">v1.2.0</p>
+          <p className="text-[10px] text-[#D4C8C0]">2026.06.10 업데이트</p>
+        </div>
+      </div>
 
       {/* Profile */}
       <BubbleCard>
