@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:word-images-manifest": "node scripts/build-word-image-manifest.mjs",
+    "generate:word-images": "tsx scripts/generate-word-images.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -38,7 +40,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "prisma": "^7.7.0",
+    "sharp": "^0.34.4",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
