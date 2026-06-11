@@ -22,8 +22,8 @@ const SIZE_PX: Record<NonNullable<Props["size"]>, number> = {
  * 단어 이미지 컴포넌트.
  *
  * imageSlug가 있으면 /images/words/{slug}.webp 를 표시하고,
- * 없거나(미지정) 파일 로드에 실패하면 회색 플레이스홀더를 표시합니다.
- * → 이미지가 아직 생성되지 않았어도 깨진 이미지 대신 회색으로 우아하게 폴백.
+ * 없거나(미지정) 파일 로드에 실패하면 아무것도 렌더하지 않습니다(null).
+ * → 회색 빈 박스를 띄우지 않음. 이미지가 보장된 유사패턴 단어에서만 그림이 보임.
  *
  * 이미지 추가 방법:
  *   1. /public/images/words/ 폴더에 {slug}.webp 파일 저장
@@ -35,15 +35,8 @@ export function WordImage({ word, imageSlug, size = "md", className = "" }: Prop
   const rounded = size === "xl" || size === "lg" ? "rounded-2xl" : "rounded-xl";
   const [failed, setFailed] = useState(false);
 
-  if (!imageSlug || failed) {
-    return (
-      <div
-        className={`bg-gray-100 flex-shrink-0 ${rounded} ${className}`}
-        style={{ width: px, height: px }}
-        aria-label={word}
-      />
-    );
-  }
+  // 이미지가 없거나 로드 실패 시 회색 박스 대신 아무것도 안 그림
+  if (!imageSlug || failed) return null;
 
   return (
     <Image

@@ -1,9 +1,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { ReviewClient } from "./ReviewClient";
+import { ReviewClient, type ReviewSeqItem } from "./ReviewClient";
 import { getSelectedChildId } from "@/lib/child-cookie";
+import { getImagedWordsByPhoneme } from "@/lib/word-database";
 import { getKSTEndOfDay } from "@/lib/kst-utils";
+
+const SIMILAR_PER_WORD = 3; // 분석단어 1개당 따라오는 유사단어 수
 
 // 음소 다양성을 갖춘 5개 선별 (어려운 단어 우선, 같은 목표 단어 중복 제거)
 function smartFilterReviews(
@@ -80,13 +83,43 @@ export default async function ReviewPage() {
     5
   );
 
+  // ── 시퀀스 구성: 분석단어 1개 → 그림 있는 유사단어 3개 → 다음 분석단어 ... ──────
+  // 유사단어는 같은 음소를 가진 "이미지 있는" DB 단어에서 선택(중복 제거)
+  const usedSimilar = new Set<string>();
+  const sequence: ReviewSeqItem[] = [];
+  for (const r of reviewItems) {
+    sequence.push({
+      kind: "analysis",
+      key: `a-${r.id}`,
+      word: r.targetWord,
+      phoneme: r.phoneme,
+      scheduleId: r.id,
+      childPronunciation: r.childPronunciation,
+      reviewCount: r.reviewCount,
+    });
+    const sims = getImagedWordsByPhoneme(r.phoneme)
+      .filter((w) => w.word !== r.targetWord && !usedSimilar.has(w.word))
+      .slice(0, SIMILAR_PER_WORD);
+    for (const s of sims) {
+      usedSimilar.add(s.word);
+      sequence.push({
+        kind: "similar",
+        key: `s-${s.word}`,
+        word: s.word,
+        phoneme: r.phoneme,
+        imageSlug: s.imageSlug!,
+        sourceWord: r.targetWord,
+      });
+    }
+  }
+
   return (
     <ReviewClient
       childId={child.id}
       childName={child.name}
       childImage={child.image}
       mascotLevel={child.mascotLevel}
-      reviewItems={reviewItems}
+      sequence={sequence}
     />
   );
 }
