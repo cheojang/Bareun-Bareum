@@ -6,22 +6,30 @@ import Link from "next/link";
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
+import { WordImage } from "@/components/ui/WordImage";
 import { useTTS } from "@/lib/useTTS";
 
-interface ReviewWord {
-  id: string;
-  targetWord: string;
-  childPronunciation: string;
+// 복습 시퀀스 아이템: 분석단어(평가·SM-2) 또는 유사단어(그림·연습)
+export type ReviewSeqItem = {
+  kind: "analysis" | "similar";
+  key: string;
+  word: string;
   phoneme: string;
-  reviewCount: number;
-}
+  // analysis 전용
+  scheduleId?: string;
+  childPronunciation?: string;
+  reviewCount?: number;
+  // similar 전용
+  imageSlug?: string;
+  sourceWord?: string;
+};
 
 interface Props {
   childId: string;
   childName: string;
   childImage?: string | null;
   mascotLevel: number;
-  reviewItems: ReviewWord[];
+  sequence: ReviewSeqItem[];
 }
 
 const MAX_DOTS = 5;
@@ -130,8 +138,8 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
   );
 }
 
-export function ReviewClient({ childId, childName, childImage, mascotLevel, reviewItems }: Props) {
-  const [items] = useState(reviewItems);
+export function ReviewClient({ childId, childName, childImage, mascotLevel, sequence }: Props) {
+  const [items] = useState(sequence);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dotSlots, setDotSlots] = useState<DotResult[][]>(
     () => Array.from({ length: Math.max(items.length, 1) }, () => Array(MAX_DOTS).fill(null))
@@ -148,18 +156,18 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
   const lastPlayedRef = useRef<string>("");
 
   useEffect(() => {
-    const text = currentItem?.targetWord;
+    const text = currentItem?.word;
     if (!text) return;
     if (lastPlayedRef.current === text) return;
     lastPlayedRef.current = text;
     const t = setTimeout(() => { playWord(text).catch(() => {}); }, 250);
     return () => { clearTimeout(t); stopWord(); };
-  }, [currentItem?.targetWord, playWord, stopWord]);
+  }, [currentItem?.word, playWord, stopWord]);
 
   const handleReplay = useCallback(() => {
-    const text = currentItem?.targetWord;
+    const text = currentItem?.word;
     if (text) playWord(text).catch(() => {});
-  }, [currentItem?.targetWord, playWord]);
+  }, [currentItem?.word, playWord]);
   const filledCount = currentSlots.filter((s) => s !== null).length;
   const isSlotsFull = filledCount >= MAX_DOTS;
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
@@ -187,15 +195,16 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
     });
   }, [currentIndex, isSlotsFull]);
 
-  // 5개 채워졌을 때 SM-2 업데이트 (한 번만)
-  if (isSlotsFull && currentItem && !savedIds.has(currentItem.id)) {
+  // 5개 채워졌을 때 SM-2 업데이트 (분석단어만, 한 번만)
+  if (isSlotsFull && currentItem?.kind === "analysis" && currentItem.scheduleId && !savedIds.has(currentItem.scheduleId)) {
     const goodCount = currentSlots.filter((s) => s === "good").length;
     const quality = toQuality(goodCount);
-    setSavedIds((prev) => new Set(prev).add(currentItem.id));
+    const sid = currentItem.scheduleId;
+    setSavedIds((prev) => new Set(prev).add(sid));
     fetch("/api/review", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scheduleId: currentItem.id, quality }),
+      body: JSON.stringify({ scheduleId: sid, quality }),
     }).catch(() => {});
   }
 
@@ -320,41 +329,65 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
               <span className="text-[10px] text-[#8B7E74] font-semibold">다음</span>
             </button>
 
-            {/* 음소 배지 */}
-            <span
-              className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
-              style={{ backgroundColor: "#F0FAF8", color: "#0D9488" }}
-            >
-              {currentItem.phoneme}
-            </span>
+            {/* 음소 배지 (+ 유사단어면 출처) — 항상 한 줄, 높이 고정 */}
+            <div className="flex items-center justify-center gap-1.5 mb-3 h-6">
+              <span
+                className="inline-block text-xs font-bold px-3 py-1 rounded-full"
+                style={{ backgroundColor: "#F0FAF8", color: "#0D9488" }}
+              >
+                {currentItem.phoneme}
+              </span>
+              {currentItem.kind === "similar" && currentItem.sourceWord && (
+                <span className="text-[11px] text-[#8B7E74]">
+                  🔗 <b className="text-[#FFB38A]">{currentItem.sourceWord}</b>와 비슷한 소리
+                </span>
+              )}
+            </div>
 
-            {/* 단어 비교 (글자 수 기준 동적 사이즈) */}
-            {(() => {
-              const text = currentItem.targetWord;
-              const childPron = currentItem.childPronunciation;
-              const maxLen = Math.max(text.length, childPron.length);
-              const left  = maxLen <= 2 ? "2.75rem" : maxLen === 3 ? "2.25rem" : maxLen === 4 ? "1.875rem" : "1.5rem";
-              const right = maxLen <= 2 ? "3.5rem"  : maxLen === 3 ? "2.75rem" : maxLen === 4 ? "2.25rem" : "1.875rem";
-              return (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="text-center min-w-0">
-                    <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
-                    <p className="font-bold text-[#FCA5A5] whitespace-nowrap" style={{ fontSize: left }}>
-                      {childPron}
-                    </p>
-                  </div>
-                  <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
-                  <div className="text-center min-w-0">
-                    <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
-                    <p className="font-black text-[#3D3530] whitespace-nowrap" style={{ fontSize: right }}>
-                      {text}
-                    </p>
-                  </div>
-                </div>
-              );
-            })()}
+            {/* 콘텐츠 슬롯 — 분석(비교)·유사(이미지+단어) 높이를 통일해 버튼이 안 튐 */}
+            <div className="flex flex-col items-center justify-center gap-2" style={{ minHeight: 188 }}>
+              {currentItem.kind === "similar" ? (
+                (() => {
+                  const w = currentItem.word;
+                  const size = w.length <= 2 ? "3.5rem" : w.length === 3 ? "2.75rem" : "2.25rem";
+                  return (
+                    <>
+                      <WordImage word={w} imageSlug={currentItem.imageSlug} size="lg" />
+                      <p className="font-black text-[#3D3530] whitespace-nowrap leading-none" style={{ fontSize: size }}>
+                        {w}
+                      </p>
+                    </>
+                  );
+                })()
+              ) : (
+                (() => {
+                  const text = currentItem.word;
+                  const childPron = currentItem.childPronunciation ?? "";
+                  const maxLen = Math.max(text.length, childPron.length);
+                  const left  = maxLen <= 2 ? "2.75rem" : maxLen === 3 ? "2.25rem" : maxLen === 4 ? "1.875rem" : "1.5rem";
+                  const right = maxLen <= 2 ? "3.5rem"  : maxLen === 3 ? "2.75rem" : maxLen === 4 ? "2.25rem" : "1.875rem";
+                  return (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="text-center min-w-0">
+                        <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
+                        <p className="font-bold text-[#FCA5A5] whitespace-nowrap" style={{ fontSize: left }}>
+                          {childPron}
+                        </p>
+                      </div>
+                      <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
+                      <div className="text-center min-w-0">
+                        <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
+                        <p className="font-black text-[#3D3530] whitespace-nowrap" style={{ fontSize: right }}>
+                          {text}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
 
-            {/* 🔊 단어 다시 듣기 — 글자 못 읽는 아이도 소리로 확인 가능 */}
+            {/* 🔊 단어 다시 듣기 — 글자 못 읽는 아이도 소리로 확인 가능 (공통) */}
             <div className="flex justify-center mt-4">
               <button
                 type="button"
@@ -367,8 +400,11 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, revi
               </button>
             </div>
 
-            <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed">
-              💡 {currentItem.reviewCount}회째 복습이에요
+            {/* 안내 문구 — 항상 한 줄, 높이 고정 */}
+            <p className="text-xs text-[#C4B5A8] mt-3 leading-relaxed h-4">
+              {currentItem.kind === "analysis"
+                ? `💡 ${currentItem.reviewCount}회째 복습이에요`
+                : "🔗 비슷한 소리 단어로 연습해요"}
             </p>
           </div>
 
