@@ -1,3 +1,5 @@
+import { WORD_IMAGE_SLUGS } from "./word-images";
+
 export interface PracticeWord {
   word: string;
   targetPhonemes: string[];
@@ -2407,7 +2409,18 @@ export function getWordsByPhoneme(phoneme: string): PracticeWord[] {
 }
 
 export function getWordByText(word: string): PracticeWord | undefined {
-  return WORD_DATABASE.find((w) => w.word === word);
+  const found = WORD_DATABASE.find((w) => w.word === word);
+  if (!found) return undefined;
+  // 큐레이션된 이미지 슬러그를 오버레이 (단일 소스: word-images.ts)
+  const slug = WORD_IMAGE_SLUGS[word];
+  return slug ? { ...found, imageSlug: slug } : found;
+}
+
+/** 해당 음소를 포함하면서 이미지가 있는 단어만 반환 (유사패턴 stage2 선택용) */
+export function getImagedWordsByPhoneme(phoneme: string): PracticeWord[] {
+  return WORD_DATABASE.filter(
+    (w) => w.targetPhonemes.includes(phoneme) && WORD_IMAGE_SLUGS[w.word],
+  ).map((w) => ({ ...w, imageSlug: WORD_IMAGE_SLUGS[w.word] }));
 }
 
 export function getAllWords(): PracticeWord[] {

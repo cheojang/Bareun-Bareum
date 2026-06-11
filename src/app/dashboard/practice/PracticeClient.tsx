@@ -8,6 +8,7 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
 import { useTTS } from "@/lib/useTTS";
+import { WordImage } from "@/components/ui/WordImage";
 import Link from "next/link";
 
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
@@ -247,6 +248,7 @@ interface Props {
   mascotLevel: number;
   stage1Words: ErrorWord[];
   stage2Words: SimilarWord[];
+  wordInfos: Record<string, { imageSlug?: string }>;
   errorPattern?: string;
 }
 
@@ -429,6 +431,7 @@ export function PracticeClient({
   mascotLevel,
   stage1Words,
   stage2Words,
+  wordInfos,
   errorPattern,
 }: Props) {
   // 항상 1단계부터 시작
@@ -1044,13 +1047,19 @@ export function PracticeClient({
                     </div>
                   );
                 }
+                const slug = currentItem?.kind === "sentence" ? undefined : wordInfos[text]?.imageSlug;
                 return (
-                  <p
-                    className="font-black text-[#3D3530] tracking-wide leading-snug"
-                    style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : singleSize }}
-                  >
-                    {text}
-                  </p>
+                  <div className="flex flex-col items-center gap-2">
+                    {slug && (
+                      <WordImage word={text} imageSlug={slug} size="xl" />
+                    )}
+                    <p
+                      className="font-black text-[#3D3530] tracking-wide leading-snug"
+                      style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : singleSize }}
+                    >
+                      {text}
+                    </p>
+                  </div>
                 );
               })()}
 
