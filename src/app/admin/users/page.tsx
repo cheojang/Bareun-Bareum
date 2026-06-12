@@ -23,7 +23,8 @@ export default async function AdminUsersPage({
       }
     : {};
 
-  const nowMs = Date.now(); // 렌더 순수성 — 체험 만료 비교 기준 시각 고정
+  // eslint-disable-next-line react-hooks/purity -- 서버 컴포넌트는 요청당 1회 렌더 — 체험 만료 비교 기준 시각
+  const nowMs = Date.now();
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
