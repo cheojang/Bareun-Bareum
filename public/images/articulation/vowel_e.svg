@@ -1,0 +1,73 @@
+<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <!-- 카드 배경 -->
+  <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
+
+  <!-- 얼굴 단면 살 (매끄러운 옆모습) -->
+  <path d="M 28 40 Q 130 18 230 30 Q 320 42 330 110
+           L 330 240 Q 320 290 240 296 Q 130 304 60 286
+           Q 28 276 28 230 Q 25 180 28 130 Z"
+        fill="#FFE3CC"/>
+
+  <!-- 구강 내부 -->
+  <path d="M 23 124
+           L 58 120
+           Q 60 106 85 104
+           Q 150 62 225 80 Q 272 92 282 122
+           L 286 150 Q 290 162 280 168
+           L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202
+           L 58 186
+           L 23 182 Z"
+        fill="#FFF6F0"/>
+  <path d="M 0 125
+               Q 40 123 58 121
+               L 58 185
+               Q 40 183 0 181 Z"
+            fill="#FFF9F2"/>
+
+  <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
+  <path d="M 85 104 Q 96 96 108 104 Q 116 110 126 104
+           Q 170 72 225 84 Q 266 94 278 120"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+  <!-- 목젖 -->
+  <path d="M 278 120 Q 288 138 280 156 Q 276 166 282 174"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 입 바닥/아래턱 -->
+  <path d="M 88 238 Q 150 258 230 250 Q 268 244 280 218"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 윗니 / 아랫니 -->
+  <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+  <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+
+  <!-- 입술 -->
+  <!-- 윗입술 -->
+       <path d="M 56 112
+                Q 46 102 32 95
+                Q 22 103 22 110
+                Q 22 117 32 123
+                Q 46 120 56 112 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+       <!-- 아랫입술 -->
+       <path d="M 56 194
+                Q 46 186 32 183
+                Q 22 189 22 196
+                Q 22 203 32 211
+                Q 46 204 56 194 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- 혀 (음소별) -->
+  
+  <path d="M 100 202 Q 108 150 140 130 Q 168 116 188 132 Q 200 148 206 178
+           Q 230 198 256 214 Q 262 226 252 236 Q 210 232 160 226
+           Q 116 218 100 206 Q 94 204 100 202 Z"
+        fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M 124 156 Q 152 134 182 142" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+
+  <!-- 접촉/근접 포인트 표시 -->
+  
+
+  <!-- 공기 흐름 -->
+  
+
+</svg>
