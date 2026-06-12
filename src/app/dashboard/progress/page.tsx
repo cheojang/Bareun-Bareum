@@ -254,7 +254,7 @@ export default async function ProgressPage() {
 
       {/* ── 발음 분석 기반 약점 음소 분석 ────────────────────────────── */}
       <BubbleCard>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <p className="font-bold text-[#3D3530]">🎯 약점 음소 분석</p>
           <span className="text-xs text-[#8B7E74]">발음 분석 {totalErrorRecords}개 기준</span>
         </div>
