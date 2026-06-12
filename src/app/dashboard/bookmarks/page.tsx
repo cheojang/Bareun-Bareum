@@ -104,7 +104,7 @@ export default async function BookmarksPage() {
         <>
           {/* ── 오늘 복습 안내 CTA ─────────────────────────────────────────── */}
           {reviewCount > 0 && (
-            {/* block: 인라인 Link엔 space-y 세로 마진이 적용되지 않아 섹션 간격이 좁아짐 */}
+            // block: 인라인 Link엔 space-y 세로 마진이 적용되지 않아 섹션 간격이 좁아짐
             <Link href="/dashboard/practice/review" className="block">
               <BubbleCard className="border-2 border-[#FFD9B8] cursor-pointer hover:opacity-95 transition">
                 <div className="flex items-center gap-3">
