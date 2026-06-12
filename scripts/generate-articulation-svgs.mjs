@@ -79,9 +79,6 @@ function scaffold({ tongue, contact, airflow, upperLipY = 108, lowerLipY = 202 }
            Q 22 ${lowerLipY + 5} 32 ${lowerLipY + 13}
            Q 46 ${lowerLipY + 6} 56 ${lowerLipY - 4} Z"
         fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- 입꼬리 점 -->
-  <circle cx="56" cy="${Math.round((upperLipY + lowerLipY) / 2)}" r="3.5" fill="#E8947A" opacity="0.7"/>
-
   <!-- 혀 (음소별) — 입 바닥과 분리된 자연스러운 위치 -->
   ${tongue}
 
