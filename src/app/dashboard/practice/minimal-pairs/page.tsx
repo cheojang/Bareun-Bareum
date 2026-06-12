@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSelectedChildId } from "@/lib/child-cookie";
-import { getMinimalPairsByPhoneme, type MinimalPair } from "@/lib/word-database";
+import {
+  getMinimalPairsByPhoneme,
+  phonemePositionFromError,
+  type MinimalPair,
+  type PhonemePosition,
+} from "@/lib/word-database";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 
 /**
@@ -51,9 +56,29 @@ export default async function MinimalPairsRouter({
     targetPhoneme = top?.phoneme;
   }
 
-  // 쌍 추출 — 음소가 정해졌으면 그 음소, 아니면 빈 배열
+  // 음소 위치 판정 — 해당 음소의 실제 오류 기록(ReviewSchedule)에서 우세한 위치 도출.
+  // 초성 오류가 많으면 초성 대조쌍, 받침 오류가 많으면 받침 대조쌍을 우선 제시.
+  let desiredPosition: PhonemePosition = "any";
+  if (targetPhoneme) {
+    const schedules = await prisma.reviewSchedule.findMany({
+      where: { childId: child.id, phoneme: targetPhoneme },
+      select: { errorPattern: true },
+      take: 20,
+    });
+    let onset = 0;
+    let coda = 0;
+    for (const s of schedules) {
+      const p = phonemePositionFromError(s.errorPattern);
+      if (p === "onset") onset++;
+      else if (p === "coda") coda++;
+    }
+    if (coda > onset) desiredPosition = "coda";
+    else if (onset > 0) desiredPosition = "onset";
+  }
+
+  // 쌍 추출 — 음소+위치에 맞는 대립쌍 (위치 쌍 없으면 전체로 폴백)
   const pairs: MinimalPair[] = targetPhoneme
-    ? getMinimalPairsByPhoneme(targetPhoneme).slice(0, 5)
+    ? getMinimalPairsByPhoneme(targetPhoneme, desiredPosition).slice(0, 5)
     : [];
 
   // 안내 화면: 음소가 없거나 해당 음소 쌍이 없을 때

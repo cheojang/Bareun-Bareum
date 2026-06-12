@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ReviewClient, type ReviewSeqItem } from "./ReviewClient";
 import { getSelectedChildId } from "@/lib/child-cookie";
-import { getImagedWordsByPhoneme } from "@/lib/word-database";
+import { getSimilarPatternWords, phonemePositionFromError } from "@/lib/word-database";
 import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 const SIMILAR_PER_WORD = 3; // 분석단어 1개당 따라오는 유사단어 수
@@ -97,7 +97,9 @@ export default async function ReviewPage() {
       childPronunciation: r.childPronunciation,
       reviewCount: r.reviewCount,
     });
-    const sims = getImagedWordsByPhoneme(r.phoneme)
+    // 음소 위치(초성/종성)까지 맞춰 유사단어 선택 — 받침 ㄱ 탈락엔 받침 ㄱ 단어만
+    const pos = phonemePositionFromError(r.errorPattern);
+    const sims = getSimilarPatternWords(r.phoneme, pos)
       .filter((w) => w.word !== r.targetWord && !usedSimilar.has(w.word))
       .slice(0, SIMILAR_PER_WORD);
     for (const s of sims) {

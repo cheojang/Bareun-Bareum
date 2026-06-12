@@ -339,7 +339,7 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
               </span>
               {currentItem.kind === "similar" && currentItem.sourceWord && (
                 <span className="text-[11px] text-[#8B7E74]">
-                  🔗 <b className="text-[#FFB38A]">{currentItem.sourceWord}</b>와 비슷한 소리
+                  🔗 <b className="text-[#FFB38A]">{currentItem.sourceWord}</b>의 유사패턴 단어
                 </span>
               )}
             </div>
