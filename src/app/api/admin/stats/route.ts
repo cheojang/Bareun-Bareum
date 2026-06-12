@@ -108,6 +108,59 @@ export async function GET(_: NextRequest) {
     prisma.pushSubscription.count(),
   ]);
 
+  // ─── 7일 리텐션 + 월별 Gemini 추이 (2차 쿼리) ─────────────────────
+  // 코호트: 가입 후 7일이 다 지난 사용자(7~37일 전 가입)만 — 관찰 기간 보장
+  const cohortStart = new Date(now.getTime() - 37 * 24 * 60 * 60 * 1000);
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const [cohortUsers, geminiForTrend] = await Promise.all([
+    prisma.user.findMany({
+      where: { createdAt: { gte: cohortStart, lte: sevenDaysAgo }, email: { not: { endsWith: "@test.com" } } },
+      select: { id: true, createdAt: true },
+    }),
+    prisma.geminiFeedback.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  const cohortIds = cohortUsers.map((u) => u.id);
+  const cohortActivity = cohortIds.length > 0
+    ? await prisma.practiceSession.findMany({
+        where: { userId: { in: cohortIds }, startedAt: { gte: cohortStart } },
+        select: { userId: true, startedAt: true },
+      })
+    : [];
+
+  // 재방문 = 가입한 날(KST)과 다른 날에, 가입 후 7일 내 연습 세션 존재
+  const kstDate = (d: Date) => toKST(d).toISOString().slice(0, 10);
+  const retainedSet = new Set<string>();
+  for (const a of cohortActivity) {
+    const u = cohortUsers.find((c) => c.id === a.userId);
+    if (!u) continue;
+    const within7d = a.startedAt.getTime() - u.createdAt.getTime() <= 7 * 24 * 60 * 60 * 1000;
+    if (within7d && kstDate(a.startedAt) !== kstDate(u.createdAt)) {
+      retainedSet.add(a.userId);
+    }
+  }
+  const retention = {
+    cohortSize: cohortUsers.length,
+    retained: retainedSet.size,
+    rate: cohortUsers.length > 0 ? Math.round((retainedSet.size / cohortUsers.length) * 100) : null,
+  };
+
+  // 월별 Gemini 호출 추이 (최근 6개월, KST)
+  const monthCounts: Record<string, number> = {};
+  for (const g of geminiForTrend) {
+    const ym = toKST(g.createdAt).toISOString().slice(0, 7);
+    monthCounts[ym] = (monthCounts[ym] ?? 0) + 1;
+  }
+  const monthlyGemini = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return { month: ym, count: monthCounts[ym] ?? 0 };
+  });
+
   // ─── 파생 지표 계산 ───────────────────────────────────────────
   const cacheHitTotal = wordPairCacheAgg._sum.hitCount ?? 0;
   const cacheItemCount = wordPairCacheAgg._count.id;
@@ -190,6 +243,8 @@ export async function GET(_: NextRequest) {
       accuracy7d: words7d > 0 ? Math.round((correctWords7d / words7d) * 100) : null,
       pushSubscribers,
     },
+    retention,
+    monthlyGemini,
     children: {
       total: totalChildren,
       ageDistribution,

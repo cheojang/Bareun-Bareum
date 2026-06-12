@@ -24,6 +24,12 @@ interface AdminStats {
     accuracy7d: number | null;
     pushSubscribers: number;
   };
+  retention: {
+    cohortSize: number;
+    retained: number;
+    rate: number | null;
+  };
+  monthlyGemini: { month: string; count: number }[];
   children: {
     total: number;
     ageDistribution: { label: string; count: number }[];
@@ -201,8 +207,9 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { users, analysis, engagement, children, hourlyUsage, weekdayUsage, topCachedWords,
-    errorCategories, errorTypes, weakPhonemes, dailySignups, generatedAt } = stats;
+  const { users, analysis, engagement, retention, monthlyGemini, children, hourlyUsage,
+    weekdayUsage, topCachedWords, errorCategories, errorTypes, weakPhonemes,
+    dailySignups, generatedAt } = stats;
 
   const boyCount  = children.genderDistribution.find((g) => g.label === "남아")?.count ?? 0;
   const girlCount = children.genderDistribution.find((g) => g.label === "여아")?.count ?? 0;
@@ -262,6 +269,68 @@ export default function AdminDashboardPage() {
           accent="#0D9488"
         />
         <KpiCard icon="🔔" label="푸시 구독 기기" value={engagement?.pushSubscribers ?? 0} accent="#8B7EFF" />
+      </div>
+
+      {/* ── 리텐션 + Gemini 월별 추이 ───────────────────────────── */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <SectionTitle>🔁 7일 리텐션 (재방문율)</SectionTitle>
+          {retention?.cohortSize === 0 ? (
+            <p className="text-xs text-[#C4B5A8] py-4 text-center">
+              코호트 데이터가 아직 없어요 (가입 후 7일이 지난 일반 회원 기준)
+            </p>
+          ) : (
+            <div className="flex items-center gap-5">
+              <p
+                className="text-4xl font-black"
+                style={{
+                  color: (retention?.rate ?? 0) >= 40 ? "#0D9488"
+                       : (retention?.rate ?? 0) >= 20 ? "#FFB38A" : "#EF4444",
+                }}
+              >
+                {retention?.rate ?? 0}%
+              </p>
+              <div className="text-xs text-[#8B7E74] leading-relaxed">
+                최근 가입자 <b>{retention?.cohortSize}</b>명 중 <b>{retention?.retained}</b>명이
+                <br />
+                가입 후 7일 안에 다시 와서 연습했어요
+                <br />
+                <span className="text-[10px] text-[#C4B5A8]">
+                  (가입 7~37일 전 코호트 · 테스트 계정 제외)
+                </span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <SectionTitle>📉 Gemini 호출 월별 추이 (6개월)</SectionTitle>
+          <div className="flex items-end gap-2 h-24">
+            {monthlyGemini?.map((m) => {
+              const max = Math.max(...monthlyGemini.map((x) => x.count), 1);
+              const pct = (m.count / max) * 100;
+              return (
+                <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-[#8B7E74]">
+                    {m.count.toLocaleString()}
+                  </span>
+                  <div
+                    className="w-full rounded-t-lg transition-all"
+                    style={{
+                      height: `${Math.max(pct, 3)}%`,
+                      backgroundColor: "#8B7EFF",
+                      opacity: 0.4 + (pct / 100) * 0.6,
+                    }}
+                  />
+                  <span className="text-[10px] text-[#C4B5A8]">{m.month.slice(5)}월</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-[#C4B5A8] mt-2">
+            💡 Flash 기준 1,000회 ≈ $1 미만 — 캐시 히트는 호출에 포함되지 않음
+          </p>
+        </Card>
       </div>
 
       {/* ── AI 분석 현황 ─────────────────────────────────────────── */}
