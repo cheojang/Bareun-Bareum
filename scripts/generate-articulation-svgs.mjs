@@ -41,19 +41,12 @@ function scaffold({ tongue, contact, airflow, upperLipY = 108, lowerLipY = 202 }
            L 58 ${lowerLipY - 12}
            L 23 ${lowerLipY - 16} Z"
         fill="#FFF6F0"/>
-  <!-- 입 열린 공간 강조 (뚫린 느낌 — 진한 살구색으로 내부 표현) -->
-  <path d="M 23 ${upperLipY + 17}
+  <!-- 입 열린 공간: 바깥(카드 배경)까지 완전히 뚫림 -->
+  <path d="M 0 ${upperLipY + 17}
            Q 40 ${upperLipY + 15} 58 ${upperLipY + 13}
            L 58 ${lowerLipY - 13}
-           Q 40 ${lowerLipY - 15} 23 ${lowerLipY - 17} Z"
-        fill="#F5C4A8"/>
-  <!-- 위아래 입술 안쪽 그림자 (깊이감) -->
-  <path d="M 23 ${upperLipY + 17} Q 40 ${upperLipY + 15} 58 ${upperLipY + 13}
-           L 58 ${upperLipY + 26} Q 40 ${upperLipY + 30} 23 ${upperLipY + 26} Z"
-        fill="#D9906E" opacity="0.3"/>
-  <path d="M 23 ${lowerLipY - 17} Q 40 ${lowerLipY - 15} 58 ${lowerLipY - 13}
-           L 58 ${lowerLipY - 26} Q 40 ${lowerLipY - 30} 23 ${lowerLipY - 26} Z"
-        fill="#D9906E" opacity="0.3"/>
+           Q 40 ${lowerLipY - 15} 0 ${lowerLipY - 17} Z"
+        fill="#FFF9F2"/>
 
   <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
   <path d="M 85 104 Q 96 96 108 104 Q 116 110 126 104
