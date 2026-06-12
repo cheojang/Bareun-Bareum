@@ -97,12 +97,12 @@ const sparkle = (x, y) => `
   <path d="M ${x} ${y - 22} l 2.6 6.5 6.9 0.6 -5.2 4.6 1.6 6.8 -5.9 -3.7 -5.9 3.7 1.6 -6.8 -5.2 -4.6 6.9 -0.6 Z"
         fill="#FFB38A" transform="translate(0,-6)"/>`;
 
-// 파란 바람 화살표 (마찰음 기류)
+// 파란 바람 화살표 (마찰음 기류) — 입술 바깥쪽에만, 치아와 겹치지 않음
 const airflowOut = (y) => `
-  <g stroke="#6FBDE8" stroke-width="5" fill="none" stroke-linecap="round">
-    <path d="M 92 ${y} Q 78 ${y - 6} 64 ${y} Q 50 ${y + 6} 36 ${y}"/>
-  </g>
-  <path d="M 38 ${y - 9} L 20 ${y} L 38 ${y + 9} Z" fill="#6FBDE8"/>`;
+  <g stroke="#6FBDE8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.9">
+    <path d="M 16 ${y - 11} L 7 ${y} L 16 ${y + 11}"/>
+    <path d="M 10 ${y - 7} L 3 ${y} L 10 ${y + 7}"/>
+  </g>`;
 
 const PHONEMES = {
   // ㄹ (치조 탄설음): 혀끝이 치조에 톡 닿음 — 혀 앞부분만 올라가고 나머지는 중간 높이
