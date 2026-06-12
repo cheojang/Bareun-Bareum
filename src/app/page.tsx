@@ -17,8 +17,11 @@ export default function LandingPage() {
               <span className="text-[9px] text-[#C4B5A8] font-semibold tracking-wide">AI 발음 홈케어</span>
             </div>
           </div>
-          <Link href="/login">
-            <BubbleButton variant="peach" size="sm">무료로 시작하기</BubbleButton>
+          <Link
+            href="/login"
+            className="text-sm font-bold text-[#8B7E74] hover:text-[#FFB38A] transition-colors px-2 py-1"
+          >
+            로그인
           </Link>
         </div>
       </header>
