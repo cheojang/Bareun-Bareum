@@ -10,6 +10,7 @@ import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
 import { ChildImageUpload } from "@/components/settings/ChildImageUpload";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 import { PushNotificationCard } from "@/components/settings/PushNotificationCard";
+import { AppInstallCard } from "@/components/settings/AppInstallCard";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -168,6 +169,9 @@ export default async function SettingsPage() {
         </div>
 
       </BubbleCard>
+
+      {/* 앱 설치 (홈 화면 추가 — 알림 수신의 선행 단계) */}
+      <AppInstallCard />
 
       {/* 푸시 알림 (게스트 제외 — 구독에 User 계정 필요) */}
       {!session?.user?.isGuest && <PushNotificationCard />}
