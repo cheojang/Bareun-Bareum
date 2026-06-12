@@ -32,7 +32,7 @@ AI 기반 아동 조음 홈케어 SaaS. 부모가 발음 오류를 입력 → AI
 
 ## 다음 담당자 체크리스트
 
-- [ ] **🔥 최우선: `npx prisma db push` 실행** — UserConsent 테이블 생성 필요 (약관 동의 기록, PR #12). 사용자가 모바일이라 보류됨. 실행 전까지 동의 수집 보류 상태 (앱은 정상 동작)
+- [ ] **🔥 최우선: `npx prisma db push` 실행** — ① UserConsent 테이블(약관 동의 기록) ② User.trialEndsAt 컬럼(가입 7일 프리미엄 체험) 생성 필요. 사용자가 모바일이라 보류됨. 실행 전까지는 동의 기록·체험 부여가 보류되고 신규 가입자는 무료 등급으로 동작(앱은 정상). push 후부터 신규 가입자에게 자동 7일 체험 부여
 - [ ] Supabase DB 비밀번호 교체 안내 (git 이력 노출 — 사용자 직접)
 - [ ] 단어 이미지 생성: `npm run generate:word-images` (754개, GEMINI_API_KEY 필요, ~$29)
 - [ ] /subscribe 환불·청약철회 정책 고지 확인 (결제 오픈 전)

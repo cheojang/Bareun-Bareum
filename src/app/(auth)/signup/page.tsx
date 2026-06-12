@@ -165,6 +165,15 @@ export default function SignupPage() {
         {/* ── Step 1: 가입 폼 ─────────────────────────────────────────── */}
         {step === "form" && (
           <div className="space-y-4">
+            {/* 가입 혜택 — 7일 프리미엄 체험 (USP) */}
+            <div className="flex items-center gap-3 bg-[#F0FAF8] border border-[#7EDFD0]/50 rounded-xl px-4 py-3">
+              <span className="text-2xl flex-shrink-0">🎁</span>
+              <p className="text-xs text-[#3D3530] leading-relaxed">
+                <span className="font-black text-[#0D9488]">가입하면 7일간 모든 기능 무료</span>
+                <br />AI 분석·단계별 연습·복습·리포트까지 결제 없이 체험해요
+              </p>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-[#3D3530] mb-1.5">이름</label>
               <input
