@@ -22,7 +22,7 @@ function pickPhoneme(reviewPhoneme: string | null | undefined, errorPattern: str
 export default async function PracticePage({
   searchParams,
 }: {
-  searchParams: Promise<{ errorRecordId?: string }>;
+  searchParams: Promise<{ errorRecordId?: string; routine?: string }>;
 }) {
   const session = await auth();
   const userId = session!.user!.id!;
@@ -43,6 +43,8 @@ export default async function PracticePage({
 
   const params = await searchParams;
   const errorRecordId = params.errorRecordId;
+  // 루틴 모드: 세션 상한 축소 (아동 집중력 — 5~7분 안에 끝나는 분량)
+  const routineMode = params.routine === "1";
 
   // ── 1단계·2단계 단어 로딩 ────────────────────────────────────────────────
   // trainingTip을 단어별로 매칭하기 위해 stage1Words에 함께 저장
@@ -96,8 +98,10 @@ export default async function PracticePage({
     // ① 마스터 완료(isLearned=true) 제외
     const notMastered = errorRecords.filter((r) => !r.reviewSchedule?.isLearned);
 
-    const MAX_TOTAL = 5;
+    // 루틴 모드: 분석단어 3개 + 유사패턴 5개로 축소 (전체 루틴 5~7분 유지)
+    const MAX_TOTAL = routineMode ? 3 : 5;
     const MAX_PER_PHONEME = 2;
+    const STAGE2_MAX = routineMode ? 5 : 8;
     const stage1Seen = new Set<string>();
     const phonemeCount: Record<string, number> = {};
     // 선정된 stage1 단어의 음소 + 위치 (stage2 유사패턴 선택에 사용)
@@ -140,9 +144,9 @@ export default async function PracticePage({
     // 유사패턴 단어: 아이 오류 음소별로 "이미지 있는" DB 단어를 모음 (Gemini 대체)
     const stage2Seen = new Set<string>(stage1Seen);
     for (const sel of stage1Selected) {
-      if (stage2Words.length >= 8) break;
+      if (stage2Words.length >= STAGE2_MAX) break;
       for (const w of getSimilarPatternWords(sel.phoneme, sel.position)) {
-        if (stage2Words.length >= 8) break;
+        if (stage2Words.length >= STAGE2_MAX) break;
         if (stage2Seen.has(w.word)) continue;
         stage2Seen.add(w.word);
         stage2Words.push({ word: w.word, sourceWord: sel.word });
@@ -170,6 +174,7 @@ export default async function PracticePage({
       stage2Words={stage2Words}
       wordInfos={wordInfos}
       errorPattern={errorPattern}
+      routineMode={routineMode}
     />
   );
 }

@@ -41,9 +41,14 @@ function smartFilterReviews(
   return result;
 }
 
-export default async function ReviewPage() {
+export default async function ReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ routine?: string }>;
+}) {
   const session = await auth();
   const userId = session!.user!.id!;
+  const routineMode = (await searchParams).routine === "1";
 
   const [children, savedId] = await Promise.all([
     prisma.child.findMany({
@@ -122,6 +127,7 @@ export default async function ReviewPage() {
       childImage={child.image}
       mascotLevel={child.mascotLevel}
       sequence={sequence}
+      routineMode={routineMode}
     />
   );
 }

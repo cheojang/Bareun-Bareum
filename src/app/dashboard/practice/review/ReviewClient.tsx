@@ -30,6 +30,8 @@ interface Props {
   childImage?: string | null;
   mascotLevel: number;
   sequence: ReviewSeqItem[];
+  /** 오늘의 루틴 1단계로 진입 — 완료 시 집중 연습으로 체인 연결 */
+  routineMode?: boolean;
 }
 
 const MAX_DOTS = 5;
@@ -138,7 +140,7 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
   );
 }
 
-export function ReviewClient({ childId, childName, childImage, mascotLevel, sequence }: Props) {
+export function ReviewClient({ childId, childName, childImage, mascotLevel, sequence, routineMode }: Props) {
   const [items] = useState(sequence);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dotSlots, setDotSlots] = useState<DotResult[][]>(
@@ -251,15 +253,28 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
         <ConfettiEffect trigger />
         <div className="text-8xl mb-4 animate-bounce-in">🎊</div>
         <h2 className="text-3xl font-black text-[#3D3530] mb-2">{childName} 잘했어요!</h2>
-        <p className="text-[#8B7E74] mb-6">오늘의 복습 {masteredCount}개를 완료했어요</p>
+        <p className="text-[#8B7E74] mb-6">
+          {routineMode ? "루틴 1단계 · 복습" : "오늘의 복습"} {masteredCount}개를 완료했어요
+        </p>
         <div className="flex flex-wrap justify-center gap-2 mb-8">
           <span className="px-4 py-2 bg-[#7EDFD0]/20 rounded-full text-sm font-bold text-[#0D9488]">
             ⭐ {totalGood}번 성공
           </span>
         </div>
-        <Link href="/dashboard">
-          <BubbleButton variant="mint" size="xl">홈으로 가기 🏠</BubbleButton>
-        </Link>
+        {routineMode ? (
+          <div className="flex flex-col items-center gap-3">
+            <Link href="/dashboard/practice?routine=1">
+              <BubbleButton variant="peach" size="xl">다음: 집중 연습 →</BubbleButton>
+            </Link>
+            <Link href="/dashboard" className="text-xs text-[#8B7E74] underline">
+              오늘은 여기까지 할래요
+            </Link>
+          </div>
+        ) : (
+          <Link href="/dashboard">
+            <BubbleButton variant="mint" size="xl">홈으로 가기 🏠</BubbleButton>
+          </Link>
+        )}
       </div>
     );
   }
@@ -277,7 +292,7 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
       <div className="max-w-lg mx-auto w-full px-5 py-2">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#F0FAF8] text-[#0D9488]">
-            🔁 오늘의 복습
+            {routineMode ? "🌞 오늘의 루틴 1/2 · 복습" : "🔁 오늘의 복습"}
           </span>
           <span className="text-xs text-[#8B7E74] font-semibold">
             {currentIndex + 1} / {items.length}
