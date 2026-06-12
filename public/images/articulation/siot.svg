@@ -8,7 +8,7 @@
            Q 28 276 28 230 Q 25 180 28 130 Z"
         fill="#FFE3CC"/>
 
-  <!-- 구강 내부 — 입술 사이 열린 공간까지 확장 -->
+  <!-- 구강 내부 -->
   <path d="M 23 124
            L 58 120
            Q 60 106 85 104
@@ -18,12 +18,11 @@
            L 58 193
            L 23 189 Z"
         fill="#FFF6F0"/>
-  <!-- 입 열린 공간: 바깥(카드 배경)까지 완전히 뚫림 -->
   <path d="M 0 125
-           Q 40 123 58 121
-           L 58 192
-           Q 40 190 0 188 Z"
-        fill="#FFF9F2"/>
+               Q 40 123 58 121
+               L 58 192
+               Q 40 190 0 188 Z"
+            fill="#FFF9F2"/>
 
   <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
   <path d="M 85 104 Q 96 96 108 104 Q 116 110 126 104
@@ -41,37 +40,30 @@
   <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
   <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
 
-  <!-- 입술: 옆에서 본 렌즈형 사이드 프로파일 (발음별 열린 정도) -->
-  <!-- 윗입술: 왼쪽(입술 끝)이 뾰족하고 오른쪽(입꼬리)이 연결됨 -->
-  <path d="M 56 112
-           Q 46 102 32 95
-           Q 22 103 22 110
-           Q 22 117 32 123
-           Q 46 120 56 112 Z"
-        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- 아랫입술 -->
-  <path d="M 56 201
-           Q 46 193 32 190
-           Q 22 196 22 203
-           Q 22 210 32 218
-           Q 46 211 56 201 Z"
-        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- 혀 (음소별) — 입 바닥과 분리된 자연스러운 위치 -->
+  <!-- 입술 -->
+  <!-- 윗입술 -->
+       <path d="M 56 112
+                Q 46 102 32 95
+                Q 22 103 22 110
+                Q 22 117 32 123
+                Q 46 120 56 112 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+       <!-- 아랫입술 -->
+       <path d="M 56 201
+                Q 46 193 32 190
+                Q 22 196 22 203
+                Q 22 210 32 218
+                Q 46 211 56 201 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- 혀 (음소별) -->
   
-      <!-- 혀몸통: 편평하게 앞쪽이 높이 올라와 있고 입 바닥과 공간 유지 -->
       <path d="M 90 196
-               Q 92 168 110 148
-               Q 130 132 161 130
-               Q 192 132 213 148
-               Q 245 172 256 210
-               Q 260 222 252 234
-               Q 212 228 162 222
-               Q 118 214 95 202
-               Q 88 200 90 196 Z"
+               Q 92 168 110 148 Q 130 132 161 130 Q 192 132 213 148
+               Q 245 172 256 210 Q 260 222 252 234 Q 212 228 162 222
+               Q 118 214 95 202 Q 88 200 90 196 Z"
             fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
-      <!-- 혀 등면 하이라이트 -->
-      <path d="M 114 166 Q 152 152 198 164" fill="none" stroke="#FFFFFF"
-            stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+      <path d="M 114 166 Q 152 152 198 164" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
 
   <!-- 접촉/근접 포인트 표시 -->
   <g stroke="#FFC93D" stroke-width="3.5" stroke-linecap="round">

@@ -15,13 +15,13 @@
            Q 150 62 225 80 Q 272 92 282 122
            L 286 150 Q 290 162 280 168
            L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202
-           L 58 186
-           L 23 182 Z"
+           L 58 188
+           L 23 184 Z"
         fill="#FFF6F0"/>
   <path d="M 0 125
                Q 40 123 58 121
-               L 58 185
-               Q 40 183 0 181 Z"
+               L 58 187
+               Q 40 185 0 183 Z"
             fill="#FFF9F2"/>
 
   <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
@@ -49,21 +49,21 @@
                 Q 46 120 56 112 Z"
              fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
        <!-- 아랫입술 -->
-       <path d="M 56 194
-                Q 46 186 32 183
-                Q 22 189 22 196
-                Q 22 203 32 211
-                Q 46 204 56 194 Z"
+       <path d="M 56 196
+                Q 46 188 32 185
+                Q 22 191 22 198
+                Q 22 205 32 213
+                Q 46 206 56 196 Z"
              fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
 
   <!-- 혀 (음소별) -->
   
-      <path d="M 103 118
-               Q 115 124 132 152 Q 150 182 185 198 Q 220 210 252 218
-               Q 262 228 256 240 Q 216 236 166 230 Q 123 220 101 206
-               Q 89 190 89 156 Q 90 130 101 120 Z"
-            fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
-      <path d="M 108 150 Q 146 186 188 202" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+  <path d="M 100 116
+           Q 116 120 134 150 Q 152 180 186 196 Q 220 208 252 216
+           Q 262 226 256 238 Q 214 234 164 228 Q 120 220 100 206
+           Q 88 188 88 154 Q 89 128 100 118 Z"
+        fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M 108 150 Q 146 186 188 202" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
 
   <!-- 접촉/근접 포인트 표시 -->
   
