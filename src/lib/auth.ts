@@ -67,6 +67,14 @@ const devProvider = [
               }
             }
 
+            // 개발 계정은 프리미엄 자동 부여 — AI 분석 무제한 등 모든 제한 해제
+            // (getAccessInfo·isUserPremium·설정 화면이 전부 Subscription만 보므로 한 곳으로 충분)
+            await prisma.subscription.upsert({
+              where: { userId: user.id },
+              create: { userId: user.id, plan: "premium", status: "active" },
+              update: { plan: "premium", status: "active" },
+            });
+
             return { id: user.id, email: user.email, name: user.name };
           },
         }),

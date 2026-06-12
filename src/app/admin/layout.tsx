@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isAdmin } from "@/lib/admin-auth";
 import AdminNav from "./_components/AdminNav";
 
 export default async function AdminLayout({
@@ -8,12 +9,9 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
 
-  if (!session?.user?.email || !adminEmails.includes(session.user.email)) {
+  // isAdmin 단일 게이트 — API 라우트들과 동일 기준 (개발 계정 포함)
+  if (!isAdmin(session?.user?.email)) {
     redirect("/dashboard");
   }
 
@@ -34,7 +32,7 @@ export default async function AdminLayout({
         <div className="px-6 py-3 flex items-center gap-3">
           <span className="text-lg">🛡️</span>
           <p className="font-black text-[#3D3530]">관리자 패널</p>
-          <span className="text-xs text-[#C4B5A8] ml-auto">{session.user.email}</span>
+          <span className="text-xs text-[#C4B5A8] ml-auto">{session?.user?.email}</span>
         </div>
         <AdminNav />
       </header>

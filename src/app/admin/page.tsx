@@ -18,6 +18,12 @@ interface AdminStats {
     cacheItemCount: number;
     cacheHitRate: number;
   };
+  engagement: {
+    sessions7d: number;
+    words7d: number;
+    accuracy7d: number | null;
+    pushSubscribers: number;
+  };
   children: {
     total: number;
     ageDistribution: { label: string; count: number }[];
@@ -195,7 +201,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { users, analysis, children, hourlyUsage, weekdayUsage, topCachedWords,
+  const { users, analysis, engagement, children, hourlyUsage, weekdayUsage, topCachedWords,
     errorCategories, errorTypes, weakPhonemes, dailySignups, generatedAt } = stats;
 
   const boyCount  = children.genderDistribution.find((g) => g.label === "남아")?.count ?? 0;
@@ -243,6 +249,19 @@ export default function AdminDashboardPage() {
         <KpiCard icon="⭐" label="프리미엄 구독" value={users.premium} sub={`전환율 ${conversionRate}%`} accent="#FFB38A" />
         <KpiCard icon="🆓" label="무료 회원" value={users.free} />
         <KpiCard icon="🏃" label="활성 아이 (7일)" value={users.activeChildren7d} sub="오답 입력 기준" accent="#0D9488" />
+      </div>
+
+      {/* ── 학습 활동 KPI (최근 7일) ─────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard icon="🏋️" label="연습 세션 (7일)" value={engagement?.sessions7d ?? 0} />
+        <KpiCard icon="🔤" label="연습 단어 (7일)" value={engagement?.words7d ?? 0} />
+        <KpiCard
+          icon="🎯"
+          label="평균 정확도 (7일)"
+          value={engagement?.accuracy7d === null || engagement === undefined ? "—" : `${engagement.accuracy7d}%`}
+          accent="#0D9488"
+        />
+        <KpiCard icon="🔔" label="푸시 구독 기기" value={engagement?.pushSubscribers ?? 0} accent="#8B7EFF" />
       </div>
 
       {/* ── AI 분석 현황 ─────────────────────────────────────────── */}
