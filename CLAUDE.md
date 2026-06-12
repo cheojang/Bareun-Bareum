@@ -32,7 +32,7 @@ AI 기반 아동 조음 홈케어 SaaS. 부모가 발음 오류를 입력 → AI
 
 ## 다음 담당자 체크리스트
 
-- [ ] **🔥 최우선: `npx prisma db push` 실행** — ① UserConsent 테이블(약관 동의 기록) ② User.trialEndsAt 컬럼(가입 7일 프리미엄 체험) 생성 필요. 사용자가 모바일이라 보류됨. 실행 전까지는 동의 기록·체험 부여가 보류되고 신규 가입자는 무료 등급으로 동작(앱은 정상). push 후부터 신규 가입자에게 자동 7일 체험 부여
+- [x] ~~**🔥 최우선: `npx prisma db push`**~~ — ✅ 2026-06-12 완료. ① UserConsent 테이블 ② User.trialEndsAt 컬럼 생성됨. (모바일 환경이라 일회용 마이그레이션 API로 프로덕션 DB에 직접 DDL 실행 후 엔드포인트 삭제). 신규 가입자에게 자동 7일 체험 부여 활성. ⚠️ 로컬/다른 환경에서 스키마 추가 변경 시엔 정식으로 `npx prisma db push` 실행 필요
 - [ ] Supabase DB 비밀번호 교체 안내 (git 이력 노출 — 사용자 직접)
 - [ ] 단어 이미지 생성: `npm run generate:word-images` (754개, GEMINI_API_KEY 필요, ~$29)
 - [ ] /subscribe 환불·청약철회 정책 고지 확인 (결제 오픈 전)
