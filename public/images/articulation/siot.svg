@@ -2,17 +2,14 @@
   <!-- 카드 배경 -->
   <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
 
-  <!-- 얼굴 단면 살 (입 주변) -->
-  <path d="M 30 40
-           Q 130 18 230 30 Q 320 42 330 110
+  <!-- 얼굴 단면 살 (매끄러운 옆모습) -->
+  <path d="M 28 40 Q 130 18 230 30 Q 320 42 330 110
            L 330 240 Q 320 290 240 296 Q 130 304 60 286
-           Q 28 276 30 230
-           L 42 218 Q 30 205 32 190 L 44 165 Q 30 150 32 132 L 30 40 Z"
+           Q 28 276 28 230 Q 25 180 28 130 Z"
         fill="#FFE3CC"/>
 
   <!-- 구강 내부 (입 안 공간) -->
-  <path d="M 50 122
-           Q 60 106 85 104
+  <path d="M 50 122 Q 60 106 85 104
            Q 150 62 225 80 Q 272 92 282 122
            L 286 150 Q 290 162 280 168
            L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202 Z"
@@ -34,36 +31,53 @@
   <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
   <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
 
-  <!-- 입술 -->
-  <ellipse cx="48" cy="103" rx="14" ry="13" fill="#FFB59B"/>
-  <ellipse cx="48" cy="218" rx="14" ry="13" fill="#FFB59B"/>
+  <!-- 입술: 옆에서 본 렌즈형 사이드 프로파일 (발음별 열린 정도) -->
+  <!-- 윗입술: 왼쪽(입술 끝)이 뾰족하고 오른쪽(입꼬리)이 연결됨 -->
+  <path d="M 56 112
+           Q 46 102 32 95
+           Q 22 103 22 110
+           Q 22 117 32 123
+           Q 46 120 56 112 Z"
+        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- 아랫입술 -->
+  <path d="M 56 201
+           Q 46 193 32 190
+           Q 22 196 22 203
+           Q 22 210 32 218
+           Q 46 211 56 201 Z"
+        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- 입꼬리 점 -->
+  <circle cx="56" cy="157" r="3.5" fill="#E8947A" opacity="0.7"/>
 
-  <!-- 혀 (음소별) -->
+  <!-- 혀 (음소별) — 입 바닥과 분리된 자연스러운 위치 -->
   
-      <path d="M 92 196
-               Q 96 172 116 152
-               Q 138 134 162 134
-               Q 186 136 206 152
-               Q 240 176 258 232
-               Q 226 252 174 252
-               Q 120 250 100 228
-               Q 90 214 92 196 Z"
-            fill="#FF9B8A" stroke="#E8705F" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M 116 170 Q 150 156 192 166" fill="none" stroke="#E8705F"
-            stroke-width="3" opacity="0.45" stroke-linecap="round"/>
+      <!-- 혀몸통: 편평하게 앞쪽이 높이 올라와 있고 입 바닥과 공간 유지 -->
+      <path d="M 90 196
+               Q 92 168 110 148
+               Q 130 132 161 130
+               Q 192 132 213 148
+               Q 245 172 256 210
+               Q 260 222 252 234
+               Q 212 228 162 222
+               Q 118 214 95 202
+               Q 88 200 90 196 Z"
+            fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+      <!-- 혀 등면 하이라이트 -->
+      <path d="M 114 166 Q 152 152 198 164" fill="none" stroke="#FFFFFF"
+            stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
 
   <!-- 접촉/근접 포인트 표시 -->
-  <g stroke="#FFC93D" stroke-width="4" stroke-linecap="round">
-        <path d="M 128 116 L 136 126"/>
-        <path d="M 144 112 L 150 124"/>
+  <g stroke="#FFC93D" stroke-width="3.5" stroke-linecap="round">
+        <path d="M 126 114 L 133 125"/>
+        <path d="M 142 110 L 148 122"/>
       </g>
 
   <!-- 공기 흐름 -->
   
   <g stroke="#6FBDE8" stroke-width="5" fill="none" stroke-linecap="round">
-    <path d="M 92 150 Q 78 144 64 150 Q 50 156 36 150"/>
+    <path d="M 92 155 Q 78 149 64 155 Q 50 161 36 155"/>
   </g>
-  <path d="M 38 141 L 20 150 L 38 159 Z" fill="#6FBDE8"/>
+  <path d="M 38 146 L 20 155 L 38 164 Z" fill="#6FBDE8"/>
 
   <!-- 라벨 -->
   <g>

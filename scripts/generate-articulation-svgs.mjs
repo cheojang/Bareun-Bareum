@@ -10,27 +10,29 @@ mkdirSync(OUT_DIR, { recursive: true });
 /**
  * 공통 골격: 왼쪽을 보는 옆모습 구강 단면.
  * 좌표계 (viewBox 0 0 360 320):
- *  - 입술 x≈40, 윗니 x≈62-82 (y105→140), 아랫니 (y185→215)
+ *  - 입술 x≈22-56 (렌즈형 사이드 프로파일)
+ *  - 윗니 x≈60-82 y=100→140, 아랫니 y=180→220
  *  - 치조(잇몸 융기) x≈85-115 y≈105
  *  - 경구개 아치 → 연구개(x≈270) → 목젖
- *  - 입 바닥 y≈215-245
+ *  - 입 바닥 y≈238-258
+ *
+ * upperLipY / lowerLipY: 음소별 입모양(열린 정도) 제어
+ *  - 두 값의 중간이 "입 코너(입꼬리)"
+ *  - 격차가 클수록 입이 더 벌어진 모양
  */
-function scaffold({ tongue, contact, airflow, label, labelKo }) {
+function scaffold({ tongue, contact, airflow, label, labelKo, upperLipY = 108, lowerLipY = 202 }) {
   return `<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <!-- 카드 배경 -->
   <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
 
-  <!-- 얼굴 단면 살 (입 주변) -->
-  <path d="M 30 40
-           Q 130 18 230 30 Q 320 42 330 110
+  <!-- 얼굴 단면 살 (매끄러운 옆모습) -->
+  <path d="M 28 40 Q 130 18 230 30 Q 320 42 330 110
            L 330 240 Q 320 290 240 296 Q 130 304 60 286
-           Q 28 276 30 230
-           L 42 218 Q 30 205 32 190 L 44 165 Q 30 150 32 132 L 30 40 Z"
+           Q 28 276 28 230 Q 25 180 28 130 Z"
         fill="#FFE3CC"/>
 
   <!-- 구강 내부 (입 안 공간) -->
-  <path d="M 50 122
-           Q 60 106 85 104
+  <path d="M 50 122 Q 60 106 85 104
            Q 150 62 225 80 Q 272 92 282 122
            L 286 150 Q 290 162 280 168
            L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202 Z"
@@ -52,11 +54,25 @@ function scaffold({ tongue, contact, airflow, label, labelKo }) {
   <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
   <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
 
-  <!-- 입술 -->
-  <ellipse cx="48" cy="103" rx="14" ry="13" fill="#FFB59B"/>
-  <ellipse cx="48" cy="218" rx="14" ry="13" fill="#FFB59B"/>
+  <!-- 입술: 옆에서 본 렌즈형 사이드 프로파일 (발음별 열린 정도) -->
+  <!-- 윗입술: 왼쪽(입술 끝)이 뾰족하고 오른쪽(입꼬리)이 연결됨 -->
+  <path d="M 56 ${upperLipY + 4}
+           Q 46 ${upperLipY - 6} 32 ${upperLipY - 13}
+           Q 22 ${upperLipY - 5} 22 ${upperLipY + 2}
+           Q 22 ${upperLipY + 9} 32 ${upperLipY + 15}
+           Q 46 ${upperLipY + 12} 56 ${upperLipY + 4} Z"
+        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- 아랫입술 -->
+  <path d="M 56 ${lowerLipY - 4}
+           Q 46 ${lowerLipY - 12} 32 ${lowerLipY - 15}
+           Q 22 ${lowerLipY - 9} 22 ${lowerLipY - 2}
+           Q 22 ${lowerLipY + 5} 32 ${lowerLipY + 13}
+           Q 46 ${lowerLipY + 6} 56 ${lowerLipY - 4} Z"
+        fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- 입꼬리 점 -->
+  <circle cx="56" cy="${Math.round((upperLipY + lowerLipY) / 2)}" r="3.5" fill="#E8947A" opacity="0.7"/>
 
-  <!-- 혀 (음소별) -->
+  <!-- 혀 (음소별) — 입 바닥과 분리된 자연스러운 위치 -->
   ${tongue}
 
   <!-- 접촉/근접 포인트 표시 -->
@@ -89,48 +105,57 @@ const airflowOut = (y) => `
   <path d="M 38 ${y - 9} L 20 ${y} L 38 ${y + 9} Z" fill="#6FBDE8"/>`;
 
 const PHONEMES = {
-  // ㄹ (초성·치조 탄설음): 혀끝이 윗잇몸(치조)을 가볍게 톡 — 끝이 올라간 혀
+  // ㄹ (치조 탄설음): 혀끝이 치조에 톡 닿음 — 혀 앞부분만 올라가고 나머지는 중간 높이
   rieul: scaffold({
     label: "ㄹ",
     labelKo: "혀끝을 윗잇몸에 톡!",
+    upperLipY: 108,   // 살짝 열린 입 (자연스런 발화 자세)
+    lowerLipY: 198,
     tongue: `
-      <path d="M 118 232
-               Q 96 196 98 150
-               Q 99 124 108 112
-               Q 114 104 122 110
-               Q 128 116 126 132
-               Q 138 178 188 196
-               Q 238 210 258 234
-               Q 230 252 178 252
-               Q 136 250 118 232 Z"
-            fill="#FF9B8A" stroke="#E8705F" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M 112 150 Q 120 190 165 206" fill="none" stroke="#E8705F"
-            stroke-width="3" opacity="0.45" stroke-linecap="round"/>`,
-    contact: sparkle(112, 100),
+      <!-- 혀몸통: 입 바닥(y≈238)보다 위에 떠 있어 혀 아래 공간이 보임 -->
+      <path d="M 103 118
+               Q 115 124 132 152
+               Q 150 182 185 198
+               Q 220 210 252 218
+               Q 262 228 256 240
+               Q 216 236 166 230
+               Q 123 220 101 206
+               Q 89 190 89 156
+               Q 90 130 101 120 Z"
+            fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+      <!-- 혀 등면 하이라이트 -->
+      <path d="M 108 150 Q 146 186 188 202" fill="none" stroke="#FFFFFF"
+            stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>`,
+    contact: sparkle(106, 100),
   }),
 
-  // ㅅ (치조 마찰음): 혀끝은 아랫니 뒤, 혓날이 잇몸에 가까이 — 좁은 틈으로 바람
+  // ㅅ (치조 마찰음): 혀가 편평하게 올라와 좁은 틈으로 바람
   siot: scaffold({
     label: "ㅅ",
     labelKo: "살짝 틈으로 바람 스─",
+    upperLipY: 108,
+    lowerLipY: 205,   // ㄹ보다 약간 더 열린 입 (마찰음 발화 시)
     tongue: `
-      <path d="M 92 196
-               Q 96 172 116 152
-               Q 138 134 162 134
-               Q 186 136 206 152
-               Q 240 176 258 232
-               Q 226 252 174 252
-               Q 120 250 100 228
-               Q 90 214 92 196 Z"
-            fill="#FF9B8A" stroke="#E8705F" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M 116 170 Q 150 156 192 166" fill="none" stroke="#E8705F"
-            stroke-width="3" opacity="0.45" stroke-linecap="round"/>`,
-    // 혓날과 잇몸 사이 좁은 틈 표시
-    contact: `<g stroke="#FFC93D" stroke-width="4" stroke-linecap="round">
-        <path d="M 128 116 L 136 126"/>
-        <path d="M 144 112 L 150 124"/>
+      <!-- 혀몸통: 편평하게 앞쪽이 높이 올라와 있고 입 바닥과 공간 유지 -->
+      <path d="M 90 196
+               Q 92 168 110 148
+               Q 130 132 161 130
+               Q 192 132 213 148
+               Q 245 172 256 210
+               Q 260 222 252 234
+               Q 212 228 162 222
+               Q 118 214 95 202
+               Q 88 200 90 196 Z"
+            fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+      <!-- 혀 등면 하이라이트 -->
+      <path d="M 114 166 Q 152 152 198 164" fill="none" stroke="#FFFFFF"
+            stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>`,
+    // 혓날과 잇몸 사이 좁은 틈 표시 (노란 선)
+    contact: `<g stroke="#FFC93D" stroke-width="3.5" stroke-linecap="round">
+        <path d="M 126 114 L 133 125"/>
+        <path d="M 142 110 L 148 122"/>
       </g>`,
-    airflow: airflowOut(150),
+    airflow: airflowOut(155),
   }),
 };
 
