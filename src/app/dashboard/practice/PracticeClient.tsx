@@ -866,6 +866,31 @@ export function PracticeClient({
     );
   }
 
+  // ── 혀 모양 단면도 팝업 모달 ──────────────────────────────────────────────────
+  const tongueModal = showTongue && tonguePhoneme ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={() => setShowTongue(false)}
+    >
+      <div
+        className="bg-[#FFF9F2] rounded-3xl p-6 w-full max-w-xs shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-base font-black text-[#3D3530]">👅 혀 위치</p>
+          <button
+            onClick={() => setShowTongue(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F0E8E0] hover:bg-[#FFEAD9] text-[#8B7E74] font-bold text-lg transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+        <ArticulationDiagram phoneme={tonguePhoneme} size="lg" className="w-full" />
+      </div>
+    </div>
+  ) : null;
+
   // ── 전체 완료 화면 ────────────────────────────────────────────────────────────
   if (allDone) {
     const masteredCount = [...autoSavedItems.values()].filter((v) => v === "mastered").length;
@@ -922,6 +947,7 @@ export function PracticeClient({
       className="min-h-dvh flex flex-col"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
+      {tongueModal}
       <ConfettiEffect trigger={confetti} />
 
       {/* 단계 표시 바 */}
@@ -988,9 +1014,19 @@ export function PracticeClient({
 
           {/* 연습 카드 */}
           <div
-            className="w-full bg-white/90 rounded-[32px] shadow-lg text-center"
+            className="relative w-full bg-white/90 rounded-[32px] shadow-lg text-center"
             style={{ border: `2px solid ${meta.color}22` }}
           >
+            {/* 혀 모양 팝업 버튼 — 목표 음소가 매핑될 때만 우상단에 표시 */}
+            {hasTongueDiagram && !stage3Loading && (
+              <button
+                onClick={() => setShowTongue(true)}
+                className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#FFF5EE] hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90 z-10"
+                title="혀 위치 보기"
+              >
+                <span className="text-lg leading-none">👅</span>
+              </button>
+            )}
             {/* 2단계 유사 패턴 라벨 — 좌상단에 작게 표시 */}
             {currentItem?.similarTo && (
               <span className="block text-[11px] font-semibold text-[#8B7E74] pt-4 pb-1">
@@ -1005,23 +1041,6 @@ export function PracticeClient({
               >
                 {stripEnglishParens(currentItem.badge)}
               </span>
-            )}
-
-            {/* 혀 모양 단면도 토글 — 목표 음소가 매핑될 때만 */}
-            {hasTongueDiagram && !stage3Loading && (
-              <div className="px-6 pt-1">
-                <button
-                  onClick={() => setShowTongue((v) => !v)}
-                  className="text-xs font-bold text-[#8B7E74] bg-[#FFF5EE] hover:bg-[#FFEAD9] px-3 py-1.5 rounded-full transition-colors"
-                >
-                  👅 혀 위치 {showTongue ? "숨기기" : "보기"}
-                </button>
-                {showTongue && tonguePhoneme && (
-                  <div className="mt-2 flex justify-center animate-bounce-in">
-                    <ArticulationDiagram phoneme={tonguePhoneme} size="md" />
-                  </div>
-                )}
-              </div>
             )}
 
             {/* ── 단어 표시 영역: 버튼이 이 영역의 세로 중앙에 고정됨 ── */}
