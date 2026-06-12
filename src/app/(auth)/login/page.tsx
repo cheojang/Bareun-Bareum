@@ -173,13 +173,18 @@ function DevLoginButtons() {
   async function devLogin(email: string, dest: string) {
     setLoading(email);
     setError("");
-    const res = await signIn("dev", { email, redirect: false });
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await signIn("dev", { email, redirect: false });
+      if (res?.error) {
+        setError(res.error);
+        setLoading(null);
+        return;
+      }
+      window.location.href = dest;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
       setLoading(null);
-      return;
     }
-    window.location.href = dest;
   }
 
   return (

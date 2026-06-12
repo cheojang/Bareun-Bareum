@@ -6,19 +6,19 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 
-// dev 로그인: ALLOW_DEV_LOGIN=1 이면 활성 (로컬 및 스테이징 테스트용)
-const IS_DEV_LOGIN_ENABLED = process.env.ALLOW_DEV_LOGIN === "1";
-
-const devProvider = IS_DEV_LOGIN_ENABLED
-  ? [
+// dev 로그인 provider — 항상 등록하되 authorize 내부에서 런타임 게이트.
+// (조건부로 배열에서 빼면 ALLOW_DEV_LOGIN이 런타임에 1이어도 빌드 시점 평가/캐싱 때문에
+//  provider 자체가 누락돼 NextAuth가 "Configuration" 에러를 던지는 문제가 있었음)
+// 버튼 노출은 NEXT_PUBLIC_ALLOW_DEV_LOGIN으로 별도 게이트되므로 프로덕션 노출 위험 없음.
+const devProvider = [
         Credentials({
           id: "dev",
           name: "개발자 로그인",
           credentials: { email: { label: "Email", type: "text" } },
           async authorize(credentials) {
-            // 런타임 재검증 (런타임에 env가 바뀌었거나 빌드 타임 평가 우회 방지)
+            // 런타임 게이트: ALLOW_DEV_LOGIN=1 일 때만 동작
             if (process.env.ALLOW_DEV_LOGIN !== "1") {
-              return null;
+              throw new Error("개발 로그인이 비활성화되어 있어요 (ALLOW_DEV_LOGIN).");
             }
             const email = (credentials?.email as string) ?? "dev@test.com";
 
@@ -70,8 +70,7 @@ const devProvider = IS_DEV_LOGIN_ENABLED
             return { id: user.id, email: user.email, name: user.name };
           },
         }),
-      ]
-  : [];
+      ];
 
 // ── 비회원 (게스트) 로그인 ──────────────────────────────────────────────────────
 const guestProvider = Credentials({
