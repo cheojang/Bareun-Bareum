@@ -1,0 +1,72 @@
+<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <!-- 카드 배경 -->
+  <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
+
+  <!-- 얼굴 단면 살 (입 주변) -->
+  <path d="M 30 40
+           Q 130 18 230 30 Q 320 42 330 110
+           L 330 240 Q 320 290 240 296 Q 130 304 60 286
+           Q 28 276 30 230
+           L 42 218 Q 30 205 32 190 L 44 165 Q 30 150 32 132 L 30 40 Z"
+        fill="#FFE3CC"/>
+
+  <!-- 구강 내부 (입 안 공간) -->
+  <path d="M 50 122
+           Q 60 106 85 104
+           Q 150 62 225 80 Q 272 92 282 122
+           L 286 150 Q 290 162 280 168
+           L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202 Z"
+        fill="#FFF6F0"/>
+
+  <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
+  <path d="M 85 104 Q 96 96 108 104 Q 116 110 126 104
+           Q 170 72 225 84 Q 266 94 278 120"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+  <!-- 목젖 -->
+  <path d="M 278 120 Q 288 138 280 156 Q 276 166 282 174"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 입 바닥/아래턱 -->
+  <path d="M 88 238 Q 150 258 230 250 Q 268 244 280 218"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 윗니 / 아랫니 -->
+  <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+  <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+
+  <!-- 입술 -->
+  <ellipse cx="48" cy="103" rx="14" ry="13" fill="#FFB59B"/>
+  <ellipse cx="48" cy="218" rx="14" ry="13" fill="#FFB59B"/>
+
+  <!-- 혀 (음소별) -->
+  
+      <path d="M 118 232
+               Q 96 196 98 150
+               Q 99 124 108 112
+               Q 114 104 122 110
+               Q 128 116 126 132
+               Q 138 178 188 196
+               Q 238 210 258 234
+               Q 230 252 178 252
+               Q 136 250 118 232 Z"
+            fill="#FF9B8A" stroke="#E8705F" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M 112 150 Q 120 190 165 206" fill="none" stroke="#E8705F"
+            stroke-width="3" opacity="0.45" stroke-linecap="round"/>
+
+  <!-- 접촉/근접 포인트 표시 -->
+  
+  <circle cx="112" cy="100" r="13" fill="#FFD93D" opacity="0.35"/>
+  <circle cx="112" cy="100" r="6" fill="#FFC93D"/>
+  <path d="M 112 78 l 2.6 6.5 6.9 0.6 -5.2 4.6 1.6 6.8 -5.9 -3.7 -5.9 3.7 1.6 -6.8 -5.2 -4.6 6.9 -0.6 Z"
+        fill="#FFB38A" transform="translate(0,-6)"/>
+
+  <!-- 공기 흐름 -->
+  
+
+  <!-- 라벨 -->
+  <g>
+    <rect x="252" y="244" width="84" height="56" rx="18" fill="#FFFFFF" stroke="#F0E2D6" stroke-width="2"/>
+    <text x="294" y="274" text-anchor="middle" font-size="26" font-weight="900" fill="#3D3530">ㄹ</text>
+    <text x="294" y="292" text-anchor="middle" font-size="11" font-weight="700" fill="#A89B8E">혀끝을 윗잇몸에 톡!</text>
+  </g>
+</svg>
