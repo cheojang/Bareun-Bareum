@@ -1,5 +1,6 @@
 import { WORD_IMAGE_SLUGS } from "./word-images";
 import { decomposeWord, normalizeJongseong } from "./jamo-analysis";
+import { difficultyDistance, type Difficulty } from "./adaptive-difficulty";
 
 export interface PracticeWord {
   word: string;
@@ -2076,14 +2077,29 @@ export function getImagedWordsByPhoneme(
  * 유사패턴 단어 선택 (stage2·복습 공용).
  * 위치(초성/종성)가 일치하는 이미지 단어를 우선 선택하고,
  * 해당 위치 단어가 하나도 없으면(예: 받침 ㄷ) 위치 무관으로 폴백해 빈 카드를 방지한다.
+ * preferredDifficulty 지정 시 해당 난이도 단어 우선 정렬(이웃 난이도 폴백 — 적응형 난이도).
  */
 export function getSimilarPatternWords(
   phoneme: string,
   position: PhonemePosition = "any",
+  preferredDifficulty?: Difficulty,
 ): PracticeWord[] {
-  if (position === "any") return getImagedWordsByPhoneme(phoneme, "any");
-  const strict = getImagedWordsByPhoneme(phoneme, position);
-  return strict.length > 0 ? strict : getImagedWordsByPhoneme(phoneme, "any");
+  let words: PracticeWord[];
+  if (position === "any") {
+    words = getImagedWordsByPhoneme(phoneme, "any");
+  } else {
+    const strict = getImagedWordsByPhoneme(phoneme, position);
+    words = strict.length > 0 ? strict : getImagedWordsByPhoneme(phoneme, "any");
+  }
+  if (preferredDifficulty) {
+    // 안정 정렬 — 같은 거리끼리는 기존 순서 유지
+    words = [...words].sort(
+      (a, b) =>
+        difficultyDistance(a.difficulty, preferredDifficulty) -
+        difficultyDistance(b.difficulty, preferredDifficulty),
+    );
+  }
+  return words;
 }
 
 export function getAllWords(): PracticeWord[] {
