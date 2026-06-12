@@ -246,10 +246,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ─── 월간 사용 제한 체크 (캐시 미스 경우에만 적용) ──────────────────────
+    // ─── 사용 제한 체크 (캐시 미스 경우에만 적용) ──────────────────────────────
     const {
-      FREE_AI_MONTHLY_LIMIT, GUEST_AI_MONTHLY_LIMIT,
-      isUserPremium, countMonthlyGeminiUsage,
+      FREE_AI_MONTHLY_LIMIT, GUEST_AI_MONTHLY_LIMIT, TRIAL_DAILY_LIMIT,
+      getAccessInfo, countMonthlyGeminiUsage, countDailyGeminiUsage,
       hashGuestIp, getClientIp, getGuestMonthlyUsage, incrementGuestUsage,
     } = await import("@/lib/usage-limit");
 
@@ -271,8 +271,19 @@ export async function POST(request: NextRequest) {
       // 사전 증가: 동시 요청 race condition 차단 (Gemini 호출 실패 시 차감하지 않음 — 안전한 over-count)
       await incrementGuestUsage(guestIpHash);
     } else {
-      const premium = await isUserPremium(session.user.id);
-      if (!premium) {
+      const access = await getAccessInfo(session.user.id);
+      if (access.level === "trial") {
+        // 체험 회원: 무제한이되 일일 상한으로 비용 폭주 방어
+        const usedToday = await countDailyGeminiUsage(session.user.id);
+        if (usedToday >= TRIAL_DAILY_LIMIT) {
+          return NextResponse.json({
+            error: `프리미엄 체험 중에는 하루 ${TRIAL_DAILY_LIMIT}회까지 분석할 수 있어요. 내일 다시 이용해 주세요.`,
+            isDailyLimitReached: true,
+            limit: TRIAL_DAILY_LIMIT,
+            used: usedToday,
+          }, { status: 429 });
+        }
+      } else if (access.level === "free") {
         const used = await countMonthlyGeminiUsage(session.user.id);
         if (used >= FREE_AI_MONTHLY_LIMIT) {
           return NextResponse.json({
@@ -283,6 +294,7 @@ export async function POST(request: NextRequest) {
           }, { status: 429 });
         }
       }
+      // premium: 제한 없음
     }
 
     // ─── 2순위: Gemini API 신규 호출 (NDJSON 스트리밍) ───────────────────────

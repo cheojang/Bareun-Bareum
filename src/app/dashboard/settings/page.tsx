@@ -14,15 +14,23 @@ export default async function SettingsPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const [children, subscription] = await Promise.all([
+  const [children, subscription, user] = await Promise.all([
     prisma.child.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
     }),
     prisma.subscription.findUnique({ where: { userId } }),
+    prisma.user
+      .findUnique({ where: { id: userId }, select: { trialEndsAt: true } })
+      .catch(() => null),
   ]);
 
   const isPremium = subscription?.status === "active" && subscription?.plan === "premium";
+  // 체험 활성: 유료 아님 + 체험 종료일 미도래
+  const trialActive = !isPremium && !!user?.trialEndsAt && user.trialEndsAt.getTime() > Date.now();
+  const trialDaysLeft = trialActive
+    ? Math.max(1, Math.ceil((user!.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
   const userIsAdmin = isAdmin(session?.user?.email);
 
   return (
@@ -54,11 +62,11 @@ export default async function SettingsPage() {
       </BubbleCard>
 
       {/* Subscription */}
-      <BubbleCard color={isPremium ? "mint" : "peach"}>
+      <BubbleCard color={isPremium || trialActive ? "mint" : "peach"}>
         <div className="mb-3">
           <p className="text-xs text-[#8B7E74] mb-0.5">현재 이용 중인 플랜</p>
           <p className="font-bold text-[#3D3530]">
-            {isPremium ? "✨ 프리미엄 플랜" : "무료 플랜"}
+            {isPremium ? "✨ 프리미엄 플랜" : trialActive ? "🎁 프리미엄 체험 중" : "무료 플랜"}
           </p>
           {isPremium && subscription?.currentPeriodEnd && (
             <p className="text-xs text-[#8B7E74] mt-0.5">
@@ -66,10 +74,17 @@ export default async function SettingsPage() {
               {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
             </p>
           )}
+          {trialActive && (
+            <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
+              체험 {trialDaysLeft}일 남음 · {new Date(user!.trialEndsAt!).toLocaleDateString("ko-KR")}까지 모든 기능 무료
+            </p>
+          )}
         </div>
         {!isPremium && (
           <Link href="/subscribe">
-            <BubbleButton variant="peach" className="w-full">프리미엄 시작하기</BubbleButton>
+            <BubbleButton variant="peach" className="w-full">
+              {trialActive ? "체험 끝나기 전에 프리미엄 등록하기" : "프리미엄 시작하기"}
+            </BubbleButton>
           </Link>
         )}
       </BubbleCard>

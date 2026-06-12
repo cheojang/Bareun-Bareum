@@ -157,4 +157,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
     newUser: "/onboarding",
   },
+  events: {
+    // OAuth(구글/카카오) 신규 가입자에게도 7일 프리미엄 체험 부여 (이메일 가입은 signup API에서 처리)
+    async createUser({ user }) {
+      if (!user.id) return;
+      try {
+        const { computeTrialEndsAt } = await import("@/lib/usage-limit");
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { trialEndsAt: computeTrialEndsAt() },
+        });
+      } catch (e) {
+        console.warn("[auth] 체험 부여 실패:", e instanceof Error ? e.message : e);
+      }
+    },
+  },
 });

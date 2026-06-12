@@ -5,6 +5,16 @@ export const FREE_AI_MONTHLY_LIMIT = 10;
 export const GUEST_AI_MONTHLY_LIMIT = 5;
 export const GUEST_COOKIE_NAME = "ai_guest_usage";
 
+/** 리버스 트라이얼: 가입 시 부여되는 프리미엄 체험 기간(일) */
+export const TRIAL_DAYS = 7;
+/** 체험 기간 중 일일 AI 분석 상한 — 어뷰징/비용 폭주 방어 (정상 사용자는 체감 못 함) */
+export const TRIAL_DAILY_LIMIT = 30;
+
+/** 가입 시각 기준 체험 종료 일시 계산 */
+export function computeTrialEndsAt(from: Date = new Date()): Date {
+  return new Date(from.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+}
+
 export function getCurrentYearMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -13,6 +23,11 @@ export function getCurrentYearMonth(): string {
 export function getMonthStart(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+export function getDayStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 /** 이번 달 실제 Gemini 호출 횟수 (캐시 히트 제외 — GeminiFeedback 생성 기준) */
@@ -25,12 +40,65 @@ export async function countMonthlyGeminiUsage(userId: string): Promise<number> {
   });
 }
 
+/** 오늘 실제 Gemini 호출 횟수 (체험 기간 일일 상한 체크용) */
+export async function countDailyGeminiUsage(userId: string): Promise<number> {
+  return prisma.geminiFeedback.count({
+    where: {
+      createdAt: { gte: getDayStart() },
+      errorRecord: { child: { userId } },
+    },
+  });
+}
+
+/** 유료 구독(프리미엄) 여부 — 결제 활성 사용자만 true (체험 제외) */
 export async function isUserPremium(userId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({
     where: { userId },
     select: { status: true, plan: true },
   });
   return sub?.status === "active" && sub?.plan === "premium";
+}
+
+export type AccessLevel = "premium" | "trial" | "free";
+
+export interface AccessInfo {
+  level: AccessLevel;
+  /** 체험 종료 일시 (trial일 때만 의미 있음) */
+  trialEndsAt: Date | null;
+  /** 체험 남은 일수 (올림, trial일 때만) */
+  trialDaysLeft: number | null;
+}
+
+/**
+ * 사용자의 AI 접근 등급 판정.
+ * - premium: 결제 활성 → 무제한
+ * - trial:   trialEndsAt 미도래 → 일일 상한(TRIAL_DAILY_LIMIT) 내 프리미엄 기능
+ * - free:    그 외 → 월 FREE_AI_MONTHLY_LIMIT
+ */
+export async function getAccessInfo(userId: string): Promise<AccessInfo> {
+  // trialEndsAt 컬럼 미생성(prisma db push 전)이어도 free로 안전 폴백
+  const [sub, user] = await Promise.all([
+    prisma.subscription.findUnique({
+      where: { userId },
+      select: { status: true, plan: true },
+    }),
+    prisma.user
+      .findUnique({ where: { id: userId }, select: { trialEndsAt: true } })
+      .catch(() => null),
+  ]);
+
+  if (sub?.status === "active" && sub?.plan === "premium") {
+    return { level: "premium", trialEndsAt: null, trialDaysLeft: null };
+  }
+
+  const trialEndsAt = user?.trialEndsAt ?? null;
+  if (trialEndsAt && trialEndsAt.getTime() > Date.now()) {
+    const msLeft = trialEndsAt.getTime() - Date.now();
+    const trialDaysLeft = Math.max(1, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+    return { level: "trial", trialEndsAt, trialDaysLeft };
+  }
+
+  return { level: "free", trialEndsAt: null, trialDaysLeft: null };
 }
 
 /** 게스트 쿠키에서 이번 달 사용 횟수 파싱 */

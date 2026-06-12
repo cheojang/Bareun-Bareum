@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { recordConsent } from "@/lib/consent";
+import { computeTrialEndsAt } from "@/lib/usage-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,6 +79,17 @@ export async function POST(request: NextRequest) {
 
     // 가입 화면에서 약관 동의를 받았으므로 동의 일시를 기록 (실패해도 가입은 유지)
     await recordConsent(user.id);
+
+    // 가입 즉시 7일 프리미엄 체험 부여 (리버스 트라이얼).
+    // trialEndsAt 컬럼 미생성(prisma db push 전)이어도 가입은 유지되도록 best-effort 처리.
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { trialEndsAt: computeTrialEndsAt() },
+      });
+    } catch (e) {
+      console.warn("[Signup] 체험 부여 보류 (컬럼 미생성?):", e instanceof Error ? e.message : e);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

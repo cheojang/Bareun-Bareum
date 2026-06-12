@@ -39,14 +39,16 @@ export default async function AnswerNotePage() {
     );
   }
 
-  // ── 회원: 아이 목록 + 선택 ID 병렬 조회 ─────────────────────────────────
-  const [children, savedId] = await Promise.all([
+  // ── 회원: 아이 목록 + 선택 ID + 접근 등급(체험) 병렬 조회 ──────────────────
+  const { getAccessInfo } = await import("@/lib/usage-limit");
+  const [children, savedId, access] = await Promise.all([
     prisma.child.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, userId: true },
     }),
     getSelectedChildId(),
+    getAccessInfo(session.user.id),
   ]);
 
   if (children.length === 0) redirect("/onboarding");
@@ -88,6 +90,7 @@ export default async function AnswerNotePage() {
       childId={targetChild.id}
       childName={targetChild.name}
       pastRecords={pastRecords}
+      trialDaysLeft={access.level === "trial" ? access.trialDaysLeft ?? undefined : undefined}
     />
   );
 }

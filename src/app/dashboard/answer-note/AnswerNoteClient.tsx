@@ -59,6 +59,8 @@ interface Props {
   guestRemaining?: number;
   /** 게스트 전용: 월간 무료 한도 */
   guestLimit?: number;
+  /** 회원 전용: 프리미엄 체험 남은 일수 (체험 중일 때만 전달) */
+  trialDaysLeft?: number;
 }
 
 // ─── 카테고리 색상 매핑 ────────────────────────────────────────────────────────
@@ -420,7 +422,7 @@ function CurrentAnalysisCard({
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 
-export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, guestRemaining, guestLimit }: Props) {
+export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, guestRemaining, guestLimit, trialDaysLeft }: Props) {
   // 누적 기록 상태 (새 분석 완료 시 맨 앞에 추가)
   const [records, setRecords] = useState<PastRecord[]>(pastRecords);
 
@@ -547,6 +549,8 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
         if (err?.isMonthlyLimitReached && err?.isGuest) {
           setRemaining(0);
           setGeminiError(`이번 달 비회원 AI 분석 횟수(${err.limit ?? guestLimit ?? 5}회)를 모두 사용했어요.\n회원가입하면 매달 10회 무료로 이용할 수 있고, 분석 기록도 쌓을 수 있어요!`);
+        } else if (err?.isDailyLimitReached) {
+          setGeminiError(`프리미엄 체험 중에는 하루 ${err.limit ?? 30}회까지 분석할 수 있어요.\n내일 다시 이용해 주세요!`);
         } else if (err?.isMonthlyLimitReached) {
           setGeminiError("이번 달 AI 분석 횟수(10회)를 모두 사용했어요.\n다음 달 1일에 자동 초기화돼요.\n프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요!");
         } else if (err?.isQuotaError) {
@@ -781,6 +785,22 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
           {childName}의 발음을 입력하면 AI가 원인을 분석해드려요
         </p>
       </div>
+
+      {/* 회원 체험 중: 프리미엄 체험 잔여일 배지 (가치 환기) */}
+      {!isGuest && typeof trialDaysLeft === "number" && trialDaysLeft > 0 && (
+        <div className="rounded-2xl px-4 py-3 flex items-center gap-3 bg-[#F0FAF8] border border-[#7EDFD0]/50">
+          <span className="text-2xl flex-shrink-0">🎁</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[#3D3530]">
+              프리미엄 체험 중 · <span className="text-[#0D9488]">{trialDaysLeft}일 남음</span>
+            </p>
+            <p className="text-xs text-[#8B7E74]">지금은 모든 기능을 무제한에 가깝게 쓸 수 있어요</p>
+          </div>
+          <Link href="/subscribe" className="flex-shrink-0">
+            <span className="text-xs font-bold text-white bg-[#FFB38A] rounded-full px-3 py-1.5">계속 쓰기</span>
+          </Link>
+        </div>
+      )}
 
       {/* 게스트: 남은 무료 AI 분석 횟수 배너 (손실 회피 — 가입 유도) */}
       {isGuest && typeof remaining === "number" && (
