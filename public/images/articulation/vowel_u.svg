@@ -1,0 +1,63 @@
+<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <!-- 카드 배경 -->
+  <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
+
+  <!-- 얼굴 단면 살 (매끄러운 옆모습) -->
+  <path d="M 28 40 Q 130 18 230 30 Q 320 42 330 110
+           L 330 240 Q 320 290 240 296 Q 130 304 60 286
+           Q 28 276 28 230 Q 25 180 28 130 Z"
+        fill="#FFE3CC"/>
+
+  <!-- 구강 내부 -->
+  <path d="M 23 144
+           L 58 140
+           Q 60 106 85 104
+           Q 150 62 225 80 Q 272 92 282 122
+           L 286 150 Q 290 162 280 168
+           L 282 215 Q 270 252 200 256 Q 120 260 88 238 Q 62 224 58 202
+           L 58 164
+           L 23 160 Z"
+        fill="#FFF6F0"/>
+  <path d="M 0 144 L 58 146 L 58 158 L 0 160 Z" fill="#FFF9F2"/>
+
+  <!-- 입천장: 치조 융기 + 경구개 + 연구개/목젖 -->
+  <path d="M 85 104 Q 96 96 108 104 Q 116 110 126 104
+           Q 170 72 225 84 Q 266 94 278 120"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+  <!-- 목젖 -->
+  <path d="M 278 120 Q 288 138 280 156 Q 276 166 282 174"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 입 바닥/아래턱 -->
+  <path d="M 88 238 Q 150 258 230 250 Q 268 244 280 218"
+        fill="none" stroke="#E8A988" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 윗니 / 아랫니 -->
+  <rect x="60" y="100" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+  <rect x="60" y="180" width="22" height="40" rx="9" fill="#FFFFFF" stroke="#E5D8CC" stroke-width="2.5"/>
+
+  <!-- 입술 -->
+  <!-- 윗입술 (오므림) -->
+       <path d="M 58 139 Q 40 132 22 135
+                Q 9 140 12 147 Q 26 144 58 145 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+       <!-- 아랫입술 (오므림) -->
+       <path d="M 58 165 Q 40 172 22 169
+                Q 9 164 12 157 Q 26 160 58 159 Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- 혀 (음소별) -->
+  
+  <path d="M 96 210 Q 102 196 134 188 Q 172 180 200 158 Q 222 140 234 124
+           Q 244 116 252 128 Q 258 152 252 186 Q 244 214 220 226
+           Q 184 236 150 232 Q 116 228 98 218 Q 90 214 96 210 Z"
+        fill="#FF9B8A" stroke="#E8705F" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M 150 178 Q 196 158 226 140" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+
+  <!-- 접촉/근접 포인트 표시 -->
+  
+
+  <!-- 공기 흐름 -->
+  
+
+</svg>

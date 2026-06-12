@@ -23,19 +23,24 @@ mkdirSync(OUT_DIR, { recursive: true });
  * upperLipY / lowerLipY: open일 때 입 열린 정도 제어
  */
 function scaffold({ tongue, contact, airflow, upperLipY = 108, lowerLipY = 202, lipState = "open" }) {
-  const open = lipState === "open";
+  const cy = Math.round((upperLipY + lowerLipY) / 2); // 입 중심 (원순/다문용)
 
-  // 입 열린 빈 공간(바깥까지 뚫림) — 다문 입에서는 없음
-  const gapFill = open
-    ? `<path d="M 0 ${upperLipY + 17}
+  // 입 열린 빈 공간(바깥까지 뚫림)
+  let gapFill = "";
+  if (lipState === "open") {
+    gapFill = `<path d="M 0 ${upperLipY + 17}
                Q 40 ${upperLipY + 15} 58 ${upperLipY + 13}
                L 58 ${lowerLipY - 13}
                Q 40 ${lowerLipY - 15} 0 ${lowerLipY - 17} Z"
-            fill="#FFF9F2"/>`
-    : "";
+            fill="#FFF9F2"/>`;
+  } else if (lipState === "rounded") {
+    // 오므린 입은 앞쪽 작은 구멍만 뚫림
+    gapFill = `<path d="M 0 ${cy - 8} L 58 ${cy - 6} L 58 ${cy + 6} L 0 ${cy + 8} Z" fill="#FFF9F2"/>`;
+  }
 
-  const lips = open
-    ? `<!-- 윗입술 -->
+  let lips;
+  if (lipState === "open") {
+    lips = `<!-- 윗입술 -->
        <path d="M 56 ${upperLipY + 4}
                 Q 46 ${upperLipY - 6} 32 ${upperLipY - 13}
                 Q 22 ${upperLipY - 5} 22 ${upperLipY + 2}
@@ -48,13 +53,25 @@ function scaffold({ tongue, contact, airflow, upperLipY = 108, lowerLipY = 202, 
                 Q 22 ${lowerLipY - 9} 22 ${lowerLipY - 2}
                 Q 22 ${lowerLipY + 5} 32 ${lowerLipY + 13}
                 Q 46 ${lowerLipY + 6} 56 ${lowerLipY - 4} Z"
-             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>`
-    : `<!-- 다문 입술 (양순음 — 위아래 입술이 y≈155에서 맞붙음) -->
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>`;
+  } else if (lipState === "rounded") {
+    // 오므린 입술 (원순모음 ㅗㅜ) — 앞으로 쭉 나와 작은 구멍
+    lips = `<!-- 윗입술 (오므림) -->
+       <path d="M 58 ${cy - 13} Q 40 ${cy - 20} 22 ${cy - 17}
+                Q 9 ${cy - 12} 12 ${cy - 5} Q 26 ${cy - 8} 58 ${cy - 7} Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
+       <!-- 아랫입술 (오므림) -->
+       <path d="M 58 ${cy + 13} Q 40 ${cy + 20} 22 ${cy + 17}
+                Q 9 ${cy + 12} 12 ${cy + 5} Q 26 ${cy + 8} 58 ${cy + 7} Z"
+             fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>`;
+  } else {
+    lips = `<!-- 다문 입술 (양순음 — 위아래 입술이 y≈155에서 맞붙음) -->
        <path d="M 58 155 Q 46 142 31 136 Q 20 145 21 155 Q 34 155 58 155 Z"
              fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
        <path d="M 58 155 Q 46 168 31 174 Q 20 165 21 155 Q 34 155 58 155 Z"
              fill="#FFB59B" stroke="#E8947A" stroke-width="1.5" stroke-linejoin="round"/>
        <path d="M 22 155 L 56 155" stroke="#E8947A" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
 
   return `<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <!-- 카드 배경 -->
@@ -180,6 +197,35 @@ const tongueBackVelum = `
         ${TONGUE}/>
   ${gloss("M 120 202 Q 170 190 212 178")}`;
 
+// ─── 모음 혀 모양 (입천장에 닿지 않는 부드러운 언덕) ───────────
+// 낮은 혀 (ㅏㅐ): 입 크게 벌리고 혀 낮음
+const tongueLow = `
+  <path d="M 98 208 Q 110 192 145 186 Q 190 180 224 190 Q 252 198 258 216
+           Q 262 226 252 236 Q 210 240 160 234 Q 116 228 100 218 Q 92 212 98 208 Z"
+        ${TONGUE}/>
+  ${gloss("M 118 200 Q 170 188 214 196")}`;
+// 앞 혀 높음 (ㅣㅔ): 혀 앞부분이 경구개 가까이
+const tongueFrontHigh = `
+  <path d="M 100 202 Q 108 150 140 130 Q 168 116 188 132 Q 200 148 206 178
+           Q 230 198 256 214 Q 262 226 252 236 Q 210 232 160 226
+           Q 116 218 100 206 Q 94 204 100 202 Z"
+        ${TONGUE}/>
+  ${gloss("M 124 156 Q 152 134 182 142")}`;
+// 뒤 혀 높음 (ㅡㅜ): 혀 뒷부분이 연구개 가까이 (닿지는 않음)
+const tongueBackHigh = `
+  <path d="M 96 210 Q 102 196 134 188 Q 172 180 200 158 Q 222 140 234 124
+           Q 244 116 252 128 Q 258 152 252 186 Q 244 214 220 226
+           Q 184 236 150 232 Q 116 228 98 218 Q 90 214 96 210 Z"
+        ${TONGUE}/>
+  ${gloss("M 150 178 Q 196 158 226 140")}`;
+// 뒤 혀 중간 (ㅗㅓ): 혀 뒷부분이 중간 높이
+const tongueBackMid = `
+  <path d="M 96 214 Q 102 200 136 192 Q 176 184 204 170 Q 226 158 236 144
+           Q 244 136 250 148 Q 254 174 248 200 Q 240 220 214 228
+           Q 180 236 148 232 Q 116 228 98 220 Q 90 216 96 214 Z"
+        ${TONGUE}/>
+  ${gloss("M 150 190 Q 198 172 228 156")}`;
+
 const PHONEMES = {
   // ── 양순음 (입술) ──────────────────────────────────────────
   // ㅂㅍ(ㅃ): 두 입술 다물었다 터뜨림
@@ -267,6 +313,24 @@ const PHONEMES = {
     tongue: tongueNeutral,
     airflow: breathOut,
   }),
+
+  // ═══ 모음 (단모음 8개) ═══════════════════════════════════════
+  // ㅏ: 입 크게 벌리고 혀 낮게
+  vowel_a: scaffold({ upperLipY: 96, lowerLipY: 216, tongue: tongueLow }),
+  // ㅐ: ㅏ보다 살짝 덜 벌림, 혀 앞쪽
+  vowel_ae: scaffold({ upperLipY: 102, lowerLipY: 206, tongue: tongueFrontHigh }),
+  // ㅓ: 중간 벌림, 혀 뒤 중간
+  vowel_eo: scaffold({ upperLipY: 104, lowerLipY: 204, tongue: tongueBackMid }),
+  // ㅔ: 중간 벌림, 혀 앞 중간
+  vowel_e: scaffold({ upperLipY: 108, lowerLipY: 198, tongue: tongueFrontHigh }),
+  // ㅗ: 입술 동그랗게 오므림, 혀 뒤 중간
+  vowel_o: scaffold({ upperLipY: 120, lowerLipY: 184, lipState: "rounded", tongue: tongueBackMid }),
+  // ㅜ: 입술 더 작게 오므림, 혀 뒤 높게
+  vowel_u: scaffold({ upperLipY: 128, lowerLipY: 176, lipState: "rounded", tongue: tongueBackHigh }),
+  // ㅡ: 입술 옆으로 좁게(안 오므림), 혀 뒤 높게
+  vowel_eu: scaffold({ upperLipY: 118, lowerLipY: 186, tongue: tongueBackHigh }),
+  // ㅣ: 입술 옆으로 좁게, 혀 앞 높게
+  vowel_i: scaffold({ upperLipY: 116, lowerLipY: 188, tongue: tongueFrontHigh }),
 };
 
 for (const [slug, svg] of Object.entries(PHONEMES)) {
