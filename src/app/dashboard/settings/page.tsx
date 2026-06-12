@@ -71,25 +71,69 @@ export default async function SettingsPage() {
         </div>
       </BubbleCard>
 
-      {/* Subscription */}
+      {/* Subscription — 등급별 미니 카드 비교 + 내 등급 표시 */}
       <BubbleCard color={isPremium || trialActive ? "mint" : "peach"}>
         <div className="mb-3">
           <p className="text-xs text-[#8B7E74] mb-0.5">현재 이용 중인 플랜</p>
           <p className="font-bold text-[#3D3530]">
-            {isPremium ? "✨ 프리미엄 플랜" : trialActive ? "🎁 프리미엄 체험 중" : "무료 플랜"}
+            {isPremium ? "✨ 프리미엄 등급" : trialActive ? "🎁 프리미엄 체험 중" : "무료 등급"}
           </p>
-          {isPremium && subscription?.currentPeriodEnd && (
-            <p className="text-xs text-[#8B7E74] mt-0.5">
-              다음 갱신:{" "}
-              {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
-            </p>
-          )}
           {trialActive && (
             <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
               체험 {trialDaysLeft}일 남음 · {new Date(user!.trialEndsAt!).toLocaleDateString("ko-KR")}까지 모든 기능 무료
             </p>
           )}
         </div>
+
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
+          {/* 무료 등급 */}
+          <div
+            className={`rounded-2xl p-3.5 ${
+              !isPremium && !trialActive
+                ? "bg-white border-2 border-[#FFB38A]"
+                : "bg-white/50 border-2 border-transparent"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="font-bold text-[#3D3530] text-sm">무료</p>
+              {!isPremium && !trialActive && (
+                <span className="text-[10px] font-bold text-[#FF9B6A]">내 등급 ✓</span>
+              )}
+            </div>
+            <ul className="space-y-0.5 text-[11px] text-[#8B7E74] leading-relaxed">
+              <li>AI 조음 분석 월 10회</li>
+              <li>단계별 반복 연습</li>
+              <li>종합 진단 보고서</li>
+            </ul>
+            <p className="text-xs font-bold text-[#8B7E74] mt-2">0원</p>
+          </div>
+
+          {/* 프리미엄 등급 */}
+          <div
+            className={`rounded-2xl p-3.5 ${
+              isPremium || trialActive
+                ? "bg-white border-2 border-[#5EC9B8]"
+                : "bg-white/50 border-2 border-transparent"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="font-bold text-[#3D3530] text-sm">프리미엄</p>
+              {isPremium && (
+                <span className="text-[10px] font-bold text-[#0D9488]">내 등급 ✓</span>
+              )}
+              {trialActive && (
+                <span className="text-[10px] font-bold text-[#0D9488]">체험 중 ✓</span>
+              )}
+            </div>
+            <ul className="space-y-0.5 text-[11px] text-[#8B7E74] leading-relaxed">
+              <li className="font-semibold text-[#3D3530]">AI 조음 분석 무제한</li>
+              <li>단계별 반복 연습</li>
+              <li>종합 진단 보고서</li>
+            </ul>
+            <p className="text-xs font-bold text-[#FF9B6A] mt-2">월 5,000원</p>
+          </div>
+        </div>
+
         {!isPremium && (
           <Link href="/subscribe">
             <BubbleButton variant="peach" className="w-full">
