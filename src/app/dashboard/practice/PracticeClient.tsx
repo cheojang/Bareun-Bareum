@@ -11,6 +11,8 @@ import { useTTS } from "@/lib/useTTS";
 import { usePracticeRecorder } from "@/lib/usePracticeRecorder";
 import { DIFFICULTY_LABEL, type Difficulty } from "@/lib/adaptive-difficulty";
 import { WordImage } from "@/components/ui/WordImage";
+import { ArticulationDiagram } from "@/components/ui/ArticulationDiagram";
+import { getArticulationSlug, phonemeFromPattern } from "@/lib/articulation-mapper";
 import Link from "next/link";
 
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
@@ -477,6 +479,7 @@ export function PracticeClient({
   const [saving, setSaving] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [allDone, setAllDone] = useState(false);
+  const [showTongue, setShowTongue] = useState(false);
 
   // ── 반복 카운터 (운동학습 원리: 음소당 50회 이상이 효과적) ─────────────────────
   const [totalReps, setTotalReps] = useState(0);
@@ -505,6 +508,13 @@ export function PracticeClient({
   const isSlotsFull = filledCount >= MAX_DOTS;
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
+
+  // ── 조음 단면도(혀 모양): 현재 단어의 목표 음소 추출 ──────────────────────────────
+  const tonguePhoneme =
+    currentItem?.kind === "sentence"
+      ? null
+      : phonemeFromPattern(currentItem?.badge) ?? phonemeFromPattern(errorPattern);
+  const hasTongueDiagram = !!getArticulationSlug(tonguePhoneme);
 
   // ── 단어 자동 재생 + 다시 듣기 버튼용 TTS ──────────────────────────────────────
   const { play: playWord, stop: stopWord } = useTTS();
@@ -995,6 +1005,23 @@ export function PracticeClient({
               >
                 {stripEnglishParens(currentItem.badge)}
               </span>
+            )}
+
+            {/* 혀 모양 단면도 토글 — 목표 음소가 매핑될 때만 */}
+            {hasTongueDiagram && !stage3Loading && (
+              <div className="px-6 pt-1">
+                <button
+                  onClick={() => setShowTongue((v) => !v)}
+                  className="text-xs font-bold text-[#8B7E74] bg-[#FFF5EE] hover:bg-[#FFEAD9] px-3 py-1.5 rounded-full transition-colors"
+                >
+                  👅 혀 위치 {showTongue ? "숨기기" : "보기"}
+                </button>
+                {showTongue && tonguePhoneme && (
+                  <div className="mt-2 flex justify-center animate-bounce-in">
+                    <ArticulationDiagram phoneme={tonguePhoneme} size="md" />
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ── 단어 표시 영역: 버튼이 이 영역의 세로 중앙에 고정됨 ── */}
