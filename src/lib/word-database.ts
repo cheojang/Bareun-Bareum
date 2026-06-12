@@ -2398,10 +2398,41 @@ export function getAllWords(): PracticeWord[] {
   return WORD_DATABASE;
 }
 
-export function getMinimalPairsByPhoneme(phoneme: string): MinimalPair[] {
-  return MINIMAL_PAIRS.filter(
+/**
+ * 최소대립쌍의 대조가 일어나는 위치(초성/종성) 판정.
+ * 두 단어를 분해해 처음으로 달라지는 자리가 초성이면 onset, 종성이면 coda.
+ * 예) 곰/돔 → 초성(ㄱ/ㄷ) = onset, 공/곰 → 종성(ㅇ/ㅁ) = coda.
+ */
+function minimalPairContrastPosition(pair: MinimalPair): PhonemePosition {
+  const a = decomposeWord(pair.word1);
+  const b = decomposeWord(pair.word2);
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    const sa = a[i];
+    const sb = b[i];
+    if (!sa || !sb) continue;
+    if (sa.choseong !== sb.choseong) return "onset";
+    if (normalizeJongseong(sa.jongseong) !== normalizeJongseong(sb.jongseong)) return "coda";
+  }
+  return "any";
+}
+
+/**
+ * 음소를 대조하는 최소대립쌍 반환.
+ * position을 지정하면 그 위치(초성/종성)에서 대조하는 쌍을 우선 반환하고,
+ * 해당 위치 쌍이 없으면 전체로 폴백한다(빈 결과 방지).
+ * 예) 받침 ㅁ/ㅇ 혼동 → 공/곰 같은 종성 대조쌍을 우선 제시.
+ */
+export function getMinimalPairsByPhoneme(
+  phoneme: string,
+  position: PhonemePosition = "any",
+): MinimalPair[] {
+  const matched = MINIMAL_PAIRS.filter(
     (p) => p.targetPhoneme === phoneme || p.contrastPhoneme === phoneme
   );
+  if (position === "any") return matched;
+  const positioned = matched.filter((p) => minimalPairContrastPosition(p) === position);
+  return positioned.length > 0 ? positioned : matched;
 }
 
 export function getWordsByDifficulty(phoneme: string, difficulty: "easy" | "medium" | "hard"): PracticeWord[] {
