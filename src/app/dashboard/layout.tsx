@@ -116,7 +116,7 @@ export default async function DashboardLayout({
 
           {/* 하단 버전 표시 */}
           <div className="px-5 py-4 border-t border-[#F0E8E0]">
-            <p className="text-[10px] text-[#C4B5A8]">바른발음 v1.0</p>
+            <p className="text-[10px] text-[#C4B5A8]">바른발음 v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
           </div>
         </aside>
 

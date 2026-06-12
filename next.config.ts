@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
+import packageJson from "./package.json";
 
 const nextConfig: NextConfig = {
+  // 버전·빌드 시각 자동 주입 — 배포(빌드)마다 갱신됨. 표시: 설정 페이지·사이드바
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   turbopack: {
     root: __dirname,
   },

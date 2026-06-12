@@ -38,8 +38,17 @@ export default async function SettingsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-[#3D3530]">설정 ⚙️</h2>
         <div className="text-right">
-          <p className="text-xs font-semibold text-[#A89B8E]">v1.2.0</p>
-          <p className="text-[11px] text-[#B0A89E]">2026.06.10 14:30 업데이트</p>
+          <p className="text-xs font-semibold text-[#A89B8E]">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+          {process.env.NEXT_PUBLIC_BUILD_TIME && (
+            <p className="text-[11px] text-[#B0A89E]">
+              {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("ko-KR", {
+                timeZone: "Asia/Seoul",
+                year: "numeric", month: "2-digit", day: "2-digit",
+                hour: "2-digit", minute: "2-digit", hour12: false,
+              })}{" "}
+              업데이트
+            </p>
+          )}
         </div>
       </div>
 
