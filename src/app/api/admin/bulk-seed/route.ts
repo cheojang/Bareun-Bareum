@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
+import { adminSeedLimiter } from "@/lib/rate-limit";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 
@@ -134,6 +135,10 @@ export async function POST(request: NextRequest) {
   const session = await auth();
   if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  // Gemini 대량 호출 보호 — 관리자 계정 탈취 시 API 크레딧 고갈 방지
+  if (!adminSeedLimiter.allow(session!.user!.email!)) {
+    return NextResponse.json({ error: "요청이 너무 잦아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
   }
 
   const body = await request.json().catch(() => ({}));
