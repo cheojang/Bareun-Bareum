@@ -8,6 +8,7 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
 import { useTTS } from "@/lib/useTTS";
+import { DIFFICULTY_LABEL, type Difficulty } from "@/lib/adaptive-difficulty";
 import { WordImage } from "@/components/ui/WordImage";
 import Link from "next/link";
 
@@ -254,6 +255,8 @@ interface Props {
   errorPattern?: string;
   /** 오늘의 루틴 2단계로 진입 — 완료 화면이 루틴 피날레가 됨 */
   routineMode?: boolean;
+  /** 적응형 난이도 — 최근 결과로 서버에서 계산 (3연속 성공 ↑, 2연속 실패 ↓) */
+  difficulty?: Difficulty;
 }
 
 type Stage = 1 | 2 | 3;
@@ -438,6 +441,7 @@ export function PracticeClient({
   wordInfos,
   errorPattern,
   routineMode,
+  difficulty,
 }: Props) {
   // 항상 1단계부터 시작
   const startStage: Stage = 1;
@@ -924,6 +928,11 @@ export function PracticeClient({
             {meta.label}
           </span>
           <span className="text-xs text-[#8B7E74] font-semibold">
+            {difficulty && (
+              <span className="mr-2 text-[#A89B8E]">
+                난이도 {DIFFICULTY_LABEL[difficulty]}
+              </span>
+            )}
             {currentIndex + 1} / {items.length}
           </span>
         </div>
@@ -1179,7 +1188,7 @@ export function PracticeClient({
                 fillDot("bad");
                 // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
                 if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.text);
+                  playWord(currentItem.text).catch(() => {});
                 }
               }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
@@ -1196,7 +1205,7 @@ export function PracticeClient({
                 fillDot("good");
                 // 마지막(5번째) 도트가 아닐 때만 TTS 재생
                 if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.text);
+                  playWord(currentItem.text).catch(() => {});
                 }
               }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"

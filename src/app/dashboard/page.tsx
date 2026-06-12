@@ -206,6 +206,23 @@ export default async function DashboardHome() {
             </BubbleCard>
           </Link>
 
+          {/* 주간 리포트 진입 */}
+          <Link href="/dashboard/report" className="block">
+            <BubbleCard
+              padding="sm"
+              className="flex items-center gap-3 cursor-pointer hover:bg-[#FAF6FF] transition-colors"
+            >
+              <span className="text-3xl">📊</span>
+              <div className="flex-1">
+                <p className="font-black text-[#3D3530]">주간 리포트</p>
+                <p className="text-xs text-[#8B7E74] mt-0.5">
+                  이번 주 연습 성과와 다음 주 코칭을 확인해요
+                </p>
+              </div>
+              <span className="text-xs text-[#C4B5A8] font-bold">보기 →</span>
+            </BubbleCard>
+          </Link>
+
           {/* 최근 연습 기록 */}
           <div>
             <div className="flex items-center justify-between mb-2">

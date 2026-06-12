@@ -71,8 +71,14 @@ async function playAudioUrl(
   signal?: AbortSignal
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const audio = new Audio(url);
+    // 같은 Audio 엘리먼트 재사용 — iOS는 사용자 제스처로 한 번 재생된 엘리먼트만
+    // 이후 제스처 없이(예: fetch 후) 재생을 허용한다. 매번 new Audio()를 만들면
+    // 첫 단어 이후 버튼 평가 시 재생이 조용히 거부됨.
+    const audio = audioRef.current ?? new Audio();
     audioRef.current = audio;
+    audio.pause();
+    audio.src = url;
+    audio.currentTime = 0;
 
     const cleanup = () => {
       audio.onended = null;
@@ -118,6 +124,7 @@ async function playSpeechSynthesis(text: string, signal?: AbortSignal): Promise<
     const safety = setTimeout(finish, 3000);
     u.addEventListener("end", () => clearTimeout(safety));
 
-    window.speechSynthesis.speak(u);
+    // Android Chrome: cancel() 직후 speak()하면 무음이 되는 엔진 버그 — 한 틱 띄움
+    setTimeout(() => window.speechSynthesis.speak(u), 60);
   });
 }

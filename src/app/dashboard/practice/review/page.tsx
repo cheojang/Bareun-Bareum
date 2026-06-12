@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ReviewClient, type ReviewSeqItem } from "./ReviewClient";
 import { getSelectedChildId } from "@/lib/child-cookie";
 import { getSimilarPatternWords, phonemePositionFromError } from "@/lib/word-database";
+import { computeAdaptiveDifficulty } from "@/lib/adaptive-difficulty";
 import { getKSTEndOfDay } from "@/lib/kst-utils";
 
 const SIMILAR_PER_WORD = 3; // 분석단어 1개당 따라오는 유사단어 수
@@ -65,16 +66,28 @@ export default async function ReviewPage({
 
   const kstEndOfDay = getKSTEndOfDay();
 
-  // 망각곡선(SM-2) 기반 오늘 복습 필요 단어
-  const allReviewsDue = await prisma.reviewSchedule.findMany({
-    where: {
-      childId: child.id,
-      isLearned: false,
-      nextReviewAt: { lte: kstEndOfDay },
-    },
-    orderBy: { easeFactor: "asc" }, // easeFactor 낮을수록 어려운 단어 우선
-    take: 20,
-  });
+  // 망각곡선(SM-2) 기반 오늘 복습 필요 단어 + 적응형 난이도용 최근 결과
+  const [allReviewsDue, recentResults] = await Promise.all([
+    prisma.reviewSchedule.findMany({
+      where: {
+        childId: child.id,
+        isLearned: false,
+        nextReviewAt: { lte: kstEndOfDay },
+      },
+      orderBy: { easeFactor: "asc" }, // easeFactor 낮을수록 어려운 단어 우선
+      take: 20,
+    }),
+    prisma.wordRecord.findMany({
+      where: { session: { childId: child.id } },
+      orderBy: { practicedAt: "desc" },
+      take: 30,
+      select: { isCorrect: true },
+    }),
+  ]);
+  // 3연속 성공 ↑ / 2연속 실패 ↓ — 유사단어 난이도 선호에 반영
+  const difficulty = computeAdaptiveDifficulty(
+    recentResults.map((r) => r.isCorrect).reverse(),
+  );
 
   const reviewItems = smartFilterReviews(
     allReviewsDue.map((r) => ({
@@ -104,7 +117,7 @@ export default async function ReviewPage({
     });
     // 음소 위치(초성/종성)까지 맞춰 유사단어 선택 — 받침 ㄱ 탈락엔 받침 ㄱ 단어만
     const pos = phonemePositionFromError(r.errorPattern);
-    const sims = getSimilarPatternWords(r.phoneme, pos)
+    const sims = getSimilarPatternWords(r.phoneme, pos, difficulty)
       .filter((w) => w.word !== r.targetWord && !usedSimilar.has(w.word))
       .slice(0, SIMILAR_PER_WORD);
     for (const s of sims) {

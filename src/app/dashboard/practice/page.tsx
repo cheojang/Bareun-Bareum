@@ -8,6 +8,7 @@ import {
   phonemePositionFromError,
   type PhonemePosition,
 } from "@/lib/word-database";
+import { computeAdaptiveDifficulty } from "@/lib/adaptive-difficulty";
 import { PracticeClient } from "./PracticeClient";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,17 @@ export default async function PracticePage({
   // 루틴 모드: 세션 상한 축소 (아동 집중력 — 5~7분 안에 끝나는 분량)
   const routineMode = params.routine === "1";
 
+  // 적응형 난이도: 최근 연습 결과(오래된→최신)로 결정 — 3연속 성공 ↑, 2연속 실패 ↓
+  const recentResults = await prisma.wordRecord.findMany({
+    where: { session: { childId: child.id } },
+    orderBy: { practicedAt: "desc" },
+    take: 30,
+    select: { isCorrect: true },
+  });
+  const difficulty = computeAdaptiveDifficulty(
+    recentResults.map((r) => r.isCorrect).reverse(),
+  );
+
   // ── 1단계·2단계 단어 로딩 ────────────────────────────────────────────────
   // trainingTip을 단어별로 매칭하기 위해 stage1Words에 함께 저장
   // stage2Words는 sourceWord(원본 분석 단어)도 함께 저장
@@ -74,7 +86,7 @@ export default async function PracticePage({
       // 음소 위치(초성/종성)까지 맞춰 선택 — 예) 노트북(받침 ㄱ 탈락)엔 받침 ㄱ 단어만
       const ph = pickPhoneme(record.reviewSchedule?.phoneme, record.errorPattern);
       const pos = phonemePositionFromError(record.errorPattern, record.errorType);
-      stage2Words = getSimilarPatternWords(ph, pos)
+      stage2Words = getSimilarPatternWords(ph, pos, difficulty)
         .filter((w) => w.word !== record.targetWord)
         .slice(0, 8)
         .map((w) => ({ word: w.word, sourceWord: record.targetWord }));
@@ -145,7 +157,7 @@ export default async function PracticePage({
     const stage2Seen = new Set<string>(stage1Seen);
     for (const sel of stage1Selected) {
       if (stage2Words.length >= STAGE2_MAX) break;
-      for (const w of getSimilarPatternWords(sel.phoneme, sel.position)) {
+      for (const w of getSimilarPatternWords(sel.phoneme, sel.position, difficulty)) {
         if (stage2Words.length >= STAGE2_MAX) break;
         if (stage2Seen.has(w.word)) continue;
         stage2Seen.add(w.word);
@@ -175,6 +187,7 @@ export default async function PracticePage({
       wordInfos={wordInfos}
       errorPattern={errorPattern}
       routineMode={routineMode}
+      difficulty={difficulty}
     />
   );
 }

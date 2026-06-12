@@ -32,3 +32,15 @@ export function getKSTDayAfter(days: number, date: Date = new Date()): Date {
   kst.setUTCHours(0, 0, 0, 0);
   return new Date(kst.getTime() - KST_OFFSET_MS);
 }
+
+/**
+ * KST 기준 이번 주 월요일 00:00을 UTC Date로 반환.
+ * offsetWeeks=-1 → 지난주 월요일 (주간 리포트 비교용)
+ */
+export function getKSTStartOfWeek(offsetWeeks = 0, date: Date = new Date()): Date {
+  const kst = new Date(date.getTime() + KST_OFFSET_MS);
+  const dow = (kst.getUTCDay() + 6) % 7; // 월=0 … 일=6
+  kst.setUTCDate(kst.getUTCDate() - dow + offsetWeeks * 7);
+  kst.setUTCHours(0, 0, 0, 0);
+  return new Date(kst.getTime() - KST_OFFSET_MS);
+}

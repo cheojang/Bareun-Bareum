@@ -454,14 +454,26 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
         {!isSlotsFull && (
           <div className="flex gap-3">
             <button
-              onClick={() => fillDot("bad")}
+              onClick={() => {
+                fillDot("bad");
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어 직전엔 안 들려줌
+                if (currentItem?.word && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.word).catch(() => {});
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
             >
               아직 어려워요 🔄
             </button>
             <button
-              onClick={() => fillDot("good")}
+              onClick={() => {
+                fillDot("good");
+                // 마지막(5번째) 도트가 아닐 때만 TTS 재생
+                if (currentItem?.word && filledCount < MAX_DOTS - 1) {
+                  playWord(currentItem.word).catch(() => {});
+                }
+              }}
               className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
               style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
             >
