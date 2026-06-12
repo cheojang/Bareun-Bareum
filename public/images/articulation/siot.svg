@@ -79,10 +79,4 @@
     <path d="M 10 148 L 3 155 L 10 162"/>
   </g>
 
-  <!-- 라벨 -->
-  <g>
-    <rect x="252" y="244" width="84" height="56" rx="18" fill="#FFFFFF" stroke="#F0E2D6" stroke-width="2"/>
-    <text x="294" y="274" text-anchor="middle" font-size="26" font-weight="900" fill="#3D3530">ㅅ</text>
-    <text x="294" y="292" text-anchor="middle" font-size="11" font-weight="700" fill="#A89B8E">살짝 틈으로 바람 스─</text>
-  </g>
 </svg>

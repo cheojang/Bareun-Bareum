@@ -20,7 +20,7 @@ mkdirSync(OUT_DIR, { recursive: true });
  *  - 두 값의 중간이 "입 코너(입꼬리)"
  *  - 격차가 클수록 입이 더 벌어진 모양
  */
-function scaffold({ tongue, contact, airflow, label, labelKo, upperLipY = 108, lowerLipY = 202 }) {
+function scaffold({ tongue, contact, airflow, upperLipY = 108, lowerLipY = 202 }) {
   return `<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <!-- 카드 배경 -->
   <rect width="360" height="320" rx="28" fill="#FFF9F2"/>
@@ -81,12 +81,6 @@ function scaffold({ tongue, contact, airflow, label, labelKo, upperLipY = 108, l
   <!-- 공기 흐름 -->
   ${airflow ?? ""}
 
-  <!-- 라벨 -->
-  <g>
-    <rect x="252" y="244" width="84" height="56" rx="18" fill="#FFFFFF" stroke="#F0E2D6" stroke-width="2"/>
-    <text x="294" y="274" text-anchor="middle" font-size="26" font-weight="900" fill="#3D3530">${label}</text>
-    <text x="294" y="292" text-anchor="middle" font-size="11" font-weight="700" fill="#A89B8E">${labelKo}</text>
-  </g>
 </svg>`;
 }
 
