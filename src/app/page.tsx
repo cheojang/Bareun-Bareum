@@ -3,6 +3,19 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { SoriMascot, SoriLogo } from "@/components/ui/SoriMascot";
 
+// 앱 버전 — 배포 전 수동으로 갱신
+const APP_VERSION = "v1.3.0";
+// 빌드(배포) 시점이 KST로 자동 기록됨. 정적 렌더 시 빌드 타임에 1회 평가.
+const BUILD_TIME = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+}).format(new Date());
+
 export default function LandingPage() {
   return (
     <main className="min-h-dvh flex flex-col bg-white">
@@ -268,16 +281,10 @@ export default function LandingPage() {
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mt-6 mb-4">
             지금 시작하면<br />오늘부터 달라져요
           </h2>
-          <p className="text-sm text-[#8B7E74] mb-8 leading-relaxed">
+          <p className="text-sm text-[#8B7E74] leading-relaxed">
             가입 즉시 무료로 사용할 수 있어요.<br />
             우리 아이 발음, 오늘 확인해보세요.
           </p>
-          <Link href="/login">
-            <BubbleButton size="lg" variant="peach" className="shadow-lg shadow-[#FFB38A]/25">
-              무료로 시작하기
-            </BubbleButton>
-          </Link>
-          <p className="text-xs text-[#C4B5A8] mt-3">카카오 · 구글로 3초 가입</p>
         </div>
       </section>
 
@@ -292,6 +299,9 @@ export default function LandingPage() {
           <Link href="/privacy" className="hover:underline">개인정보 처리방침</Link>
         </div>
         <p className="text-xs text-[#C4B5A8] mt-3">© 2026 바른발음</p>
+        <p className="text-[10px] text-[#D8CFC5] mt-1.5">
+          {APP_VERSION} · {BUILD_TIME} 배포
+        </p>
       </footer>
     </main>
   );
