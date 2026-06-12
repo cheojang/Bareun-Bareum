@@ -24,10 +24,10 @@ export default function PrivacyPage() {
       <div className="bg-[#F0FAF8] border-l-4 border-[#7EDFD0] rounded-r-2xl px-5 py-4 mb-8">
         <p className="font-bold text-sm mb-2">🔒 개인정보 처리 요약</p>
         <ul className="text-sm text-[#8B7E74] space-y-1">
-          <li>✔ 수집 정보: 이메일, 아이 닉네임, 발음 연습 기록</li>
-          <li>✔ 제3자 제공: 없음 (AI 처리 시 익명화 전송)</li>
+          <li>✔ 수집 정보: 이메일, 아이 닉네임·생년월일(선택)·사진(선택), 발음 연습 기록</li>
+          <li>✔ 제3자 제공: 없음 / AI 분석을 위해 Google(미국)에 일부 데이터 처리 위탁 (제6조)</li>
           <li>✔ 보유 기간: 회원 탈퇴 후 30일 이내 삭제</li>
-          <li>✔ 아동 정보: 별도 식별자 없이 보호자 계정 하에 관리</li>
+          <li>✔ 아동 정보: 법정대리인(보호자)이 직접 입력·동의하며 보호자 계정 하에 관리</li>
         </ul>
       </div>
 
@@ -64,6 +64,8 @@ export default function PrivacyPage() {
               <p className="font-semibold mb-1">서비스 이용 정보 (서비스 사용 시 자동 생성)</p>
               <ul className="list-disc pl-4 space-y-1 text-[#8B7E74]">
                 <li>아이 닉네임 (실명 입력 불필요, 보호자가 임의 설정)</li>
+                <li>아이 생년월일 (선택 — 연령별 맞춤 분석에 사용)</li>
+                <li>아이 프로필 사진 (선택 — 앱 내 표시 용도로만 사용)</li>
                 <li>발음 연습 기록 (목표 단어, 부모가 입력한 아이 발음 텍스트)</li>
                 <li>AI 분석 결과 (오류 패턴, 훈련 제안)</li>
                 <li>연습 세션 기록 (날짜, 횟수)</li>
@@ -95,6 +97,11 @@ export default function PrivacyPage() {
             <li>
               서비스는 만 14세 미만 아동을 직접 회원으로 가입시키지 않습니다.
               아동의 연습 기록은 <strong>보호자 계정에 종속</strong>되어 관리됩니다.
+            </li>
+            <li>
+              아동 관련 정보(닉네임·생년월일·사진·발음 기록)는 <strong>법정대리인인 보호자가 직접 입력</strong>하며,
+              입력 행위로써 해당 아동 정보의 수집·이용에 대한 <strong>법정대리인의 동의</strong>가 이루어진 것으로 봅니다.
+              보호자는 언제든지 아동 정보를 수정·삭제할 수 있습니다 (제7조).
             </li>
             <li>
               아이의 실명, 주민등록번호, 학교명 등 민감한 개인정보는 수집하지 않습니다.
@@ -178,7 +185,7 @@ export default function PrivacyPage() {
                 </tr>
                 <tr>
                   <td className="px-3 py-2">Google (Gemini API)</td>
-                  <td className="px-3 py-2">AI 발음 분석 (익명화된 텍스트 전송)</td>
+                  <td className="px-3 py-2">AI 발음 분석 (아래 국외 이전 항목 참조)</td>
                 </tr>
                 <tr>
                   <td className="px-3 py-2">Vercel / 클라우드 인프라</td>
@@ -187,8 +194,22 @@ export default function PrivacyPage() {
               </tbody>
             </table>
           </div>
+
+          <p className="font-semibold mt-4 mb-2">개인정보의 국외 이전</p>
+          <p className="mb-2 text-[#8B7E74]">
+            AI 발음 분석을 위해 아래와 같이 일부 데이터가 국외로 이전·처리됩니다.
+          </p>
+          <div className="bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#8B7E74] space-y-1 text-xs">
+            <p><span className="font-semibold text-[#3D3530]">이전받는 자:</span> Google LLC (Gemini API)</p>
+            <p><span className="font-semibold text-[#3D3530]">이전 국가:</span> 미국</p>
+            <p><span className="font-semibold text-[#3D3530]">이전 항목:</span> 목표 단어, 보호자가 입력한 아이 발음 텍스트, 오류 유형, 아이 연령(생년월일에서 산출한 나이 — 생년월일 자체는 전송하지 않음)</p>
+            <p><span className="font-semibold text-[#3D3530]">이전 시기·방법:</span> AI 분석 요청 시 암호화(TLS) 네트워크 전송</p>
+            <p><span className="font-semibold text-[#3D3530]">이용 목적:</span> 발음 오류 분석 및 맞춤 훈련법 생성</p>
+            <p><span className="font-semibold text-[#3D3530]">보유 기간:</span> Google은 API 정책상 분석 처리 목적 외 저장하지 않으며, 자세한 내용은 Google 개인정보처리방침을 따릅니다.</p>
+          </div>
           <p className="mt-2 text-[#8B7E74]">
-            AI 분석(Gemini API) 전송 시 이름·연락처 등 직접 식별 정보는 포함되지 않습니다.
+            이름·연락처·사진 등 직접 식별 정보는 국외로 전송되지 않습니다.
+            이용자는 국외 이전을 거부할 수 있으나, 이 경우 AI 분석 기능 이용이 제한됩니다.
           </p>
         </section>
 
@@ -213,7 +234,7 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 space-y-1 text-[#8B7E74]">
             <li>데이터 전송 시 HTTPS(TLS) 암호화 적용</li>
             <li>데이터베이스 접근 권한 최소화 및 접근 로그 관리</li>
-            <li>비밀번호는 저장하지 않으며, 소셜 로그인(OAuth)만 지원</li>
+            <li>이메일 가입 시 비밀번호는 단방향 암호화(bcrypt)하여 저장하며, 원문은 복원할 수 없음</li>
             <li>개인정보 처리 시스템에 대한 접근 통제</li>
           </ul>
         </section>

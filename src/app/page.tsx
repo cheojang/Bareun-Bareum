@@ -213,10 +213,10 @@ export default function LandingPage() {
       {/* ── 병행 효과 ──────────────────────────────────────────────────── */}
       <section className="px-6 py-16 bg-[#FAFAF8]">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm font-bold text-[#7EDFD0] mb-2">치료 효과 극대화</p>
+          <p className="text-sm font-bold text-[#7EDFD0] mb-2">함께하면 더 좋아요</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mb-4">
             전문 상담과 병행하면<br />
-            훈련 효과가 <span className="text-[#7EDFD0]">극대화</span>돼요
+            꾸준한 연습에 <span className="text-[#7EDFD0]">큰 도움</span>이 돼요
           </h2>
           <p className="text-sm text-[#8B7E74] mb-10 max-w-md mx-auto leading-relaxed">
             바른발음은 전문 치료를 대체하는 것이 아니라,<br />
@@ -245,8 +245,8 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#FFF5EE] flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="text-left">
-                <p className="font-bold text-[#FFB38A] text-sm">교정 효과 극대화</p>
-                <p className="text-[11px] text-[#8B7E74]">매일 연습으로 센터 치료 효과를 2배로</p>
+                <p className="font-bold text-[#FFB38A] text-sm">꾸준한 연습 습관</p>
+                <p className="text-[11px] text-[#8B7E74]">매일 연습으로 배운 내용을 잊지 않게 도와줘요</p>
               </div>
             </div>
           </div>

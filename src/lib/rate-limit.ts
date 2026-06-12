@@ -98,3 +98,9 @@ export const verificationEmailLimiter = new RateLimiter({
   capacity: 5,
   refillPerSecond: 5 / 3600,
 });
+
+/** 관리자 시드 작업 (Gemini 대량 호출): 사용자당 시간당 12건, 버스트 3건 — API 크레딧 고갈 방어 */
+export const adminSeedLimiter = new RateLimiter({
+  capacity: 3,
+  refillPerSecond: 12 / 3600,
+});

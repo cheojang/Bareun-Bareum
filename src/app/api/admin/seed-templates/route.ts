@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 import { isAdmin } from "@/lib/admin-auth";
+import { adminSeedLimiter } from "@/lib/rate-limit";
 
 // 503 과부하 시 3단계 폴백 (2.0/1.5 계열 폐기 — 2.5 계열만 사용)
 const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
@@ -102,6 +103,10 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!isAdmin(session?.user?.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // Gemini 대량 호출 보호 — 관리자 계정 탈취 시 API 크레딧 고갈 방지
+    if (!adminSeedLimiter.allow(session!.user!.email!)) {
+      return NextResponse.json({ error: "요청이 너무 잦아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
     }
 
     const body = await request.json().catch(() => ({}));
