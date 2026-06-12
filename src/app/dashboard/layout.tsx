@@ -8,6 +8,7 @@ import { hasConsent } from "@/lib/consent";
 import { ChildSelector } from "@/components/dashboard/ChildSelector";
 import { SidebarNavItems, BottomNavItems } from "@/components/dashboard/DashboardNav";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { ServiceWorkerRegistrar } from "@/components/dashboard/ServiceWorkerRegistrar";
 
 export default async function DashboardLayout({
   children,
@@ -53,6 +54,7 @@ export default async function DashboardLayout({
       className="min-h-dvh"
       style={{ backgroundColor: "var(--color-bg-primary)" }}
     >
+      <ServiceWorkerRegistrar />
       {/* ── 모바일: 상단 헤더 (md 이상에서 숨김) ─────────────────── */}
       <header
         className="sticky top-0 z-40 md:hidden"
