@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getSelectedChildId } from "@/lib/child-cookie";
 
-// ⚠️ 임시 진단용 — 대시보드 홈과 동일한 쿼리를 단계별 실행해 실패 지점을 특정. 확인 후 삭제.
+// ⚠️ 임시 진단용 — 홈/저장단어/설정 페이지 쿼리를 단계별 실행해 실패 지점을 특정. 확인 후 삭제.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -23,20 +23,18 @@ export async function GET() {
     }
   };
 
-  const children = (await run("child.findMany(select)", () =>
-    prisma.child.findMany({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, mascotLevel: true, image: true, streakDays: true, totalWords: true },
-    }),
+  // 연결 자체 확인
+  await run("DB 연결 (SELECT 1)", () => prisma.$queryRaw`SELECT 1`);
+
+  const children = (await run("child.findMany(전체 컬럼 — 설정 페이지와 동일)", () =>
+    prisma.child.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
   )) as { id: string }[] | null;
 
-  // 스키마 드리프트 감지: select 없이 전체 컬럼 요청 (없는 컬럼 있으면 여기서 실패)
-  await run("child.findFirst(전체 컬럼 — gender 등 드리프트 감지)", () =>
-    prisma.child.findFirst({ where: { userId } }),
-  );
   await run("user.findUnique(전체 컬럼)", () =>
     prisma.user.findUnique({ where: { id: userId } }),
+  );
+  await run("subscription.findUnique(전체 컬럼 — 설정)", () =>
+    prisma.subscription.findUnique({ where: { userId } }),
   );
 
   const savedId = await run("getSelectedChildId(쿠키)", () => getSelectedChildId());
@@ -45,15 +43,33 @@ export async function GET() {
   if (child) {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
-    const calendarStart = new Date();
-    calendarStart.setDate(calendarStart.getDate() - 14);
 
-    await run("reviewSchedule.count", () =>
+    await run("reviewSchedule.count (홈·저장단어)", () =>
       prisma.reviewSchedule.count({
         where: { childId: child.id, isLearned: false, nextReviewAt: { lte: todayEnd } },
       }),
     );
-    await run("practiceSession.findMany(전체 컬럼+include)", () =>
+    await run("reviewSchedule.findMany(전체 컬럼 — 복습)", () =>
+      prisma.reviewSchedule.findMany({ where: { childId: child.id }, take: 3 }),
+    );
+    await run("savedWord.findMany(전체 컬럼 — 저장단어)", () =>
+      prisma.savedWord.findMany({
+        where: { childId: child.id },
+        orderBy: { savedAt: "desc" },
+      }),
+    );
+    await run("errorRecord.findMany(select — 저장단어)", () =>
+      prisma.errorRecord.findMany({
+        where: { childId: child.id },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+          id: true, targetWord: true, childPronunciation: true,
+          errorPattern: true, errorCategory: true, createdAt: true,
+        },
+      }),
+    );
+    await run("practiceSession.findMany(전체 컬럼+include — 홈)", () =>
       prisma.practiceSession.findMany({
         where: { userId, childId: child.id },
         orderBy: { startedAt: "desc" },
@@ -64,15 +80,13 @@ export async function GET() {
         },
       }),
     );
-    await run("wordRecord.findMany(캘린더)", () =>
-      prisma.wordRecord.findMany({
-        where: { session: { childId: child.id }, practicedAt: { gte: calendarStart } },
-        select: { practicedAt: true },
-      }),
-    );
   } else {
-    steps.push({ step: "child 선택", ok: false, note: "children 없음 또는 이전 단계 실패" });
+    steps.push({ step: "child 선택", ok: false, note: "children 없음 (비회원이거나 아이 미등록)" });
   }
 
-  return NextResponse.json({ userId: userId.slice(0, 8) + "…", steps });
+  return NextResponse.json({
+    userId: userId.slice(0, 8) + "…",
+    isGuest: userId.startsWith("guest:"),
+    steps,
+  });
 }
