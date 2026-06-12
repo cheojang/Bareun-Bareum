@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { recordConsent } from "@/lib/consent";
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await prisma.$transaction([
+    const [user] = await prisma.$transaction([
       prisma.user.create({
         data: {
           name: name.trim(),
@@ -74,6 +75,9 @@ export async function POST(request: NextRequest) {
         where: { identifier_token: { identifier: normalized, token: code.trim() } },
       }),
     ]);
+
+    // 가입 화면에서 약관 동의를 받았으므로 동의 일시를 기록 (실패해도 가입은 유지)
+    await recordConsent(user.id);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

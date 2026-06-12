@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { SoriLogo } from "@/components/ui/SoriMascot";
 import { prisma } from "@/lib/prisma";
 import { getSelectedChildId } from "@/lib/child-cookie";
+import { hasConsent } from "@/lib/consent";
 import { ChildSelector } from "@/components/dashboard/ChildSelector";
 import { SidebarNavItems, BottomNavItems } from "@/components/dashboard/DashboardNav";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
@@ -18,8 +19,8 @@ export default async function DashboardLayout({
 
   const isGuest = session.user.isGuest === true;
 
-  // 세 쿼리를 병렬 실행 — 각각 독립적이므로 순차 await 불필요
-  const [childList, savedId, unreadCount] = await Promise.all([
+  // 네 쿼리를 병렬 실행 — 각각 독립적이므로 순차 await 불필요
+  const [childList, savedId, unreadCount, consented] = await Promise.all([
     isGuest
       ? Promise.resolve<{ id: string; name: string; mascotLevel: number; image: string | null }[]>([])
       : prisma.child.findMany({
@@ -36,7 +37,11 @@ export default async function DashboardLayout({
             reads: { none: { userId: session.user.id! } },
           },
         }),
+    hasConsent(session.user.id!),
   ]);
+
+  // 약관 동의 기록이 없으면 동의 페이지로 (최초 1회만 — 동의 일시는 DB에 보존)
+  if (!consented) redirect("/consent");
   const validId =
     childList.find((c) => c.id === savedId)?.id ?? childList[0]?.id ?? "";
 
