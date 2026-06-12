@@ -37,6 +37,10 @@ export async function GET(_: NextRequest) {
     recentErrorsForTime,
     recentSignupsRaw,
     weakPhonemeGrouped,
+    sessions7d,
+    words7d,
+    correctWords7d,
+    pushSubscribers,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: startOfThisMonth } } }),
@@ -97,6 +101,11 @@ export async function GET(_: NextRequest) {
       orderBy: { _sum: { errorCount: "desc" } },
       take: 10,
     }),
+    // 연습 활동 (최근 7일) — 오답 입력과 별개의 실제 학습 지표
+    prisma.practiceSession.count({ where: { startedAt: { gte: sevenDaysAgo } } }),
+    prisma.wordRecord.count({ where: { practicedAt: { gte: sevenDaysAgo } } }),
+    prisma.wordRecord.count({ where: { practicedAt: { gte: sevenDaysAgo }, isCorrect: true } }),
+    prisma.pushSubscription.count(),
   ]);
 
   // ─── 파생 지표 계산 ───────────────────────────────────────────
@@ -174,6 +183,12 @@ export async function GET(_: NextRequest) {
       cacheHitTotal,
       cacheItemCount,
       cacheHitRate,
+    },
+    engagement: {
+      sessions7d,
+      words7d,
+      accuracy7d: words7d > 0 ? Math.round((correctWords7d / words7d) * 100) : null,
+      pushSubscribers,
     },
     children: {
       total: totalChildren,
