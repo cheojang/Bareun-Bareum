@@ -238,6 +238,7 @@ function DevLoginButtons() {
       >
         {loading === "dev@test.com" ? "로그인 중..." : "👪 부모 계정"}
       </button>
+      {/* 센터 연계 서비스 — 현재 미운영. 추후 재개 시 주석 해제
       <button
         onClick={() => devLogin("center@test.com", "/center")}
         disabled={!!loading}
@@ -245,6 +246,7 @@ function DevLoginButtons() {
       >
         {loading === "center@test.com" ? "로그인 중..." : "🏥 센터 계정"}
       </button>
+      */}
       {error && <p className="text-xs text-red-500 text-center mt-1">{error}</p>}
     </div>
   );

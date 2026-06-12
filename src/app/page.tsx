@@ -266,7 +266,8 @@ export default function LandingPage() {
             <FeatureCard emoji="📊" title="종합 리포트" desc="발음 발달 현황을 한눈에 파악" />
             <FeatureCard emoji="🔄" title="복습 스케줄" desc="과학적 간격 반복으로 효과적 기억" />
             <FeatureCard emoji="🎮" title="게임형 연습" desc="별가루와 캐릭터로 아이가 스스로 연습" />
-            <FeatureCard emoji="🏥" title="센터 연계" desc="치료사와 기록 공유 및 숙제 관리" />
+            {/* 센터 연계 서비스 — 현재 미운영. 추후 재개 시 주석 해제
+            <FeatureCard emoji="🏥" title="센터 연계" desc="치료사와 기록 공유 및 숙제 관리" /> */}
           </div>
         </div>
       </section>
