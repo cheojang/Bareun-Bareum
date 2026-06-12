@@ -8,6 +8,7 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
 import { useTTS } from "@/lib/useTTS";
+import { usePracticeRecorder } from "@/lib/usePracticeRecorder";
 import { DIFFICULTY_LABEL, type Difficulty } from "@/lib/adaptive-difficulty";
 import { WordImage } from "@/components/ui/WordImage";
 import Link from "next/link";
@@ -672,11 +673,19 @@ export function PracticeClient({
     [currentIndex, isSlotsFull]
   );
 
+  // ── 단어별 세션 기록: 5도트 완료 즉시 저장 (중간 이탈해도 그날 기록 보존) ──────
+  const recordWord = usePracticeRecorder(childId);
+
   // ── 5개 채워졌을 때 처리: 저장 로직 ─────────────────────────────────────────────
   useEffect(() => {
     if (!isSlotsFull || !currentItem) return;
 
     const goodCount = currentSlots.filter((s) => s === "good").length;
+
+    // 문장 제외 모든 단어를 세션에 기록 — 홈 최근연습·캘린더·streak 반영
+    if (currentItem.kind !== "sentence") {
+      recordWord(currentItem.text, goodCount >= 3);
+    }
 
     if (currentItem.scheduleId) {
       // 복습 아이템: SM-2 업데이트
@@ -833,21 +842,8 @@ export function PracticeClient({
           <BubbleButton
             variant="peach"
             size="xl"
-            onClick={async () => {
-              // 세션 저장 — 홈 "최근 연습"에 반영됨
-              const completedWords = [
-                ...stage1Words.map((e) => e.word),
-                ...stage2Words.map((w) => w.word),
-              ];
-              try {
-                await fetch("/api/sessions", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ childId, words: completedWords }),
-                });
-              } catch {
-                // 저장 실패해도 완료 화면은 정상 표시
-              }
+            onClick={() => {
+              // 세션은 단어별로 이미 저장됨 (usePracticeRecorder) — 일괄 저장 불필요
               setShowSentenceReview(false);
               setAllDone(true);
             }}

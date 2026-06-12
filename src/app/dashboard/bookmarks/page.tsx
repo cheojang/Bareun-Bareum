@@ -151,7 +151,7 @@ export default async function BookmarksPage() {
             // 날짜별 그룹화
             const groups: { dateLabel: string; words: typeof savedWords }[] = [];
             for (const sw of savedWords) {
-              const label = new Date(sw.savedAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+              const label = new Date(sw.savedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" });
               const last = groups[groups.length - 1];
               if (last && last.dateLabel === label) {
                 last.words.push(sw);

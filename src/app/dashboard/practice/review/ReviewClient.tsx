@@ -8,6 +8,7 @@ import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { WordImage } from "@/components/ui/WordImage";
 import { useTTS } from "@/lib/useTTS";
+import { usePracticeRecorder } from "@/lib/usePracticeRecorder";
 
 // 복습 시퀀스 아이템: 분석단어(평가·SM-2) 또는 유사단어(그림·연습)
 export type ReviewSeqItem = {
@@ -196,6 +197,17 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
       return next;
     });
   }, [currentIndex, isSlotsFull]);
+
+  // ── 단어별 세션 기록: 5도트 완료 즉시 저장 ──────────────────────────────────
+  // 복습은 기존에 PracticeSession을 아예 안 만들어 홈 최근연습·캘린더·
+  // 오늘 루틴 완료 표시에 누락됐었음 — 분석/유사 단어 모두 기록
+  const recordWord = usePracticeRecorder(childId);
+  useEffect(() => {
+    if (!isSlotsFull || !currentItem?.word) return;
+    const goodCount = currentSlots.filter((s) => s === "good").length;
+    recordWord(currentItem.word, goodCount >= 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSlotsFull]);
 
   // 5개 채워졌을 때 SM-2 업데이트 (분석단어만, 한 번만)
   if (isSlotsFull && currentItem?.kind === "analysis" && currentItem.scheduleId && !savedIds.has(currentItem.scheduleId)) {
