@@ -40,7 +40,7 @@ const COMPOUND_JONGSEONG: Record<string, string> = {
 };
 
 /** 겹받침이면 대표 단일 자음 반환, 아니면 그대로 반환 */
-function normalizeJongseong(j: string): string {
+export function normalizeJongseong(j: string): string {
   return COMPOUND_JONGSEONG[j] ?? j;
 }
 

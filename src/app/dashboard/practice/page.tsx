@@ -2,7 +2,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getSelectedChildId } from "@/lib/child-cookie";
-import { getImagedWordsByPhoneme, getWordByText } from "@/lib/word-database";
+import {
+  getSimilarPatternWords,
+  getWordByText,
+  phonemePositionFromError,
+  type PhonemePosition,
+} from "@/lib/word-database";
 import { PracticeClient } from "./PracticeClient";
 
 export const dynamic = "force-dynamic";
@@ -64,8 +69,10 @@ export default async function PracticePage({
       }];
       errorPattern = record.errorPattern;
       // 유사패턴 단어: 같은 음소를 가진 "이미지 있는" DB 단어에서 선택 (Gemini 자유생성 대체)
+      // 음소 위치(초성/종성)까지 맞춰 선택 — 예) 노트북(받침 ㄱ 탈락)엔 받침 ㄱ 단어만
       const ph = pickPhoneme(record.reviewSchedule?.phoneme, record.errorPattern);
-      stage2Words = getImagedWordsByPhoneme(ph)
+      const pos = phonemePositionFromError(record.errorPattern, record.errorType);
+      stage2Words = getSimilarPatternWords(ph, pos)
         .filter((w) => w.word !== record.targetWord)
         .slice(0, 8)
         .map((w) => ({ word: w.word, sourceWord: record.targetWord }));
@@ -93,12 +100,16 @@ export default async function PracticePage({
     const MAX_PER_PHONEME = 2;
     const stage1Seen = new Set<string>();
     const phonemeCount: Record<string, number> = {};
-    // 선정된 stage1 단어의 음소 (stage2 유사패턴 선택에 사용)
-    const stage1Selected: { word: string; phoneme: string }[] = [];
+    // 선정된 stage1 단어의 음소 + 위치 (stage2 유사패턴 선택에 사용)
+    const stage1Selected: { word: string; phoneme: string; position: PhonemePosition }[] = [];
 
     const pushWord = (rec: typeof errorRecords[number]) => {
       stage1Seen.add(rec.targetWord);
-      stage1Selected.push({ word: rec.targetWord, phoneme: getPhoneme(rec) });
+      stage1Selected.push({
+        word: rec.targetWord,
+        phoneme: getPhoneme(rec),
+        position: phonemePositionFromError(rec.errorPattern, rec.errorType),
+      });
       stage1Words.push({
         word: rec.targetWord,
         errorPattern: rec.errorPattern,
@@ -130,7 +141,7 @@ export default async function PracticePage({
     const stage2Seen = new Set<string>(stage1Seen);
     for (const sel of stage1Selected) {
       if (stage2Words.length >= 8) break;
-      for (const w of getImagedWordsByPhoneme(sel.phoneme)) {
+      for (const w of getSimilarPatternWords(sel.phoneme, sel.position)) {
         if (stage2Words.length >= 8) break;
         if (stage2Seen.has(w.word)) continue;
         stage2Seen.add(w.word);

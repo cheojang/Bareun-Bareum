@@ -1,4 +1,5 @@
 import { WORD_IMAGE_SLUGS } from "./word-images";
+import { decomposeWord, normalizeJongseong } from "./jamo-analysis";
 
 export interface PracticeWord {
   word: string;
@@ -2328,11 +2329,69 @@ export function getWordByText(word: string): PracticeWord | undefined {
   return slug ? { ...found, imageSlug: slug } : found;
 }
 
-/** 해당 음소를 포함하면서 이미지가 있는 단어만 반환 (유사패턴 stage2 선택용) */
-export function getImagedWordsByPhoneme(phoneme: string): PracticeWord[] {
-  return WORD_DATABASE.filter(
-    (w) => w.targetPhonemes.includes(phoneme) && WORD_IMAGE_SLUGS[w.word],
-  ).map((w) => ({ ...w, imageSlug: WORD_IMAGE_SLUGS[w.word] }));
+/** 음소 위치 — 초성(onset) / 종성·받침(coda) / 무관(any) */
+export type PhonemePosition = "onset" | "coda" | "any";
+
+/**
+ * 오류 정보(errorPattern/errorType)에서 음소 위치를 추출.
+ * - "종성 탈락"·"종성 변화" 등 → coda(받침)
+ * - "초성 탈락"·"초성 첨가" 등 → onset(초성)
+ * - 그 외(음절탈락·대치 등 위치 불명) → any
+ * 예) 노트북 → 노트부(종성 ㄱ 탈락)는 coda → 받침 ㄱ 단어(책·수박)만 유사패턴으로 선택.
+ */
+export function phonemePositionFromError(
+  errorPattern?: string | null,
+  errorType?: string | null,
+): PhonemePosition {
+  const s = `${errorPattern ?? ""} ${errorType ?? ""}`;
+  if (s.includes("종성")) return "coda";
+  if (s.includes("초성")) return "onset";
+  return "any";
+}
+
+/** 단어가 특정 자모를 특정 위치(초성/종성)에 실제로 포함하는지 (한글 분해 기반) */
+function wordHasPhonemeAt(word: string, jamo: string, pos: PhonemePosition): boolean {
+  if (pos === "any") return true;
+  for (const syl of decomposeWord(word)) {
+    if (!syl) continue;
+    if (pos === "onset" && syl.choseong === jamo) return true;
+    if (pos === "coda" && syl.jongseong && normalizeJongseong(syl.jongseong) === jamo) return true;
+  }
+  return false;
+}
+
+/**
+ * 해당 음소를 포함하면서 이미지가 있는 단어만 반환 (유사패턴 stage2 선택용).
+ * position을 지정하면 그 위치(초성/종성)에 음소가 오는 단어만 선택해
+ * "노트북(받침 ㄱ 탈락)에 가방(초성 ㄱ)이 추천되는" 위치 불일치를 방지한다.
+ * 위치 지정 시에는 targetPhonemes(주로 초성 위주)에 의존하지 않고 실제 분해로 판정한다.
+ * (받침 ㄱ은 targetPhonemes에 없을 수 있으므로)
+ */
+export function getImagedWordsByPhoneme(
+  phoneme: string,
+  position: PhonemePosition = "any",
+): PracticeWord[] {
+  const match = (w: PracticeWord) =>
+    position === "any"
+      ? w.targetPhonemes.includes(phoneme)
+      : wordHasPhonemeAt(w.word, phoneme, position);
+  return WORD_DATABASE.filter((w) => WORD_IMAGE_SLUGS[w.word] && match(w)).map(
+    (w) => ({ ...w, imageSlug: WORD_IMAGE_SLUGS[w.word] }),
+  );
+}
+
+/**
+ * 유사패턴 단어 선택 (stage2·복습 공용).
+ * 위치(초성/종성)가 일치하는 이미지 단어를 우선 선택하고,
+ * 해당 위치 단어가 하나도 없으면(예: 받침 ㄷ) 위치 무관으로 폴백해 빈 카드를 방지한다.
+ */
+export function getSimilarPatternWords(
+  phoneme: string,
+  position: PhonemePosition = "any",
+): PracticeWord[] {
+  if (position === "any") return getImagedWordsByPhoneme(phoneme, "any");
+  const strict = getImagedWordsByPhoneme(phoneme, position);
+  return strict.length > 0 ? strict : getImagedWordsByPhoneme(phoneme, "any");
 }
 
 export function getAllWords(): PracticeWord[] {
