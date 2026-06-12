@@ -22,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full">
       <head>
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
         <link
           rel="stylesheet"

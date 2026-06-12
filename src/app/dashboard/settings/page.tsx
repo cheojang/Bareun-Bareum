@@ -9,6 +9,7 @@ import { SignOutButton } from "./SignOutButton";
 import { ChildDeleteButton } from "@/components/settings/ChildDeleteButton";
 import { ChildImageUpload } from "@/components/settings/ChildImageUpload";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
+import { PushNotificationCard } from "@/components/settings/PushNotificationCard";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -123,6 +124,9 @@ export default async function SettingsPage() {
         </div>
 
       </BubbleCard>
+
+      {/* 푸시 알림 (게스트 제외 — 구독에 User 계정 필요) */}
+      {!session?.user?.isGuest && <PushNotificationCard />}
 
       {/* Admin (관리자만 노출) */}
       {userIsAdmin && (

@@ -25,6 +25,20 @@ model User {
   therapistProfile Therapist?
   sentMessages     Message[]         @relation("MessageParent")
   consent          UserConsent?
+  pushSubscriptions PushSubscription[]
+}
+
+// PushSubscription: Web Push 구독 정보 (브라우저·기기당 1개)
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique // 푸시 서비스 엔드포인트 URL
+  p256dh    String   // 클라이언트 공개키 (메시지 암호화용)
+  auth      String   // 인증 시크릿
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // 약관·개인정보 동의 기록 (법적 입증용 — 동의 일시 보존)
