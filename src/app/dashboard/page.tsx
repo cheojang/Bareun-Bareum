@@ -198,7 +198,7 @@ export default async function DashboardHome() {
 
           {/* 최근 연습 기록 */}
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-[#3D3530]">최근 연습</h3>
               <Link href="/dashboard/progress">
                 <span className="text-xs text-[#FFB38A] font-semibold">전체 보기 →</span>
@@ -243,7 +243,7 @@ export default async function DashboardHome() {
                           <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
                         </div>
                         {/* 해당 날짜의 단어 모음 */}
-                        <div className={`flex items-start gap-3 py-2.5 px-1 ${!isLastGroup ? "border-b border-[#F5F0EB]" : ""}`}>
+                        <div className={`flex items-start gap-3 py-3 px-1 ${!isLastGroup ? "border-b border-[#F5F0EB]" : ""}`}>
                           <span className="text-xl flex-shrink-0">📖</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-[#8B7E74] mb-1.5">

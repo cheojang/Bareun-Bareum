@@ -79,7 +79,7 @@ export default function ParentHomeworkPage() {
   const done = homeworks.filter((h) => h.status === "done");
 
   return (
-    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-6">
+    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
       <div>
         <h1 className="text-2xl font-black text-[#3D3530]">숙제</h1>
         <p className="text-sm text-[#8B7E74] mt-1">치료사가 배정한 연습 단어예요</p>

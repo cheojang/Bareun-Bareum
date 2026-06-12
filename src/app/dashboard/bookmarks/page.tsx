@@ -188,7 +188,7 @@ export default async function BookmarksPage() {
                         return (
                           <div
                             key={sw.id}
-                            className={`flex items-center gap-2 py-2.5 px-1 ${!isLast ? "border-b border-[#F5F0EB]" : ""}`}
+                            className={`flex items-center gap-2 py-3 px-1 ${!isLast ? "border-b border-[#F5F0EB]" : ""}`}
                           >
                             <span className="text-base font-black text-[#3D3530] flex-1 truncate">{sw.word}</span>
                             <PastelBadge color={diff.color}>{diff.label}</PastelBadge>

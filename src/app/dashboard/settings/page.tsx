@@ -34,7 +34,7 @@ export default async function SettingsPage() {
   const userIsAdmin = isAdmin(session?.user?.email);
 
   return (
-    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5">
+    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-[#3D3530]">설정 ⚙️</h2>
         <div className="text-right">

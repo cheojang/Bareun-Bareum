@@ -44,7 +44,7 @@ export default function ParentTherapyNotesPage() {
   const selectedChild = children.find((c) => c.id === selectedChildId);
 
   return (
-    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-6">
+    <div className="px-5 pt-6 md:px-8 md:pt-8 max-w-lg md:max-w-2xl mx-auto space-y-5 pb-8">
       <div>
         <h1 className="text-2xl font-black text-[#3D3530]">치료 일지</h1>
         <p className="text-sm text-[#8B7E74] mt-1">치료사가 공유한 회기 기록이에요</p>
