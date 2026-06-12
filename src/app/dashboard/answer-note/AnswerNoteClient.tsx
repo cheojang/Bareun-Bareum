@@ -55,6 +55,10 @@ interface Props {
   childName: string;
   pastRecords: PastRecord[];
   isGuest?: boolean;
+  /** 게스트 전용: 이번 달 남은 무료 AI 분석 횟수 */
+  guestRemaining?: number;
+  /** 게스트 전용: 월간 무료 한도 */
+  guestLimit?: number;
 }
 
 // ─── 카테고리 색상 매핑 ────────────────────────────────────────────────────────
@@ -237,6 +241,7 @@ function CurrentAnalysisCard({
   geminiResult,
   geminiError,
   fromGlobalCache,
+  isGuest,
 }: {
   targetWord: string;
   childPronunciation: string;
@@ -246,6 +251,7 @@ function CurrentAnalysisCard({
   geminiResult: GeminiResult | null;
   geminiError: string;
   fromGlobalCache: boolean;
+  isGuest?: boolean;
 }) {
   const categoryStyle = CATEGORY_STYLE[localResult.errorCategory] ?? DEFAULT_STYLE;
 
@@ -383,26 +389,43 @@ function CurrentAnalysisCard({
         </BubbleCard>
       )}
 
-      {/* 아이와 연습하기 버튼 */}
-      <BubbleButton
-        variant="peach"
-        size="lg"
-        onClick={() => {
-          window.location.href = `/dashboard/practice?errorRecordId=${localResult.errorRecordId}`;
-        }}
-        className="w-full"
-      >
-        🎮 바로 연습 시작하기 →
-      </BubbleButton>
+      {/* 아이와 연습하기 버튼 — 게스트는 가입 유도 CTA로 대체 */}
+      {isGuest ? (
+        <BubbleCard className="border-2 border-dashed border-[#FFB38A]/50 bg-[#FFF9F4]">
+          <p className="text-sm font-bold text-[#3D3530] mb-1">💾 이 분석은 저장되지 않아요</p>
+          <p className="text-xs text-[#8B7E74] mb-3 leading-relaxed">
+            회원가입하면 분석 기록이 차곡차곡 쌓이고, 단계별 연습·복습·종합 리포트까지 모두 이용할 수 있어요.
+          </p>
+          <Link href="/signup">
+            <BubbleButton variant="peach" size="lg" className="w-full">
+              회원가입하고 기록 저장하기 →
+            </BubbleButton>
+          </Link>
+        </BubbleCard>
+      ) : (
+        <BubbleButton
+          variant="peach"
+          size="lg"
+          onClick={() => {
+            window.location.href = `/dashboard/practice?errorRecordId=${localResult.errorRecordId}`;
+          }}
+          className="w-full"
+        >
+          🎮 바로 연습 시작하기 →
+        </BubbleButton>
+      )}
     </div>
   );
 }
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 
-export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: Props) {
+export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, guestRemaining, guestLimit }: Props) {
   // 누적 기록 상태 (새 분석 완료 시 맨 앞에 추가)
   const [records, setRecords] = useState<PastRecord[]>(pastRecords);
+
+  // 게스트 남은 무료 분석 횟수 (성공 시 클라이언트에서 감소 — 서버가 최종 권위)
+  const [remaining, setRemaining] = useState<number | undefined>(guestRemaining);
 
   const [targetWord, setTargetWord] = useState("");
   const [childPronunciation, setChildPronunciation] = useState("");
@@ -496,24 +519,34 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
       setLocalResult(local);
       setLocalLoading(false);
 
-      // ── 게스트: Gemini 처방전 건너뛰기 ────────────────────────────────────
-      if (isGuest || !local.errorRecordId) {
+      // ── 회원은 errorRecordId 필요. 게스트는 단어쌍을 직접 전달(저장 안 함) ──────
+      if (!isGuest && !local.errorRecordId) {
         setGeminiLoading(false);
         return;
       }
 
       // ── 2단계: Gemini 처방전 ──────────────────────────────────────────────
       setGeminiLoading(true);
+      const geminiBody = isGuest
+        ? {
+            targetWord: tw,
+            childPronunciation: cp,
+            errorType: local.localAnalysis.detectedPattern,
+            errorCategory: local.errorCategory,
+            errorPattern: local.errorPattern,
+          }
+        : { errorRecordId: local.errorRecordId };
       const geminiRes = await fetch("/api/gemini-feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ errorRecordId: local.errorRecordId }),
+        body: JSON.stringify(geminiBody),
       });
 
       if (!geminiRes.ok) {
         const err = await geminiRes.json().catch(() => null);
         if (err?.isMonthlyLimitReached && err?.isGuest) {
-          setGeminiError("이번 달 비회원 AI 분석 횟수(2회)를 모두 사용했어요.\n회원가입하면 매달 10회 무료로 이용할 수 있어요!");
+          setRemaining(0);
+          setGeminiError(`이번 달 비회원 AI 분석 횟수(${err.limit ?? guestLimit ?? 5}회)를 모두 사용했어요.\n회원가입하면 매달 10회 무료로 이용할 수 있고, 분석 기록도 쌓을 수 있어요!`);
         } else if (err?.isMonthlyLimitReached) {
           setGeminiError("이번 달 AI 분석 횟수(10회)를 모두 사용했어요.\n다음 달 1일에 자동 초기화돼요.\n프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요!");
         } else if (err?.isQuotaError) {
@@ -530,6 +563,8 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
       }
 
       const contentType = geminiRes.headers.get("Content-Type") ?? "";
+      // JSON 응답 = 글로벌 캐시 HIT(게스트 할당량 미차감), 스트림 = 신규 Gemini 호출(차감)
+      const servedFromCache = contentType.includes("application/json");
       const stepBuffer: (string | undefined)[] = [undefined, undefined, undefined, undefined];
       let acc: GeminiResult = {
         rootCause: "",
@@ -627,7 +662,18 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
       setGeminiLoading(false);
       const finalGemini: GeminiResult = acc;
 
-      // ── 완료 후 누적 기록 맨 앞에 추가 ─────────────────────────────────────
+      // ── 게스트: 저장·누적 안 함. 남은 횟수만 차감하고 현재 결과 카드로 보여줌 ──────
+      if (isGuest) {
+        // 캐시 HIT은 서버가 할당량을 차감하지 않으므로 카운터도 유지
+        if (!servedFromCache) {
+          setRemaining((r) => (typeof r === "number" ? Math.max(0, r - 1) : r));
+        }
+        setTargetWord("");
+        setChildPronunciation("");
+        return;
+      }
+
+      // ── 회원: 완료 후 누적 기록 맨 앞에 추가 ───────────────────────────────────
       const newRecord: PastRecord = {
         id: local.errorRecordId,
         targetWord: tw,
@@ -736,6 +782,28 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
         </p>
       </div>
 
+      {/* 게스트: 남은 무료 AI 분석 횟수 배너 (손실 회피 — 가입 유도) */}
+      {isGuest && typeof remaining === "number" && (
+        <div className={`rounded-2xl px-4 py-3 flex items-center gap-3 ${remaining > 0 ? "bg-[#F0FAF8] border border-[#7EDFD0]/50" : "bg-[#FFF5EE] border border-[#FFB38A]/50"}`}>
+          <span className="text-2xl flex-shrink-0">{remaining > 0 ? "🎁" : "🔒"}</span>
+          <div className="flex-1 min-w-0">
+            {remaining > 0 ? (
+              <p className="text-sm font-bold text-[#3D3530]">
+                무료 AI 분석 <span className="text-[#0D9488]">{remaining}회</span> 남았어요
+                <span className="font-normal text-[#8B7E74]"> · 회원가입하면 매달 10회</span>
+              </p>
+            ) : (
+              <p className="text-sm font-bold text-[#3D3530]">
+                이번 달 무료 분석을 다 썼어요 · <span className="text-[#FFB38A]">회원가입하면 매달 10회</span>
+              </p>
+            )}
+          </div>
+          <Link href="/signup" className="flex-shrink-0">
+            <span className="text-xs font-bold text-white bg-[#FFB38A] rounded-full px-3 py-1.5">가입</span>
+          </Link>
+        </div>
+      )}
+
       {/* 입력 폼 */}
       <BubbleCard>
         <div className="space-y-4">
@@ -831,6 +899,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest }: P
           geminiResult={geminiResult}
           geminiError={geminiError}
           fromGlobalCache={fromGlobalCache}
+          isGuest={isGuest}
         />
       )}
 

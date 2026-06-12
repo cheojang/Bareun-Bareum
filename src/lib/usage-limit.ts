@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
 
 export const FREE_AI_MONTHLY_LIMIT = 10;
-export const GUEST_AI_MONTHLY_LIMIT = 2;
+export const GUEST_AI_MONTHLY_LIMIT = 5;
 export const GUEST_COOKIE_NAME = "ai_guest_usage";
 
 export function getCurrentYearMonth(): string {

@@ -99,28 +99,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
     }
 
+    const isGuest = session.user.isGuest === true;
+    const body = await request.json();
+
     // 월간 제한은 캐시 미스 시에만 적용 (아래 캐시 확인 후)
 
-    const { errorRecordId } = await request.json();
-    if (!errorRecordId) {
-      return NextResponse.json({ error: "errorRecordId 필수" }, { status: 400 });
-    }
+    // ─── 회원: 저장된 ErrorRecord 기반 / 게스트: 입력값 기반(저장 안 함) ─────────
+    // errorRecord는 두 경로 공통 인터페이스. 게스트는 DB에 없는 합성 객체를 사용해
+    // 캐시 조회·Gemini 호출까지만 진행하고, GeminiFeedback/PhonemeTemplate 저장은 건너뜀.
+    let errorRecord: {
+      id: string | null;
+      targetWord: string;
+      childPronunciation: string;
+      errorType: string;
+      errorCategory: string;
+      errorPattern: string;
+      localAnalysis: { jamoBreakdown: string } | null;
+      child: { birthDate: Date | null };
+      geminiFeedback: {
+        rootCause: string;
+        trainingStep1: string;
+        trainingStep2: string;
+        trainingStep3: string;
+        trainingStep4: string;
+        recommendedWords: string;
+        parentMessage: string;
+      } | null;
+    };
+    let errorRecordId: string | null = null;
 
-    // ErrorRecord + 소유권 확인
-    const errorRecord = await prisma.errorRecord.findUnique({
-      where: { id: errorRecordId },
-      include: {
-        localAnalysis: true,
-        child: true,
-        geminiFeedback: true,
-      },
-    });
+    if (isGuest) {
+      // 게스트는 errorRecordId가 없음 — 단어쌍/오류유형을 직접 전달받음
+      const targetWord = typeof body.targetWord === "string" ? body.targetWord.trim() : "";
+      const childPronunciation = typeof body.childPronunciation === "string" ? body.childPronunciation.trim() : "";
+      if (!targetWord || !childPronunciation) {
+        return NextResponse.json({ error: "targetWord, childPronunciation 필수" }, { status: 400 });
+      }
+      errorRecord = {
+        id: null,
+        targetWord,
+        childPronunciation,
+        errorType: typeof body.errorType === "string" ? body.errorType : "미판정",
+        errorCategory: typeof body.errorCategory === "string" ? body.errorCategory : "미판정",
+        errorPattern: typeof body.errorPattern === "string" ? body.errorPattern : (body.errorType ?? "미판정"),
+        localAnalysis: null,
+        child: { birthDate: null },
+        geminiFeedback: null,
+      };
+    } else {
+      errorRecordId = body.errorRecordId;
+      if (!errorRecordId) {
+        return NextResponse.json({ error: "errorRecordId 필수" }, { status: 400 });
+      }
 
-    if (!errorRecord) {
-      return NextResponse.json({ error: "기록을 찾을 수 없습니다" }, { status: 404 });
-    }
-    if (errorRecord.child.userId !== session.user.id) {
-      return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
+      // ErrorRecord + 소유권 확인
+      const record = await prisma.errorRecord.findUnique({
+        where: { id: errorRecordId },
+        include: {
+          localAnalysis: true,
+          child: true,
+          geminiFeedback: true,
+        },
+      });
+
+      if (!record) {
+        return NextResponse.json({ error: "기록을 찾을 수 없습니다" }, { status: 404 });
+      }
+      if (record.child.userId !== session.user.id) {
+        return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
+      }
+      errorRecord = record;
     }
 
     // ─── 0순위: 글로벌 WordPairCache (DB) ───────────────────────────────────
@@ -205,7 +253,6 @@ export async function POST(request: NextRequest) {
       hashGuestIp, getClientIp, getGuestMonthlyUsage, incrementGuestUsage,
     } = await import("@/lib/usage-limit");
 
-    const isGuest = session.user.isGuest === true;
     let guestIpHash: string | null = null;
 
     if (isGuest) {
@@ -329,29 +376,32 @@ export async function POST(request: NextRequest) {
             // ── DB 저장 (비동기, 응답 지연 없음) ──────────────────────
             (async () => {
               try {
-                if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
-                  await prisma.errorRecord.update({
-                    where: { id: errorRecordId },
-                    data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
+                // ── 회원 전용: 개인 ErrorRecord/GeminiFeedback 저장 (게스트는 저장 안 함) ──
+                if (!isGuest && errorRecordId) {
+                  if (parsed.patternName && errorRecord.errorPattern.includes("미등록 패턴")) {
+                    await prisma.errorRecord.update({
+                      where: { id: errorRecordId },
+                      data: { errorPattern: errorRecord.errorPattern.replace("미등록 패턴", parsed.patternName) }
+                    });
+                  }
+                  // errorRecordId가 @unique이므로 upsert 단일 호출로 race 제거
+                  const feedbackData = {
+                    rootCause:        parsed.rootCause ?? "",
+                    trainingStep1:    parsed.trainingStep1 ?? "",
+                    trainingStep2:    parsed.trainingStep2 ?? "",
+                    trainingStep3:    parsed.trainingStep3 ?? "",
+                    trainingStep4:    parsed.trainingStep4 ?? "",
+                    recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
+                    parentMessage:    parsed.parentMessage ?? "",
+                  };
+                  await prisma.geminiFeedback.upsert({
+                    where: { errorRecordId },
+                    create: { errorRecordId, ...feedbackData },
+                    update: feedbackData,
                   });
                 }
-                // errorRecordId가 @unique이므로 upsert 단일 호출로 race 제거
-                const feedbackData = {
-                  rootCause:        parsed.rootCause ?? "",
-                  trainingStep1:    parsed.trainingStep1 ?? "",
-                  trainingStep2:    parsed.trainingStep2 ?? "",
-                  trainingStep3:    parsed.trainingStep3 ?? "",
-                  trainingStep4:    parsed.trainingStep4 ?? "",
-                  recommendedWords: JSON.stringify(parsed.recommendedWords ?? []),
-                  parentMessage:    parsed.parentMessage ?? "",
-                };
-                await prisma.geminiFeedback.upsert({
-                  where: { errorRecordId },
-                  create: { errorRecordId, ...feedbackData },
-                  update: feedbackData,
-                });
 
-                if (phoneme && phoneme !== "(없음)") {
+                if (!isGuest && phoneme && phoneme !== "(없음)") {
                   await prisma.phonemeTemplate.upsert({
                     where: { phoneme_position_errorType: { phoneme, position, errorType: errorRecord.errorType } },
                     create: {
