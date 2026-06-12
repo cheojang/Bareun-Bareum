@@ -51,10 +51,17 @@ for (const entry of WORD_DATABASE) {
 }
 
 // ── 2. 중복 단어 ────────────────────────────────────────────────────────────
-const wordCount = new Map<string, number>();
-for (const e of WORD_DATABASE) wordCount.set(e.word, (wordCount.get(e.word) ?? 0) + 1);
-for (const [w, n] of wordCount) {
-  if (n > 1) issues.push({ kind: "중복 단어", detail: `"${w}" — ${n}회 등록 (getWordByText는 첫 항목만 사용)` });
+// 정책: 난이도가 다른 동일 단어는 의도적 분화로 허용. 같은 (단어, 난이도) 중복만 오류.
+const wordDiffCount = new Map<string, number>();
+for (const e of WORD_DATABASE) {
+  const key = `${e.word}::${e.difficulty}`;
+  wordDiffCount.set(key, (wordDiffCount.get(key) ?? 0) + 1);
+}
+for (const [key, n] of wordDiffCount) {
+  if (n > 1) {
+    const [w, d] = key.split("::");
+    issues.push({ kind: "중복 단어", detail: `"${w}" (${d}) — 같은 난이도로 ${n}회 등록` });
+  }
 }
 
 // ── 3. 최소대립쌍 정합성 ────────────────────────────────────────────────────
