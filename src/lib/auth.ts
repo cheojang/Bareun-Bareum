@@ -67,13 +67,21 @@ const devProvider = [
               }
             }
 
-            // 개발 계정은 프리미엄 자동 부여 — AI 분석 무제한 등 모든 제한 해제
-            // (getAccessInfo·isUserPremium·설정 화면이 전부 Subscription만 보므로 한 곳으로 충분)
-            await prisma.subscription.upsert({
-              where: { userId: user.id },
-              create: { userId: user.id, plan: "premium", status: "active" },
-              update: { plan: "premium", status: "active" },
-            });
+            // 개발 계정은 프리미엄 자동 부여 + 약관 동의 자동 기록
+            // → 로그인할 때마다 /consent 리디렉트 없이 바로 /dashboard 진입
+            const now = new Date();
+            await Promise.all([
+              prisma.subscription.upsert({
+                where: { userId: user.id },
+                create: { userId: user.id, plan: "premium", status: "active" },
+                update: { plan: "premium", status: "active" },
+              }),
+              prisma.userConsent.upsert({
+                where: { userId: user.id },
+                create: { userId: user.id, termsAgreedAt: now, privacyAgreedAt: now },
+                update: {},
+              }),
+            ]);
 
             return { id: user.id, email: user.email, name: user.name };
           },
@@ -163,6 +171,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login",
     newUser: "/onboarding",
+    error: "/login",
   },
   events: {
     // OAuth(구글/카카오) 신규 가입자에게도 7일 프리미엄 체험 부여 (이메일 가입은 signup API에서 처리)
