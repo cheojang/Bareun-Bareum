@@ -45,6 +45,7 @@ export function ArticulationDiagram({ phoneme, size = "md", showHint = true, cla
         alt={`${ph} 발음 혀 모양`}
         width={px}
         height={px}
+        unoptimized
         onError={() => setFailed(true)}
         className="rounded-2xl"
       />

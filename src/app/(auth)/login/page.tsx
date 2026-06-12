@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
@@ -9,6 +10,10 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 export default function LoginPage() {
   // 약관 동의는 첫 로그인(가입) 후 /consent 에서 1회 수집해 DB에 일시 기록.
   // 로그인 화면에서는 매번 체크하지 않고 고지 문구로 안내.
+
+  // NextAuth 에러(예: Configuration) 발생 시 ?error=... 쿼리로 이 페이지로 리디렉트됨
+  const searchParams = useSearchParams();
+  const authError = searchParams.get("error");
 
   // 이메일/비밀번호 로그인 상태
   const [showEmailLogin, setShowEmailLogin] = useState(false);
@@ -52,6 +57,14 @@ export default function LoginPage() {
 
       <BubbleCard className="w-full max-w-sm">
         <h2 className="text-xl font-bold text-[#3D3530] text-center mb-5">시작하기</h2>
+
+        {authError && (
+          <div className="bg-[#FFF0EE] border border-[#FFB38A] rounded-xl px-4 py-3 mb-4 text-center">
+            <p className="text-xs font-semibold text-[#EF4444]">
+              로그인 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.
+            </p>
+          </div>
+        )}
 
         <div className="bg-[#FFF5EE] border-l-4 border-[#FFB38A] rounded-r-lg px-4 py-3 mb-5">
           <p className="text-xs font-bold text-[#3D3530] mb-1">⚠️ 중요 안내</p>
