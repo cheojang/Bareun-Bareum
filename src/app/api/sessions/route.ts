@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { getKSTDateString } from "@/lib/kst-utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { childId, words = [] } = await req.json();
+    const { childId, words = [], sessionId } = await req.json();
     if (!childId) {
       return NextResponse.json({ error: "childId is required" }, { status: 400 });
     }
@@ -61,18 +62,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Child not found or forbidden" }, { status: 404 });
     }
 
-    // 연습한 단어 목록 (string[] 또는 {text:string}[])
-    const wordList: string[] = Array.isArray(words)
+    // 연습한 단어 목록 — string[] | {text}[] | {word, correct}[] 모두 수용
+    // correct 미지정은 true (하위 호환)
+    const wordList: { word: string; correct: boolean }[] = Array.isArray(words)
       ? words
-          .map((w: unknown) => (typeof w === "string" ? w : (w as { text: string }).text))
-          .filter(Boolean)
+          .map((w: unknown) => {
+            if (typeof w === "string") return { word: w, correct: true };
+            const o = w as { word?: string; text?: string; correct?: boolean };
+            return { word: o.word ?? o.text ?? "", correct: o.correct ?? true };
+          })
+          .filter((w) => w.word)
       : [];
 
-    // streakDays 계산
+    // streakDays 계산 — KST 기준 (UTC로 하면 한국 새벽 0~9시 연습이 어제로 잡힘)
     const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-    const lastStr = child.lastPractice?.toISOString().split("T")[0] ?? "";
-    const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
+    const todayStr = getKSTDateString(now);
+    const lastStr = child.lastPractice ? getKSTDateString(child.lastPractice) : "";
+    const yesterdayStr = getKSTDateString(new Date(now.getTime() - 86400000));
 
     let newStreak = child.streakDays;
     if (lastStr === todayStr) {
@@ -85,21 +91,36 @@ export async function POST(req: NextRequest) {
 
     // 트랜잭션으로 세션 + 단어기록 + 아이 통계 한번에 저장
     const practiceSession = await prisma.$transaction(async (tx) => {
-      const ps = await tx.practiceSession.create({
-        data: {
-          userId: session.user.id,
-          childId,
-          endedAt: now,
-        },
-      });
+      let ps: { id: string };
+
+      if (sessionId && typeof sessionId === "string") {
+        // 이어쓰기: 단어 완료마다 호출돼도 한 세션에 누적 (소유권 확인)
+        const existing = await tx.practiceSession.findUnique({
+          where: { id: sessionId },
+          select: { id: true, userId: true, childId: true },
+        });
+        if (!existing || existing.userId !== session.user.id || existing.childId !== childId) {
+          throw new Error("session not found or forbidden");
+        }
+        ps = existing;
+        await tx.practiceSession.update({ where: { id: ps.id }, data: { endedAt: now } });
+      } else {
+        ps = await tx.practiceSession.create({
+          data: {
+            userId: session.user.id,
+            childId,
+            endedAt: now,
+          },
+        });
+      }
 
       if (wordList.length > 0) {
         await tx.wordRecord.createMany({
-          data: wordList.map((word) => ({
+          data: wordList.map(({ word, correct }) => ({
             sessionId: ps.id,
             targetWord: word,
             heardWord: word,
-            isCorrect: true,
+            isCorrect: correct,
             practicedAt: now,
           })),
         });

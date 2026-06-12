@@ -242,7 +242,8 @@ export default async function DashboardHome() {
               // 날짜별로 그 날 연습한 모든 단어 합치기 (중복 제거, 순서 유지)
               const dateMap = new Map<string, string[]>();
               for (const s of recentSessions) {
-                const label = new Date(s.startedAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+                // 서버는 UTC — KST로 변환 안 하면 한국 새벽 연습이 전날로 표시됨
+                const label = new Date(s.startedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" });
                 if (!dateMap.has(label)) dateMap.set(label, []);
                 const arr = dateMap.get(label)!;
                 for (const w of s.wordRecords) {
