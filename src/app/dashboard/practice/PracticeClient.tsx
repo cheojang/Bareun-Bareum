@@ -14,11 +14,11 @@ import Link from "next/link";
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
 function CompletionScreen({
   childName, totalReps, repTarget, totalGood,
-  masteredCount, needsWorkCount, practiceWords, errorPattern, childId,
+  masteredCount, needsWorkCount, practiceWords, errorPattern, childId, routineMode,
 }: {
   childName: string; totalReps: number; repTarget: number; totalGood: number;
   masteredCount: number; needsWorkCount: number;
-  practiceWords: string[]; errorPattern?: string; childId: string;
+  practiceWords: string[]; errorPattern?: string; childId: string; routineMode?: boolean;
 }) {
   const [cards, setCards] = useState<{ context: string; phrases: string[] }[]>([]);
   const [loadingCards, setLoadingCards] = useState(true);
@@ -41,7 +41,9 @@ function CompletionScreen({
       <ConfettiEffect trigger />
       <div className="text-8xl mb-4 mt-12 animate-bounce-in">🎉</div>
       <h2 className="text-3xl font-black text-[#3D3530] mb-2">{childName} 최고야!</h2>
-      <p className="text-[#8B7E74] mb-6">오늘 연습을 모두 완료했어요!</p>
+      <p className="text-[#8B7E74] mb-6">
+        {routineMode ? "오늘의 루틴을 모두 완료했어요! 내일 또 만나요 🌞" : "오늘 연습을 모두 완료했어요!"}
+      </p>
 
       <div className="flex flex-wrap justify-center gap-2 mb-8">
         <span className="px-4 py-2 bg-[#FFF5EE] rounded-full text-sm font-bold text-[#FFB38A]">
@@ -250,6 +252,8 @@ interface Props {
   stage2Words: SimilarWord[];
   wordInfos: Record<string, { imageSlug?: string }>;
   errorPattern?: string;
+  /** 오늘의 루틴 2단계로 진입 — 완료 화면이 루틴 피날레가 됨 */
+  routineMode?: boolean;
 }
 
 type Stage = 1 | 2 | 3;
@@ -433,6 +437,7 @@ export function PracticeClient({
   stage2Words,
   wordInfos,
   errorPattern,
+  routineMode,
 }: Props) {
   // 항상 1단계부터 시작
   const startStage: Stage = 1;
@@ -869,6 +874,7 @@ export function PracticeClient({
         ]}
         errorPattern={errorPattern}
         childId={childId}
+        routineMode={routineMode}
       />
     );
   }

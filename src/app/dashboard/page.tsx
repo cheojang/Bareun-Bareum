@@ -119,6 +119,8 @@ export default async function DashboardHome() {
     practiceDateSet.add(getKSTDateString(s.startedAt));
   }
   const totalPracticeDays = practiceDateSet.size;
+  // 오늘(KST) 연습 세션이 있으면 루틴 완료로 간주
+  const routineDoneToday = practiceDateSet.has(getKSTDateString(new Date()));
 
   return (
     <div className="px-5 pt-6 md:pt-8 md:px-8 max-w-lg md:max-w-5xl mx-auto">
@@ -171,30 +173,38 @@ export default async function DashboardHome() {
         {/* ── 오른쪽 컬럼 ───────────────────────────────────────── */}
         <div className="flex flex-col gap-5">
 
-          {/* 오늘 복습 배지 */}
-          {reviewDueCount > 0 && (
-            <Link href="/dashboard/bookmarks">
-              <BubbleCard padding="sm" className="flex items-center gap-3 border-2 border-[#FCA5A5]/40 bg-[#FFF5EE] cursor-pointer hover:bg-[#FFE4D8] transition-colors">
-                <span className="text-2xl">🔔</span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full leading-none bg-[#FCA5A5] text-white">
-                      오늘의 복습
-                    </span>
-                    <p className="text-sm font-bold text-[#3D3530] leading-tight">
-                      오늘 복습할 단어가 있어요
-                    </p>
-                  </div>
-                  <p className="text-xs text-[#8B7E74] mt-0.5">
-                    망각 곡선 — 지금 복습하면 기억이 오래 남아요
-                  </p>
-                </div>
-                <span className="bg-[#FCA5A5] text-white text-sm font-black px-3 py-1 rounded-full">
-                  {reviewDueCount}개
-                </span>
-              </BubbleCard>
-            </Link>
-          )}
+          {/* 오늘의 루틴 CTA — 복습→집중연습→보상 자동 시퀀스 (하루 5~7분) */}
+          <Link href="/dashboard/routine" className="block">
+            <BubbleCard
+              padding="sm"
+              className={`flex items-center gap-3 border-2 cursor-pointer transition-colors ${
+                routineDoneToday
+                  ? "border-[#7EDFD0]/50 bg-[#F0FAF8] hover:bg-[#E2F5F0]"
+                  : "border-[#FFB38A]/60 bg-[#FFF5EE] hover:bg-[#FFE4D8]"
+              }`}
+            >
+              <span className="text-3xl">{routineDoneToday ? "✅" : "🌞"}</span>
+              <div className="flex-1">
+                <p className="font-black text-[#3D3530]">
+                  {routineDoneToday ? "오늘 루틴 완료!" : "오늘의 루틴 시작"}
+                </p>
+                <p className="text-xs text-[#8B7E74] mt-0.5">
+                  {routineDoneToday
+                    ? "내일 또 만나요 — 한 번 더 하고 싶으면 눌러주세요"
+                    : reviewDueCount > 0
+                      ? `복습 ${reviewDueCount}개 + 집중 연습 · 약 5분`
+                      : "집중 연습 · 약 5분"}
+                </p>
+              </div>
+              <span
+                className={`text-white text-sm font-black px-3 py-1.5 rounded-full ${
+                  routineDoneToday ? "bg-[#7EDFD0]" : "bg-[#FFB38A]"
+                }`}
+              >
+                {routineDoneToday ? "🎉" : "GO →"}
+              </span>
+            </BubbleCard>
+          </Link>
 
           {/* 최근 연습 기록 */}
           <div>
