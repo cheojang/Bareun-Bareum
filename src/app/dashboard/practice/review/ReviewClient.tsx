@@ -60,54 +60,6 @@ function toQuality(goodCount: number): number {
   return 0;
 }
 
-function CarTrack({ progress, childImage }: { progress: number; childImage?: string | null }) {
-  const pct = Math.max(0, Math.min(1, progress));
-  const leftPct = 5 + pct * 88;
-
-  return (
-    <div className="relative w-full h-12 select-none">
-      <div className="absolute inset-x-5 bottom-2 h-3 bg-[#F0E8E0] rounded-full overflow-hidden shadow-inner">
-        <div className="absolute inset-0 flex items-center justify-around px-3">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="w-3 h-0.5 bg-white/50 rounded-full" />
-          ))}
-        </div>
-        <div
-          className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${pct * 100}%`,
-            background: "linear-gradient(90deg, #B8EDE3, #7EDFD0)",
-          }}
-        />
-      </div>
-      <div className="absolute bottom-1.5 left-1 text-sm">🚦</div>
-      <div className="absolute bottom-1.5 right-1 text-sm">🏁</div>
-      <div
-        className="absolute transition-all duration-700 ease-out"
-        style={{
-          left: `${leftPct}%`,
-          bottom: "10px",
-          transform: "translateX(-50%)",
-          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
-        }}
-      >
-        {childImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={childImage}
-            alt="아이"
-            style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", border: "2px solid #7EDFD0" }}
-          />
-        ) : (
-          <span style={{ fontSize: 24, display: "inline-block", transform: "scaleX(-1)" }}>
-            🚗
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ResultDots({ slots }: { slots: DotResult[] }) {
   return (
     <div className="flex items-center gap-2">
@@ -175,10 +127,6 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
   const isSlotsFull = filledCount >= MAX_DOTS;
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const isLastItem = currentIndex + 1 >= items.length;
-
-  const totalDots = items.length * MAX_DOTS;
-  const filledDots = currentIndex * MAX_DOTS + filledCount;
-  const carProgress = totalDots > 0 ? filledDots / totalDots : 0;
 
   const fillDot = useCallback((result: "good" | "bad") => {
     if (isSlotsFull) return;
@@ -322,9 +270,9 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
         </div>
       </div>
 
-      {/* 메인 영역 */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-3 px-6">
+      {/* 메인 영역 — 상단 정렬로 카드를 위로 당겨 세로 여백 축소(하단은 향후 그림 자리) */}
+      <div className="flex-1 flex flex-col items-center justify-start gap-2.5 pt-3">
+        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
           {/* 단어 카드 */}
           <div
@@ -434,8 +382,6 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
                 : "🔗 비슷한 소리 단어로 연습해요"}
             </p>
           </div>
-
-          <CarTrack progress={carProgress} childImage={childImage} />
 
           <ResultDots slots={currentSlots} />
 
