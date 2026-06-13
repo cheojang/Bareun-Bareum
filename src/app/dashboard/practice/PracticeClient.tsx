@@ -1098,7 +1098,7 @@ export function PracticeClient({
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
-                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                className="flex-1 py-4 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
                 style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
               >
                 아직 어려워요 🔄
@@ -1111,7 +1111,7 @@ export function PracticeClient({
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
-                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                className="flex-1 py-4 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
                 style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
               >
                 잘 됐어요 ✓
