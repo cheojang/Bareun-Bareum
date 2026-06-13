@@ -461,14 +461,18 @@ export async function POST(request: NextRequest) {
                 }).catch(() => {});
               } catch (saveError) {
                 console.error("DB Save Error:", saveError);
+              } finally {
+                // DB 저장 완료 후 스트림 닫기 — 완료 전 종료 시 Vercel이 함수를
+                // 끊어 GeminiFeedback이 누락되던 문제 수정
+                sendLine({ type: "done" });
+                controller.close();
               }
             })();
           } else {
             sendLine({ type: "error", error: "응답을 해석하지 못했어요" });
+            sendLine({ type: "done" });
+            controller.close();
           }
-
-          sendLine({ type: "done" });
-          controller.close();
         } catch (err: any) {
           console.error("[Gemini] 스트림 처리 오류:", err);
           const isQuota = err?.message?.includes('429') || err?.message?.includes('quota');

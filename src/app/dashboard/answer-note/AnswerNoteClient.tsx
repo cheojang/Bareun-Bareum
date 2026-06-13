@@ -6,6 +6,8 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { validateKoreanWord } from "@/lib/korean-input-validation";
 import { stripEnglishParens } from "@/lib/strip-english";
+import { ArticulationDiagram } from "@/components/ui/ArticulationDiagram";
+import { getArticulationSlug, phonemeFromPattern } from "@/lib/articulation-mapper";
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -190,6 +192,12 @@ function RecordRow({
         <div className="mx-1 mb-3 rounded-2xl bg-[#FAFAF8] px-4 py-3 space-y-3">
           {gemini ? (
             <>
+              {/* 혀 모양 단면도 */}
+              {getArticulationSlug(phonemeFromPattern(record.errorPattern)) && (
+                <div className="flex justify-center pb-1">
+                  <ArticulationDiagram phoneme={record.errorPattern} size="sm" />
+                </div>
+              )}
               <div>
                 <p className="text-[11px] font-bold text-[#8B7E74] mb-1">💡 왜 이런 발음이 나올까요?</p>
                 <p className="text-xs text-[#5B4E9B] leading-relaxed">{gemini.rootCause}</p>
@@ -224,7 +232,7 @@ function RecordRow({
               )}
             </>
           ) : (
-            <p className="text-xs text-[#8B7E74]">⏳ AI 분석 결과가 아직 없어요. 새로 입력하면 다시 분석할 수 있어요.</p>
+            <p className="text-xs text-[#8B7E74]">⏳ AI 처방전이 저장되지 않았어요. 위 입력창에 같은 단어를 다시 입력하면 분석됩니다.</p>
           )}
         </div>
       )}
@@ -292,6 +300,13 @@ function CurrentAnalysisCard({
             <p className="text-xl font-black text-[#FCA5A5]">{childPronunciation}</p>
           </div>
         </div>
+
+        {/* 혀 모양 단면도 — 목표 음소가 매핑될 때만 */}
+        {getArticulationSlug(phonemeFromPattern(localResult.errorPattern)) && (
+          <div className="mt-3 flex justify-center">
+            <ArticulationDiagram phoneme={localResult.errorPattern} size="md" />
+          </div>
+        )}
       </BubbleCard>
 
       {/* 글로벌 캐시 HIT 배지 */}
