@@ -184,6 +184,26 @@ export async function POST(request: NextRequest) {
       console.log("[Cache-DB] 글로벌 HIT:", errorRecord.targetWord, `(총 ${globalCache.hitCount + 1}회)`);
       let recWords: string[] = [];
       try { recWords = JSON.parse(globalCache.recommendedWords); } catch {}
+
+      // 회원 기록이면 글로벌 캐시 내용을 개인 GeminiFeedback으로도 저장
+      // → 분석기록(분석 후 펼침)에 처방전이 정상 표시됨 (이전엔 캐시 HIT 시 저장 누락)
+      if (!isGuest && errorRecordId) {
+        const feedbackData = {
+          rootCause:        globalCache.rootCause,
+          trainingStep1:    globalCache.trainingStep1,
+          trainingStep2:    globalCache.trainingStep2,
+          trainingStep3:    globalCache.trainingStep3,
+          trainingStep4:    globalCache.trainingStep4,
+          recommendedWords: globalCache.recommendedWords,
+          parentMessage:    globalCache.parentMessage,
+        };
+        await prisma.geminiFeedback.upsert({
+          where: { errorRecordId },
+          create: { errorRecordId, ...feedbackData },
+          update: feedbackData,
+        }).catch((e) => console.error("[Cache-DB] GeminiFeedback 저장 실패:", e));
+      }
+
       const result = {
         patternName:      errorRecord.errorPattern,
         rootCause:        globalCache.rootCause,
