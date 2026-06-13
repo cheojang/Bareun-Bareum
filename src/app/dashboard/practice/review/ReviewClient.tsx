@@ -404,50 +404,48 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
               </p>
             </div>
           )}
+
+          {/* 평가 버튼 + 다음 — 콘텐츠 묶음 안에 배치 (연습 화면과 통일) */}
+          {!isSlotsFull && (
+            <div className="flex gap-3 w-full mt-1">
+              <button
+                onClick={() => {
+                  fillDot("bad");
+                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어 직전엔 안 들려줌
+                  if (currentItem?.word && filledCount < MAX_DOTS - 1) {
+                    playWord(currentItem.word).catch(() => {});
+                  }
+                }}
+                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
+              >
+                아직 어려워요 🔄
+              </button>
+              <button
+                onClick={() => {
+                  fillDot("good");
+                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생
+                  if (currentItem?.word && filledCount < MAX_DOTS - 1) {
+                    playWord(currentItem.word).catch(() => {});
+                  }
+                }}
+                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
+              >
+                잘 됐어요 ✓
+              </button>
+            </div>
+          )}
+
+          <BubbleButton
+            variant="white"
+            size="md"
+            onClick={handleNext}
+            className="w-full mt-1"
+          >
+            {isLastItem ? "복습 완료 🎊" : "다음 →"}
+          </BubbleButton>
         </div>
-      </div>
-
-      {/* 하단 버튼 */}
-      <div className="max-w-lg mx-auto w-full px-6 pb-8 pt-5 space-y-3">
-        {!isSlotsFull && (
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                fillDot("bad");
-                // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어 직전엔 안 들려줌
-                if (currentItem?.word && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.word).catch(() => {});
-                }
-              }}
-              className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
-              style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
-            >
-              아직 어려워요 🔄
-            </button>
-            <button
-              onClick={() => {
-                fillDot("good");
-                // 마지막(5번째) 도트가 아닐 때만 TTS 재생
-                if (currentItem?.word && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.word).catch(() => {});
-                }
-              }}
-              className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
-              style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
-            >
-              잘 됐어요 ✓
-            </button>
-          </div>
-        )}
-
-        <BubbleButton
-          variant="white"
-          size="md"
-          onClick={handleNext}
-          className="w-full"
-        >
-          {isLastItem ? "복습 완료 🎊" : "다음 →"}
-        </BubbleButton>
       </div>
     </div>
   );
