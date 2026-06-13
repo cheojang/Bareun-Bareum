@@ -911,8 +911,8 @@ export function PracticeClient({
         })}
       </div>
 
-      {/* 메인 영역 — 상단 정렬로 카드를 위로 당겨 세로 여백 축소(하단은 향후 그림 자리) */}
-      <div className="flex-1 flex flex-col items-center justify-start gap-2.5 pt-3">
+      {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 가운데 정렬(컴포넌트 간 여백 최소화) */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-4">
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
           {/* 연습 카드 */}
@@ -1086,51 +1086,39 @@ export function PracticeClient({
               </p>
             </div>
           )}
+
+          {/* 평가 버튼 2개 — 콘텐츠 묶음 안에 배치 (별점 바로 아래, 로딩 중 비활성) */}
+          {!isSlotsFull && !stage3Loading && (
+            <div className="flex gap-3 w-full mt-1">
+              <button
+                onClick={() => {
+                  fillDot("bad");
+                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
+                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                    playWord(currentItem.text).catch(() => {});
+                  }
+                }}
+                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
+              >
+                아직 어려워요 🔄
+              </button>
+              <button
+                onClick={() => {
+                  fillDot("good");
+                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생
+                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                    playWord(currentItem.text).catch(() => {});
+                  }
+                }}
+                className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
+                style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
+              >
+                잘 됐어요 ✓
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* 하단 버튼 */}
-      <div className="max-w-lg mx-auto w-full px-6 pb-8 pt-5 space-y-3">
-        {/* 평가 버튼 2개 — 로딩 중에는 비활성 */}
-        {!isSlotsFull && !stage3Loading && (
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                fillDot("bad");
-                // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
-                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.text).catch(() => {});
-                }
-              }}
-              className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
-              style={{
-                backgroundColor: "#FDF2F8",
-                border: "2px solid #F9A8D4",
-                color: "#EC4899",
-              }}
-            >
-              아직 어려워요 🔄
-            </button>
-            <button
-              onClick={() => {
-                fillDot("good");
-                // 마지막(5번째) 도트가 아닐 때만 TTS 재생
-                if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
-                  playWord(currentItem.text).catch(() => {});
-                }
-              }}
-              className="flex-1 py-4 rounded-2xl font-black text-base transition-all active:scale-95"
-              style={{
-                backgroundColor: "#F0FAF8",
-                border: "2px solid #7EDFD0",
-                color: "#0D9488",
-              }}
-            >
-              잘 됐어요 ✓
-            </button>
-          </div>
-        )}
-
       </div>
     </div>
   );
