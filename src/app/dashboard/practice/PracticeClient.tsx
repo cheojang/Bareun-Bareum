@@ -325,78 +325,6 @@ function toQuality(goodCount: number): number {
   return 0;
 }
 
-// ─── 자동차 트랙 컴포넌트 ──────────────────────────────────────────────────────
-
-function CarTrack({ progress, childImage }: { progress: number; childImage?: string | null }) {
-  const pct = Math.max(0, Math.min(1, progress));
-  const leftPct = 5 + pct * 88; // 5%~93% — 도로(inset-x-5) 범위에 맞춤
-  const pctDisplay = Math.round(pct * 100);
-
-  return (
-    <div className="w-full select-none">
-      {/* 라벨 — 무엇을 의미하는지 명확히 */}
-      <div className="flex items-center justify-between mb-1.5 px-1">
-        <span className="text-xs font-bold text-[#8B7E74] flex items-center gap-1">
-          🏁 오늘의 진도
-        </span>
-        <span className="text-xs font-black text-[#FFB38A]">{pctDisplay}%</span>
-      </div>
-      <div className="relative w-full h-12">
-      {/* 도로 */}
-      <div className="absolute inset-x-5 bottom-2 h-3 bg-[#F0E8E0] rounded-full overflow-hidden shadow-inner">
-        {/* 차선 (점선) */}
-        <div className="absolute inset-0 flex items-center justify-around px-3">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="w-3 h-0.5 bg-white/50 rounded-full" />
-          ))}
-        </div>
-        {/* 진행 채우기 */}
-        <div
-          className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${pct * 100}%`,
-            background: "linear-gradient(90deg, #FFD9B8, #FFB38A)",
-          }}
-        />
-      </div>
-      {/* 출발 */}
-      <div className="absolute bottom-1.5 left-1 text-sm">🚦</div>
-      {/* 결승 */}
-      <div className="absolute bottom-1.5 right-1 text-sm">🏁</div>
-      {/* 아이 사진 or 자동차 */}
-      <div
-        className="absolute transition-all duration-700 ease-out"
-        style={{
-          left: `${leftPct}%`,
-          bottom: "10px",
-          transform: "translateX(-50%)",
-          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
-        }}
-      >
-        {childImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={childImage}
-            alt="아이"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "2px solid #FFB38A",
-            }}
-          />
-        ) : (
-          <span style={{ fontSize: 24, display: "inline-block", transform: "scaleX(-1)" }}>
-            🚗
-          </span>
-        )}
-      </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── 결과 도트 컴포넌트 ────────────────────────────────────────────────────────
 
 function ResultDots({ slots }: { slots: DotResult[] }) {
@@ -543,31 +471,6 @@ export function PracticeClient({
     const text = currentItem?.text;
     if (text) playWord(text).catch(() => {});
   }, [currentItem?.text, playWord]);
-
-  // ── 자동차 진행률: 전체 단계(복습+1+2+3단계) 통합 기준으로 계산 ─────────────────
-  // 3단계는 AI 동적 생성이라, 진입 전엔 추정값(5개), 진입 후엔 실제 items.length 사용
-  const STAGE3_ESTIMATED = 5;
-  const stage3ItemCount = stage === 3 ? items.length : STAGE3_ESTIMATED;
-
-  // 전체 아이템 수 (존재하는 단계만 합산)
-  const totalAllItems =
-    (stage1Words.length > 0 ? stage1Words.length : 0) +
-    (stage2Words.length > 0 ? stage2Words.length : 0) +
-    stage3ItemCount;
-
-  // 현재 단계 이전까지 완료된 아이템 수
-  const itemsBeforeCurrentStage = (() => {
-    if (stage === 1) return 0;
-    let count = stage1Words.length;
-    if (stage === 2) return count;
-    count += stage2Words.length;
-    return count; // stage === 3
-  })();
-
-  // 전체 도트 기준 진행률 계산
-  const totalAllDots = totalAllItems * MAX_DOTS;
-  const globalFilledDots = itemsBeforeCurrentStage * MAX_DOTS + currentIndex * MAX_DOTS + filledCount;
-  const carProgress = totalAllDots > 0 ? globalFilledDots / totalAllDots : 0;
 
   // ── 단계 전환 ─────────────────────────────────────────────────────────────────
   // 인트로 오버레이 없이 즉시 전환 — 버튼 한 번 누르면 바로 다음 단계
@@ -1147,40 +1050,6 @@ export function PracticeClient({
                 💡 {currentItem.trainingTip}
               </p>
             )}
-          </div>
-
-          {/* 🚗 자동차 트랙 */}
-          <CarTrack progress={carProgress} childImage={childImage} />
-
-          {/* 반복 카운터 — 학습 효과 측정 (50회 이상 반복해야 뇌가 자동화) */}
-          <div className="w-full bg-[#FAF7F4] rounded-xl px-3 py-2.5 border border-[#F0E8E0]">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs text-[#8B7E74] flex-shrink-0 font-bold flex items-center gap-1">
-                🔁 발음 연습 횟수
-              </span>
-              <div className="flex-1 h-1.5 bg-white rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, (totalReps / REP_TARGET) * 100)}%`,
-                    background: totalReps >= REP_TARGET
-                      ? "linear-gradient(90deg,#7EDFD0,#2ECC71)"
-                      : "linear-gradient(90deg,#C4B5A8,#8B7E74)",
-                  }}
-                />
-              </div>
-              <span
-                className="text-xs font-black flex-shrink-0 min-w-[44px] text-right"
-                style={{ color: totalReps >= REP_TARGET ? "#0D9488" : "#8B7E74" }}
-              >
-                {totalReps >= REP_TARGET ? "🎯 " : ""}{totalReps}/{REP_TARGET}
-              </span>
-            </div>
-            <p className="text-[10px] text-[#C4B5A8] mt-1.5 leading-tight pl-0.5">
-              {totalReps >= REP_TARGET
-                ? "✨ 목표 달성! 같은 음소를 충분히 연습했어요"
-                : "같은 음소가 들어간 단어들이 모두 누적돼요 · 50회면 뇌가 발음을 자동화해요"}
-            </p>
           </div>
 
           {/* 도트 (5개) */}
