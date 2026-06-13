@@ -38,18 +38,26 @@ const devProvider = [
               userRole = "therapist"; therapistRole = "owner"; name = "개발자(상담소장)";
             }
 
+            // ── 핵심 경로: 유저 조회/생성 (실패 시에만 로그인 차단) ──────────────────
+            let user;
             try {
-              // DB에 없으면 자동 생성
-              let user = await prisma.user.findUnique({ where: { email } });
+              user = await prisma.user.findUnique({ where: { email } });
               if (!user) {
                 user = await prisma.user.create({ data: { email, name, role: userRole } });
               }
+            } catch (e) {
+              // 진짜 DB 오류(콜드스타트 등) — null 반환 시 CredentialsSignin으로 로그인 페이지 복귀
+              console.error("[dev-auth] 유저 조회/생성 실패:", e instanceof Error ? e.message : e);
+              return null;
+            }
 
-              // therapist 계정이면 Therapist 프로필 자동 생성
-              if (therapistRole && user) {
+            // ── 부가 작업(best-effort): 실패해도 로그인은 진행 ─────────────────────────
+            // (therapist 프로필 / 프리미엄 / 약관 동의 자동 기록 — 어느 하나 실패해도
+            //  로그인 자체를 막지 않도록 별도 try/catch로 격리)
+            try {
+              if (therapistRole) {
                 const existing = await prisma.therapist.findUnique({ where: { userId: user.id } });
                 if (!existing) {
-                  // 개발용 센터 자동 생성
                   let devCenter = await prisma.center.findFirst({ where: { name: "[개발용] 테스트 센터" } });
                   if (!devCenter) {
                     devCenter = await prisma.center.create({
@@ -57,21 +65,14 @@ const devProvider = [
                     });
                   }
                   await prisma.therapist.create({
-                    data: {
-                      userId: user.id,
-                      centerId: devCenter.id,
-                      name,
-                      role: therapistRole,
-                    },
+                    data: { userId: user.id, centerId: devCenter.id, name, role: therapistRole },
                   });
                   await prisma.user.update({ where: { id: user.id }, data: { role: userRole } });
                 }
               }
 
-              // 개발 계정은 프리미엄 자동 부여 + 약관 동의 자동 기록
-              // → 로그인할 때마다 /consent 리디렉트 없이 바로 /dashboard 진입
               const now = new Date();
-              await Promise.all([
+              await Promise.allSettled([
                 prisma.subscription.upsert({
                   where: { userId: user.id },
                   create: { userId: user.id, plan: "premium", status: "active" },
@@ -83,14 +84,11 @@ const devProvider = [
                   update: {},
                 }),
               ]);
-
-              return { id: user.id, email: user.email, name: user.name };
             } catch (e) {
-              // DB 오류(콜드스타트 등)가 NextAuth "Configuration" 에러로 노출되는 것을 방지
-              // null 반환 시 "CredentialsSignin" 에러로 처리되어 로그인 페이지로 돌아감
-              console.error("[dev-auth] DB 오류:", e instanceof Error ? e.message : e);
-              return null;
+              console.warn("[dev-auth] 부가 설정 실패(로그인은 계속):", e instanceof Error ? e.message : e);
             }
+
+            return { id: user.id, email: user.email, name: user.name };
           },
         }),
       ];
