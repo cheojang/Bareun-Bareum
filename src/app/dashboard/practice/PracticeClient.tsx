@@ -911,9 +911,9 @@ export function PracticeClient({
         })}
       </div>
 
-      {/* 메인 영역 */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-3 px-6">
+      {/* 메인 영역 — 상단 정렬로 카드를 위로 당겨 세로 여백 축소(하단은 향후 그림 자리) */}
+      <div className="flex-1 flex flex-col items-center justify-start gap-2.5 pt-3">
+        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
           {/* 연습 카드 */}
           <div
