@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 
+// useSearchParams()는 Suspense 경계 안에서만 정적 프리렌더 가능 (Next.js 빌드 요구사항)
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   // 약관 동의는 첫 로그인(가입) 후 /consent 에서 1회 수집해 DB에 일시 기록.
   // 로그인 화면에서는 매번 체크하지 않고 고지 문구로 안내.
 
