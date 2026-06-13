@@ -190,14 +190,14 @@ function RecordRow({
       {/* 펼친 상세 내용 */}
       {expanded && (
         <div className="mx-1 mb-3 rounded-2xl bg-[#FAFAF8] px-4 py-3 space-y-3">
+          {/* 혀 모양 단면도 — 처방전 유무와 무관하게 오류 음소가 매핑되면 항상 표시 */}
+          {getArticulationSlug(phonemeFromPattern(record.errorPattern)) && (
+            <div className="flex justify-center pb-1">
+              <ArticulationDiagram phoneme={record.errorPattern} size="sm" />
+            </div>
+          )}
           {gemini ? (
             <>
-              {/* 혀 모양 단면도 */}
-              {getArticulationSlug(phonemeFromPattern(record.errorPattern)) && (
-                <div className="flex justify-center pb-1">
-                  <ArticulationDiagram phoneme={record.errorPattern} size="sm" />
-                </div>
-              )}
               <div>
                 <p className="text-[11px] font-bold text-[#8B7E74] mb-1">💡 왜 이런 발음이 나올까요?</p>
                 <p className="text-xs text-[#5B4E9B] leading-relaxed">{gemini.rootCause}</p>
