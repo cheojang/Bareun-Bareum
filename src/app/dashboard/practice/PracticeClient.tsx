@@ -190,10 +190,10 @@ function AuditoryBombardment({
       {!hasStarted && (
         <div className="flex flex-col items-center gap-3 mt-2">
           <div className="flex items-center gap-3">
-            <BubbleButton variant="peach" size="lg" onClick={startPlaying}>
+            <BubbleButton variant="peach" size="md" onClick={startPlaying}>
               ▶️ 듣기 시작
             </BubbleButton>
-            <BubbleButton variant="gray" size="lg" onClick={onDone}>
+            <BubbleButton variant="gray" size="md" onClick={onDone}>
               넘어가기 →
             </BubbleButton>
           </div>
@@ -419,8 +419,8 @@ export function PracticeClient({
   );
   const bombardmentWords = [
     ...stage1Words.map((e) => e.word),
-    ...stage2Words.map((w) => w.word),
-  ];
+    ...stage2Words.slice(0, Math.max(0, 6 - stage1Words.length)).map((w) => w.word),
+  ].slice(0, 6);
 
   // 3단계 사전 fetch — 2단계 마지막 단어에서 미리 문장 받아두기
   const [prefetchedS3, setPrefetchedS3] = useState<string[] | null>(null);

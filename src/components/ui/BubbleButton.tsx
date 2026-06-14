@@ -30,7 +30,7 @@ export const BubbleButton = forwardRef<HTMLButtonElement, BubbleButtonProps>(
         ref={ref}
         disabled={disabled}
         className={`
-          bubble-btn font-bold rounded-full
+          bubble-btn font-bold rounded-full whitespace-nowrap
           ${variantStyles[variant]}
           ${sizeStyles[size]}
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}
