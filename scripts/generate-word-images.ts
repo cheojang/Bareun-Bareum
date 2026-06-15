@@ -25,7 +25,14 @@ import sharp from "sharp";
 import { readFileSync, mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { WORD_IMAGE_SLUGS } from "../src/lib/word-images";
-import { getWordByText } from "../src/lib/word-database";
+
+// 영어 시각 설명(글로스) — 있으면 한글 대신 사용해 정확도 향상.
+// 파일이 아직 없을 수 있으므로(선행: generate-word-glosses.ts) 안전하게 로드.
+let WORD_GLOSS: Record<string, string> = {};
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  WORD_GLOSS = require("../src/lib/word-image-glosses").WORD_GLOSS ?? {};
+} catch { /* 글로스 파일 없으면 한글 폴백 */ }
 
 // ── 설정 ─────────────────────────────────────────────────────────────────────
 const IMAGE_MODEL = process.env.IMAGE_MODEL || "imagen-4.0-generate-001";
@@ -142,13 +149,17 @@ const WORD_CONTEXT: Record<string, string> = {
 // ── 일관된 귀여운 스타일 프롬프트 ───────────────────────────────────────────
 const STYLE = [
   "Style: flat vector illustration, thick rounded outlines, soft pastel colors (peach, mint, cream),",
-  "friendly and simple, one single centered subject only, plain solid white background,",
-  "no text, no letters, no words, no border, no watermark. Square 1:1 composition,",
-  "high quality, crisp, clean.",
+  "friendly and simple, one single centered subject only, plain solid white background.",
+  "ABSOLUTELY NO text, no letters, no words, no numbers, no labels, no captions, no writing on any surface;",
+  "keep all surfaces blank. No border, no watermark, no signature.",
+  "Square 1:1 composition, high quality, crisp, clean.",
 ].join(" ");
 
+// 프롬프트 주제 우선순위: 손튜닝 맥락(WORD_CONTEXT) > 영어 글로스 > 한글 폴백
 function buildPrompt(word: string): string {
-  const subject = WORD_CONTEXT[word] ?? `a cute illustration representing "${word}"`;
+  const subject =
+    WORD_CONTEXT[word] ??
+    (WORD_GLOSS[word] ? `${WORD_GLOSS[word]}` : `a cute illustration representing "${word}"`);
   return `Create a single cute illustration of ${subject} for a Korean toddler (age 3-5). ${STYLE}`;
 }
 
