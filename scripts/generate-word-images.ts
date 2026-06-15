@@ -239,6 +239,7 @@ async function main() {
 
   for (let i = 0; i < entries.length; i += BATCH_SIZE) {
     const batch = entries.slice(i, i + BATCH_SIZE);
+    let anyGenerated = false;
     await Promise.all(
       batch.map(async ([word, slug]) => {
         const outPath = join(OUT_DIR, `${slug}.webp`);
@@ -248,6 +249,7 @@ async function main() {
         if (buf) {
           writeFileSync(outPath, buf);
           done++;
+          anyGenerated = true;
           console.log(`  ✓ ${word} → ${slug}.webp (${(buf.length / 1024).toFixed(1)}KB)`);
         } else {
           failed++;
@@ -255,8 +257,9 @@ async function main() {
         }
       }),
     );
-    if (i + BATCH_SIZE < entries.length) await new Promise((r) => setTimeout(r, DELAY_MS));
-    console.log(`진행: ${Math.min(i + BATCH_SIZE, entries.length)}/${entries.length}`);
+    // 스킵만 했다면 딜레이 없이 즉시 다음 배치 (빠른 탐색)
+    if (anyGenerated && i + BATCH_SIZE < entries.length) await new Promise((r) => setTimeout(r, DELAY_MS));
+    if (i % 200 === 0 || anyGenerated) console.log(`진행: ${Math.min(i + BATCH_SIZE, entries.length)}/${entries.length} (신규:${done} 스킵:${skipped})`);
   }
 
   console.log(`\n완료 — 생성 ${done} · 건너뜀 ${skipped} · 실패 ${failed}`);
