@@ -192,16 +192,6 @@ function RecordRow({
       {/* 펼친 상세 내용 */}
       {expanded && (
         <div className="mx-1 mb-3 rounded-2xl bg-[#FAFAF8] px-4 py-3 space-y-3">
-          {/* 혀 모양 단면도 — 처방전 유무와 무관하게 오류 음소가 매핑되면 항상 표시.
-              서버 추출 음소(record.phoneme) 우선, 없으면 errorPattern에서 추출 */}
-          {(() => {
-            const ph = record.phoneme ?? phonemeFromPattern(record.errorPattern);
-            return ph && getArticulationSlug(ph) ? (
-              <div className="flex justify-center pb-1">
-                <ArticulationDiagram phoneme={ph} size="sm" />
-              </div>
-            ) : null;
-          })()}
           {gemini ? (
             <>
               <div>
@@ -210,6 +200,14 @@ function RecordRow({
               </div>
               <div>
                 <p className="text-[11px] font-bold text-[#8B7E74] mb-2">📚 선생님의 처방전</p>
+                {(() => {
+                  const ph = record.phoneme ?? phonemeFromPattern(record.errorPattern);
+                  return ph && getArticulationSlug(ph) ? (
+                    <div className="flex justify-center py-2">
+                      <ArticulationDiagram phoneme={ph} size="sm" />
+                    </div>
+                  ) : null;
+                })()}
                 <div className="space-y-1.5">
                   {steps.filter(Boolean).map((step, i) => {
                     const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
@@ -307,12 +305,6 @@ function CurrentAnalysisCard({
           </div>
         </div>
 
-        {/* 혀 모양 단면도 — 목표 음소가 매핑될 때만 */}
-        {getArticulationSlug(phonemeFromPattern(localResult.errorPattern)) && (
-          <div className="mt-3 flex justify-center">
-            <ArticulationDiagram phoneme={localResult.errorPattern} size="md" />
-          </div>
-        )}
       </BubbleCard>
 
       {/* 글로벌 캐시 HIT 배지 */}
@@ -364,6 +356,14 @@ function CurrentAnalysisCard({
       {geminiResult && (geminiResult.trainingSteps.length > 0 || (geminiResult.rootCause && geminiLoading)) && (
         <BubbleCard>
           <p className="text-sm font-bold text-[#3D3530] mb-3">📚 선생님의 처방전</p>
+          {(() => {
+            const ph = phonemeFromPattern(localResult.errorPattern);
+            return ph && getArticulationSlug(ph) ? (
+              <div className="flex justify-center mb-4">
+                <ArticulationDiagram phoneme={ph} size="md" />
+              </div>
+            ) : null;
+          })()}
           <div className="space-y-4">
             {geminiResult.trainingSteps.map((step, i) => {
               const meta = STEP_LABELS[i] ?? STEP_LABELS[0];
@@ -706,6 +706,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
         errorPattern: local.errorPattern,
         errorCategory: local.errorCategory,
         createdAt: new Date().toISOString(),
+        phoneme: phonemeFromPattern(local.errorPattern),
         localAnalysis: { confidence: local.localAnalysis.confidence },
         geminiFeedback: finalGemini ? {
           rootCause: finalGemini.rootCause ?? "",
