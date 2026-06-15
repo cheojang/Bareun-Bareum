@@ -40,9 +40,11 @@ const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
 const OUT_DIR = join(process.cwd(), "public", "images", "words");
 const STORE_SIZE = 1024;    // 저장 해상도(정사각) — 화질 우선
 const WEBP_QUALITY = 90;    // webp 품질 (화질 우선)
-const BATCH_SIZE = 4;       // 동시 호출 수
-const DELAY_MS = 2000;      // 배치 간 대기
-const MAX_RETRY = 2;
+const BATCH_SIZE = Number(process.env.BATCH_SIZE) || 2;   // 동시 호출 수 (quota 회피 위해 낮춤)
+const DELAY_MS = Number(process.env.DELAY_MS) || 3000;    // 배치 간 대기
+const MAX_RETRY = 2;        // 콘텐츠(안전필터) 재시도 횟수
+const QUOTA_RETRY = 8;      // 429(quota) 재시도 횟수
+const QUOTA_WAIT_MS = 30000; // 429 시 대기 (지수 증가)
 
 // 프로젝트 ID: 환경변수 우선, 없으면 서비스 계정 키 JSON에서 추출
 function resolveProject(): string {
@@ -189,20 +191,38 @@ async function generateImage(prompt: string): Promise<Buffer | null> {
     .toBuffer();
 }
 
+function isQuotaError(msg: string): boolean {
+  return /RESOURCE_EXHAUSTED|quota|429/i.test(msg);
+}
+
 async function withRetry(word: string): Promise<Buffer | null> {
   const base = buildPrompt(word);
-  for (let attempt = 0; attempt <= MAX_RETRY; attempt++) {
-    // 1차는 원본, 차단·실패 시 마스코트 프롬프트로 재시도
-    const prompt = attempt === 0 ? base : sanitizePrompt(base);
+  let contentAttempt = 0;
+  let quotaAttempt = 0;
+
+  while (contentAttempt <= MAX_RETRY) {
+    // 1차는 원본, 콘텐츠 차단·실패 시 마스코트 프롬프트로 재시도
+    const prompt = contentAttempt === 0 ? base : sanitizePrompt(base);
     try {
       const buf = await generateImage(prompt);
       if (buf) return buf;
-      console.warn(`  ⚠ ${word} 시도 ${attempt + 1}: 이미지 없음(안전필터 가능)`);
+      console.warn(`  ⚠ ${word} 시도 ${contentAttempt + 1}: 이미지 없음(안전필터 가능)`);
+      contentAttempt++;
+      await new Promise((r) => setTimeout(r, 1500 * contentAttempt));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.warn(`  ⚠ ${word} 시도 ${attempt + 1} 실패: ${msg}`);
+      // 429(quota): 콘텐츠 시도 카운트 증가 없이 길게 대기 후 같은 요청 재시도
+      if (isQuotaError(msg) && quotaAttempt < QUOTA_RETRY) {
+        quotaAttempt++;
+        const wait = QUOTA_WAIT_MS * Math.min(quotaAttempt, 4); // 30s→120s 상한
+        console.warn(`  ⏳ ${word} quota 대기 ${(wait / 1000)}s (${quotaAttempt}/${QUOTA_RETRY})`);
+        await new Promise((r) => setTimeout(r, wait));
+        continue;
+      }
+      console.warn(`  ⚠ ${word} 시도 ${contentAttempt + 1} 실패: ${msg}`);
+      contentAttempt++;
+      await new Promise((r) => setTimeout(r, 1500 * contentAttempt));
     }
-    if (attempt < MAX_RETRY) await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
   }
   return null;
 }
