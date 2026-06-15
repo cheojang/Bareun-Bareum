@@ -8,6 +8,7 @@ import { hasConsent } from "@/lib/consent";
 import { ChildSelector } from "@/components/dashboard/ChildSelector";
 import { SidebarNavItems, BottomNavItems } from "@/components/dashboard/DashboardNav";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { ProfileMenu } from "@/components/dashboard/ProfileMenu";
 import { ServiceWorkerRegistrar } from "@/components/dashboard/ServiceWorkerRegistrar";
 
 export default async function DashboardLayout({
@@ -78,6 +79,9 @@ export default async function DashboardLayout({
             <ChildSelector children={childList} selectedId={validId} />
           )}
           <NotificationBell initialUnreadCount={unreadCount} />
+          {!isGuest && (
+            <ProfileMenu name={session.user.name} email={session.user.email} />
+          )}
         </div>
       </header>
 
@@ -138,6 +142,9 @@ export default async function DashboardLayout({
               <ChildSelector children={childList} selectedId={validId} />
             )}
             <NotificationBell initialUnreadCount={unreadCount} />
+            {!isGuest && (
+              <ProfileMenu name={session.user.name} email={session.user.email} />
+            )}
           </div>
 
           {/* 게스트 배너 */}
