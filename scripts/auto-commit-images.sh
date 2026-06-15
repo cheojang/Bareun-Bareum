@@ -6,7 +6,7 @@ git config user.email noreply@anthropic.com
 git config user.name Claude
 
 while true; do
-  sleep 60
+  sleep 20
 
   UNTRACKED=$(git status --short public/images/words/ | grep "^??" | wc -l)
   if [ "$UNTRACKED" -gt 0 ]; then
