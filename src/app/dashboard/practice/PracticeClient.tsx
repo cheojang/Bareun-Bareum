@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
+import { ListenPickGame, type PickCard } from "@/components/child/ListenPickGame";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
@@ -430,6 +431,22 @@ export function PracticeClient({
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
+  // ── 단계 사이 미니게임(소리 듣고 그림 맞추기) ──────────────────────────────────
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  // 그림 있는 단어 후보 — 1·2단계 단어 중 이미지 보유 단어(중복 제거)
+  const gamePool = useMemo<PickCard[]>(() => {
+    const seen = new Set<string>();
+    const out: PickCard[] = [];
+    for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
+      const slug = wordInfos[w]?.imageSlug;
+      if (slug && !seen.has(w)) {
+        seen.add(w);
+        out.push({ word: w, imageSlug: slug });
+      }
+    }
+    return out;
+  }, [stage1Words, stage2Words, wordInfos]);
+
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
   const filledCount = currentSlots.filter((s) => s !== null).length;
@@ -681,13 +698,8 @@ export function PracticeClient({
     setCurrentIndex(prevItems.length - 1); // 마지막 아이템으로
   }, [currentIndex, stage, stage2Words, makeItems]);
 
-  // ── 다음 아이템 ───────────────────────────────────────────────────────────────
-  const handleNext = useCallback(() => {
-    if (currentIndex + 1 < items.length) {
-      setCurrentIndex((i) => i + 1);
-      return;
-    }
-    // 현재 단계 완료
+  // 현재 단계 기준으로 실제 다음 단계로 전환 (미니게임 후 호출)
+  const proceedToNextStage = useCallback(() => {
     if (stage === 1 && stage2Words.length > 0) {
       transitionToStage(2);
     } else if (stage === 1 || stage === 2) {
@@ -696,7 +708,26 @@ export function PracticeClient({
       // 3단계 마지막 → 모든 문장 리뷰 화면 표시
       setShowSentenceReview(true);
     }
-  }, [currentIndex, items.length, stage, stage2Words.length, transitionToStage]);
+  }, [stage, stage2Words.length, transitionToStage]);
+
+  // ── 다음 아이템 ───────────────────────────────────────────────────────────────
+  const handleNext = useCallback(() => {
+    if (currentIndex + 1 < items.length) {
+      setCurrentIndex((i) => i + 1);
+      return;
+    }
+    // 단계 완료 — 3단계 마지막은 게임 없이 바로 리뷰로
+    if (stage === 3) {
+      setShowSentenceReview(true);
+      return;
+    }
+    // 단계 사이: 그림 단어가 2개 이상이면 미니게임, 아니면 바로 다음 단계
+    if (gamePool.length >= 2) {
+      setShowInterstitial(true);
+    } else {
+      proceedToNextStage();
+    }
+  }, [currentIndex, items.length, stage, gamePool.length, proceedToNextStage]);
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
   if (stage1Words.length === 0) {
@@ -822,6 +853,19 @@ export function PracticeClient({
       <AuditoryBombardment
         words={bombardmentWords}
         onDone={() => setPhase("practice")}
+      />
+    );
+  }
+
+  // ── 단계 사이 미니게임 (소리 듣고 그림 맞추기) ─────────────────────────────────
+  if (showInterstitial) {
+    return (
+      <ListenPickGame
+        pool={gamePool}
+        onDone={() => {
+          setShowInterstitial(false);
+          proceedToNextStage();
+        }}
       />
     );
   }
