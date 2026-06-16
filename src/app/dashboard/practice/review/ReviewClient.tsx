@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
+import { ReviewBuddy, type BuddyReaction } from "@/components/child/ReviewBuddy";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { WordImage } from "@/components/ui/WordImage";
 import { useTTS } from "@/lib/useTTS";
@@ -102,9 +103,12 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [confetti, setConfetti] = useState(false);
   const [allDone, setAllDone] = useState(false);
+  // 소리새 친구 반응 — 평가할 때마다 id 증가
+  const [buddy, setBuddy] = useState<{ type: BuddyReaction; id: number }>({ type: null, id: 0 });
 
   const currentItem = items[currentIndex];
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
+  const goodCount = currentSlots.filter((s) => s === "good").length;
 
   // ── 단어 자동 재생 + 다시 듣기 ─────────────────────────────────────────────
   const { play: playWord, stop: stopWord } = useTTS();
@@ -327,7 +331,13 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
                   const size = w.length <= 2 ? "3.5rem" : w.length === 3 ? "2.75rem" : "2.25rem";
                   return (
                     <>
-                      <WordImage word={w} imageSlug={currentItem.imageSlug} size="lg" />
+                      {/* 색칠하기 — 잘 됐어요(good)마다 그림 색이 아래에서 위로 차오름 */}
+                      <WordImage
+                        word={w}
+                        imageSlug={currentItem.imageSlug}
+                        size="lg"
+                        reveal={goodCount / MAX_DOTS}
+                      />
                       <p className="font-black text-[#3D3530] whitespace-nowrap leading-none" style={{ fontSize: size }}>
                         {w}
                       </p>
@@ -411,6 +421,7 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
               <button
                 onClick={() => {
                   fillDot("bad");
+                  setBuddy((b) => ({ type: "oops", id: b.id + 1 }));
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어 직전엔 안 들려줌
                   if (currentItem?.word && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.word).catch(() => {});
@@ -424,6 +435,9 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
               <button
                 onClick={() => {
                   fillDot("good");
+                  // 5번째(마지막) good이면 환호, 아니면 칭찬
+                  const willComplete = filledCount + 1 >= MAX_DOTS;
+                  setBuddy((b) => ({ type: willComplete ? "celebrate" : "cheer", id: b.id + 1 }));
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생
                   if (currentItem?.word && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.word).catch(() => {});
@@ -445,6 +459,11 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
           >
             {isLastItem ? "복습 완료 🎊" : "다음 →"}
           </BubbleButton>
+        </div>
+
+        {/* 소리새 친구 — 화면 하단에서 함께 응원 */}
+        <div className="mt-auto pt-2 pb-4">
+          <ReviewBuddy reactionType={buddy.type} reactionId={buddy.id} />
         </div>
       </div>
     </div>
