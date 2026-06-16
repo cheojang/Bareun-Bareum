@@ -5,6 +5,9 @@ import { WordImage } from "@/components/ui/WordImage";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { useTTS } from "@/lib/useTTS";
+import { buildRounds, type PickCard } from "@/lib/mini-game";
+
+export type { PickCard };
 
 /**
  * ListenPickGame — 단계 사이 "소리 듣고 그림 맞추기" 미니게임 (뇌 휴식 + 청각 변별 훈련).
@@ -16,35 +19,11 @@ import { useTTS } from "@/lib/useTTS";
  * 짧게(기본 2라운드) 끝내고 onDone으로 다음 단계로 넘깁니다.
  */
 
-export interface PickCard {
-  word: string;
-  imageSlug: string;
-}
-
 interface Props {
   /** 그림 있는 단어 후보 (2개 이상이어야 의미 있음) */
   pool: PickCard[];
   onDone: () => void;
   rounds?: number;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function buildRounds(pool: PickCard[], rounds: number, cardsPerRound: number) {
-  const result: { target: PickCard; options: PickCard[] }[] = [];
-  for (let i = 0; i < rounds; i++) {
-    const options = shuffle(pool).slice(0, cardsPerRound);
-    const target = options[Math.floor(Math.random() * options.length)];
-    result.push({ target, options: shuffle(options) });
-  }
-  return result;
 }
 
 export function ListenPickGame({ pool, onDone, rounds = 2 }: Props) {

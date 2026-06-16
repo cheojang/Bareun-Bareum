@@ -13,6 +13,8 @@ interface Props {
    * (복습 "그림 색칠하기" 효과). undefined면 평소처럼 항상 풀컬러로 표시.
    */
   reveal?: number;
+  /** 검은 실루엣(그림자)으로 표시 — "그림자 맞추기" 게임용 */
+  silhouette?: boolean;
 }
 
 const SIZE_PX: Record<NonNullable<Props["size"]>, number> = {
@@ -35,7 +37,7 @@ const SIZE_PX: Record<NonNullable<Props["size"]>, number> = {
  *      (npm run generate:word-images 로 일괄 생성)
  *   2. src/lib/word-images.ts WORD_IMAGE_SLUGS 에 단어→슬러그 매핑 추가
  */
-export function WordImage({ word, imageSlug, size = "md", className = "", reveal }: Props) {
+export function WordImage({ word, imageSlug, size = "md", className = "", reveal, silhouette }: Props) {
   const px = SIZE_PX[size];
   const rounded = size === "xl" || size === "lg" ? "rounded-2xl" : "rounded-xl";
   const [failed, setFailed] = useState(false);
@@ -43,6 +45,21 @@ export function WordImage({ word, imageSlug, size = "md", className = "", reveal
 
   // 이미지가 없거나 로드 실패 시 회색 박스 대신 아무것도 안 그림
   if (!imageSlug || failed) return null;
+
+  // ── 그림자(실루엣) 모드 ──────────────────────────────────────────────────────
+  if (silhouette) {
+    return (
+      <Image
+        src={src}
+        alt={word}
+        width={px}
+        height={px}
+        onError={() => setFailed(true)}
+        className={`object-contain flex-shrink-0 ${rounded} ${className}`}
+        style={{ filter: "brightness(0) opacity(0.82)" }}
+      />
+    );
+  }
 
   // ── 색칠 모드 ─────────────────────────────────────────────────────────────
   // 흑백 베이스 위에 같은 그림(컬러)을 겹쳐, 아래에서 위로 차오르도록 clip.

@@ -4,7 +4,10 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
-import { ListenPickGame, type PickCard } from "@/components/child/ListenPickGame";
+import { ListenPickGame } from "@/components/child/ListenPickGame";
+import { ShadowMatchGame } from "@/components/child/ShadowMatchGame";
+import { PuzzleGame } from "@/components/child/PuzzleGame";
+import type { PickCard } from "@/lib/mini-game";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
@@ -431,8 +434,12 @@ export function PracticeClient({
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
-  // ── 단계 사이 미니게임(소리 듣고 그림 맞추기) ──────────────────────────────────
+  // ── 단계 사이 미니게임 ─────────────────────────────────────────────────────────
+  // 전환마다 세 게임이 번갈아 나오도록 로테이션
+  const MINI_GAMES = ["listen", "shadow", "puzzle"] as const;
   const [showInterstitial, setShowInterstitial] = useState(false);
+  const [gameType, setGameType] = useState<(typeof MINI_GAMES)[number]>("listen");
+  const interstitialCountRef = useRef(0);
   // 그림 있는 단어 후보 — 1·2단계 단어 중 이미지 보유 단어(중복 제거)
   const gamePool = useMemo<PickCard[]>(() => {
     const seen = new Set<string>();
@@ -723,10 +730,13 @@ export function PracticeClient({
     }
     // 단계 사이: 그림 단어가 2개 이상이면 미니게임, 아니면 바로 다음 단계
     if (gamePool.length >= 2) {
+      const idx = interstitialCountRef.current++;
+      setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
       setShowInterstitial(true);
     } else {
       proceedToNextStage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, items.length, stage, gamePool.length, proceedToNextStage]);
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
@@ -857,17 +867,15 @@ export function PracticeClient({
     );
   }
 
-  // ── 단계 사이 미니게임 (소리 듣고 그림 맞추기) ─────────────────────────────────
+  // ── 단계 사이 미니게임 (전환마다 로테이션) ─────────────────────────────────────
   if (showInterstitial) {
-    return (
-      <ListenPickGame
-        pool={gamePool}
-        onDone={() => {
-          setShowInterstitial(false);
-          proceedToNextStage();
-        }}
-      />
-    );
+    const finishGame = () => {
+      setShowInterstitial(false);
+      proceedToNextStage();
+    };
+    if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={finishGame} />;
+    if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={finishGame} />;
+    return <ListenPickGame pool={gamePool} onDone={finishGame} />;
   }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
