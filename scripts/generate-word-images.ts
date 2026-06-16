@@ -227,6 +227,22 @@ async function withRetry(word: string): Promise<Buffer | null> {
   return null;
 }
 
+// 안전필터 등으로 영구 실패한 단어 — 재시작마다 또 재시도하지 않도록 기록
+const FAILED_LIST_PATH = join(process.cwd(), "public", "images", ".word-images-failed.json");
+
+function loadFailedWords(): Set<string> {
+  if (!existsSync(FAILED_LIST_PATH)) return new Set();
+  try {
+    return new Set(JSON.parse(readFileSync(FAILED_LIST_PATH, "utf8")));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveFailedWords(words: Set<string>) {
+  writeFileSync(FAILED_LIST_PATH, JSON.stringify([...words], null, 2));
+}
+
 // ── 메인 ─────────────────────────────────────────────────────────────────────
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
@@ -235,6 +251,7 @@ async function main() {
   // LIMIT 환경변수로 부분 실행 가능 (스모크 테스트용): LIMIT=5
   const limit = process.env.LIMIT ? Number(process.env.LIMIT) : Infinity;
   const entries = Object.entries(WORD_IMAGE_SLUGS).slice(0, limit);
+  const failedWords = loadFailedWords();
   let done = 0, skipped = 0, failed = 0;
 
   for (let i = 0; i < entries.length; i += BATCH_SIZE) {
@@ -243,7 +260,7 @@ async function main() {
     await Promise.all(
       batch.map(async ([word, slug]) => {
         const outPath = join(OUT_DIR, `${slug}.webp`);
-        if (existsSync(outPath)) { skipped++; return; }
+        if (existsSync(outPath) || failedWords.has(word)) { skipped++; return; }
 
         const buf = await withRetry(word);
         if (buf) {
@@ -253,7 +270,9 @@ async function main() {
           console.log(`  ✓ ${word} → ${slug}.webp (${(buf.length / 1024).toFixed(1)}KB)`);
         } else {
           failed++;
-          console.error(`  ✗ ${word} 실패`);
+          failedWords.add(word);
+          saveFailedWords(failedWords);
+          console.error(`  ✗ ${word} 실패 (영구 스킵 목록에 추가)`);
         }
       }),
     );

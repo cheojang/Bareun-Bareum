@@ -450,8 +450,6 @@ export function PracticeClient({
   useEffect(() => {
     const text = currentItem?.text;
     if (!text || stage3Loading) return;
-    // 문장(3단계)은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
-    if (currentItem?.kind === "sentence") return;
     // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
     // → phase가 "practice"로 바뀐 직후(사용자 클릭 이후)에 첫 단어 재생
     if (phase !== "practice") return;
@@ -1035,15 +1033,6 @@ export function PracticeClient({
               </button>
             </div>
 
-            {!stage3Loading && currentItem?.kind === "sentence" && (
-              <div className="flex justify-center pb-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
-                  <span className="text-base">📖</span>
-                  부모님이 읽어주세요
-                </div>
-              </div>
-            )}
-
             {/* 훈련 팁 (2단계 처방전) — 단어 영역 아래에 별도 배치 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
@@ -1094,7 +1083,7 @@ export function PracticeClient({
                 onClick={() => {
                   fillDot("bad");
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1107,7 +1096,7 @@ export function PracticeClient({
                 onClick={() => {
                   fillDot("good");
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}

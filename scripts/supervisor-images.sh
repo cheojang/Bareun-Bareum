@@ -14,7 +14,7 @@ git config user.name Claude
 auto_commit() {
   local count=$(ls public/images/words/ | wc -l)
   if [ "$count" -gt "$LAST_COMMITTED" ]; then
-    git add public/images/words/
+    git add public/images/words/ public/images/.word-images-failed.json
     git commit -m "feat: 단어 이미지 자동 커밋 — 총 ${count}장
 
 https://claude.ai/code/session_01DkegYDZvRc5EVtZJgSJ3CX" 2>/dev/null
@@ -38,14 +38,18 @@ while true; do
   EXIT_CODE=$?
 
   CURRENT=$(ls public/images/words/ | wc -l)
-  echo "[$(date)] 생성기 종료 (exit ${EXIT_CODE}) — ${CURRENT}장"
+  FAILED_COUNT=0
+  if [ -f public/images/.word-images-failed.json ]; then
+    FAILED_COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('public/images/.word-images-failed.json')).length)" 2>/dev/null || echo 0)
+  fi
+  echo "[$(date)] 생성기 종료 (exit ${EXIT_CODE}) — ${CURRENT}장 (영구실패 ${FAILED_COUNT}건)"
 
   # 커밋
   auto_commit
 
-  # 목표 달성 시 종료
-  if [ "$CURRENT" -ge "$TOTAL" ]; then
-    echo "[$(date)] ✅ 완료! 총 ${CURRENT}장 생성됨"
+  # 목표 달성 시 종료 (영구 실패 단어 제외하고 더 만들 게 없으면 종료)
+  if [ "$((CURRENT + FAILED_COUNT))" -ge "$TOTAL" ]; then
+    echo "[$(date)] ✅ 완료! 생성 ${CURRENT}장 · 영구실패 ${FAILED_COUNT}건"
     break
   fi
 
