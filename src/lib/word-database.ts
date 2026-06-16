@@ -1559,7 +1559,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   // ── 음악·악기 심화 (Advanced Music) ─────────────────────────────────────
   { word: "오르간", targetPhonemes: ["ㄹ", "ㄱ", "ㄴ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "오르간을 연주해요." },
   { word: "플루트", targetPhonemes: ["ㅍ", "ㄹ", "ㅌ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "플루트를 불어요." },
-  { word: "클라리넷", targetPhonemes: ["ㅋ", "ㄹ", "ㄴ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "클라리넷을 불어요." },
   { word: "색소폰", targetPhonemes: ["ㅅ", "ㄱ", "ㅍ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "색소폰을 불어요." },
   { word: "하프", targetPhonemes: ["ㅎ", "ㅍ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "하프를 켜요." },
   { word: "첼로", targetPhonemes: ["ㅊ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "첼로를 켜요." },
@@ -2366,7 +2365,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "약과", targetPhonemes: ["ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "약과가 달콤해요." },
   { word: "칩", targetPhonemes: ["ㅊ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "바삭한 감자칩을 먹어요." },
   { word: "감자칩", targetPhonemes: ["ㄱ", "ㅁ", "ㅈ", "ㅊ", "ㅂ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "감자칩이 짭짤해요." },
-  { word: "프레첼", targetPhonemes: ["ㅍ", "ㄹ", "ㅊ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "꽈배기 모양 프레첼이에요." },
   { word: "카스텔라", targetPhonemes: ["ㅋ", "ㅅ", "ㅌ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "부드러운 카스텔라예요." },
   { word: "와플", targetPhonemes: ["ㅍ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "와플 위에 시럽을 뿌려요." },
   { word: "핫케이크", targetPhonemes: ["ㅎ", "ㅅ", "ㅋ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "핫케이크를 만들어요." },
@@ -3421,7 +3419,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "붓펜", targetPhonemes: ["ㅂ", "ㅅ", "ㅍ", "ㄴ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "붓펜으로 멋진 글씨를 써요." },
   { word: "파스텔", targetPhonemes: ["ㅍ", "ㅅ", "ㅌ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "파스텔로 부드러운 그림을 그려요." },
   { word: "본드", targetPhonemes: ["ㅂ", "ㄴ", "ㄷ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "본드로 튼튼하게 물건을 붙여요." },
-  { word: "스탬프패드", targetPhonemes: ["ㅅ", "ㅌ", "ㅁ", "ㅍ", "ㄷ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "스탬프패드에 스템프를 찍어 잉크를 묻혀요." },
   { word: "다이어리", targetPhonemes: ["ㄷ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "다이어리에 오늘 있었던 일을 적어요." },
   { word: "스크랩북", targetPhonemes: ["ㅅ", "ㅋ", "ㄹ", "ㅂ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "스크랩북에 예쁜 사진을 붙여요." },
   { word: "이젤", targetPhonemes: ["ㅈ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "이젤 위에 도화지를 놓고 그림을 그려요." },
