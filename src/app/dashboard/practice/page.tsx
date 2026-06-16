@@ -168,13 +168,13 @@ export default async function PracticePage({
     errorPattern = stage1Words[0]?.errorPattern;
   }
 
-  // 카드 이미지용: stage1+stage2 단어 → imageSlug + difficulty 매핑 (서버에서 조회, 번들 영향 없음)
-  const wordInfos: Record<string, { imageSlug?: string; difficulty?: string }> = {};
+  // 카드 이미지용: stage1+stage2 단어 → imageSlug + difficulty + ageGroup 매핑
+  const wordInfos: Record<string, { imageSlug?: string; difficulty?: string; ageGroup?: string }> = {};
   for (const w of [...stage1Words, ...stage2Words]) {
     if (wordInfos[w.word]) continue;
     const info = getWordByText(w.word);
-    if (info?.imageSlug || info?.difficulty) {
-      wordInfos[w.word] = { imageSlug: info.imageSlug, difficulty: info.difficulty };
+    if (info) {
+      wordInfos[w.word] = { imageSlug: info.imageSlug, difficulty: info.difficulty, ageGroup: info.ageGroup };
     }
   }
 
