@@ -258,7 +258,7 @@ interface Props {
   mascotLevel: number;
   stage1Words: ErrorWord[];
   stage2Words: SimilarWord[];
-  wordInfos: Record<string, { imageSlug?: string }>;
+  wordInfos: Record<string, { imageSlug?: string; difficulty?: string }>;
   errorPattern?: string;
   /** 오늘의 루틴 2단계로 진입 — 완료 화면이 루틴 피날레가 됨 */
   routineMode?: boolean;
@@ -445,10 +445,12 @@ export function PracticeClient({
     const seen = new Set<string>();
     const out: PickCard[] = [];
     for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
-      const slug = wordInfos[w]?.imageSlug;
-      if (slug && !seen.has(w)) {
+      const info = wordInfos[w];
+      // hard 단어 제외 — 아이가 그림을 보고 인식 못하면 미니게임 역효과
+      if (!info?.imageSlug || info.difficulty === "hard") continue;
+      if (!seen.has(w)) {
         seen.add(w);
-        out.push({ word: w, imageSlug: slug });
+        out.push({ word: w, imageSlug: info.imageSlug });
       }
     }
     return out;
