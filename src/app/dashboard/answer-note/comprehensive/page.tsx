@@ -5,7 +5,6 @@ import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { getSelectedChildId } from "@/lib/child-cookie";
-import { AiAdvice } from "./AiAdvice";
 
 // ─── 오류 유형 메타 (부모 친화) ────────────────────────────────────────────────
 // 실제 언어재활에서 정의하는 오류 유형을 부모가 바로 이해할 수 있는 표현으로
@@ -252,13 +251,6 @@ export default async function ComprehensivePage({
     topCategory ? { parentLabel: topCategory.parentLabel, pct: topCategory.pct, tip: topCategory.tip } : null,
   );
 
-  // AiAdvice 용 직렬화 데이터
-  const weakPhonemesSafe = weakPhonemes.map((w) => ({
-    phoneme: w.phoneme, errorRate: w.errorRate,
-    totalAttempts: w.totalAttempts, weaknessLevel: w.weaknessLevel,
-  }));
-  const categoryStatsSafe = categoryStats.map((c) => ({ label: c.label, count: c.count, pct: c.pct }));
-
   const today = new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" });
 
   return (
@@ -463,14 +455,6 @@ export default async function ComprehensivePage({
           )}
         </BubbleCard>
       )}
-
-      {/* ── 섹션 5: AI 언어재활사 종합 조언 ── */}
-      <AiAdvice
-        childId={child.id}
-        childName={child.name}
-        weakPhonemes={weakPhonemesSafe}
-        categoryStats={categoryStatsSafe}
-      />
 
     </div>
   );
