@@ -195,36 +195,55 @@ function isQuotaError(msg: string): boolean {
   return /RESOURCE_EXHAUSTED|quota|429/i.test(msg);
 }
 
-async function withRetry(word: string): Promise<Buffer | null> {
+// 일시적 네트워크 오류 — 영구 실패로 처리하면 안 됨(블랙리스트 오염 방지)
+function isNetworkError(msg: string): boolean {
+  return /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|socket hang up|network|503|502|504|timeout/i.test(msg);
+}
+
+// 생성 결과: 성공(buf) / 안전필터 영구차단(blocked) / 일시적 실패(transient)
+type GenResult =
+  | { status: "ok"; buf: Buffer }
+  | { status: "blocked" }   // 안전필터 — 다음 실행에서도 막힘 → 영구 스킵 대상
+  | { status: "transient" }; // 네트워크/quota — 이번엔 실패했어도 다음 실행에 재시도
+
+async function withRetry(word: string): Promise<GenResult> {
   const base = buildPrompt(word);
-  let contentAttempt = 0;
-  let quotaAttempt = 0;
+  let contentAttempt = 0;  // 안전필터(이미지 null) 재시도
+  let transientAttempt = 0; // 네트워크/quota 재시도
 
   while (contentAttempt <= MAX_RETRY) {
-    // 1차는 원본, 콘텐츠 차단·실패 시 마스코트 프롬프트로 재시도
+    // 1차는 원본, 안전필터 차단 시 마스코트 프롬프트로 재시도
     const prompt = contentAttempt === 0 ? base : sanitizePrompt(base);
     try {
       const buf = await generateImage(prompt);
-      if (buf) return buf;
+      if (buf) return { status: "ok", buf };
+      // 이미지가 null = 안전필터 차단(영구). 프롬프트 바꿔 재시도
       console.warn(`  ⚠ ${word} 시도 ${contentAttempt + 1}: 이미지 없음(안전필터 가능)`);
       contentAttempt++;
       await new Promise((r) => setTimeout(r, 1500 * contentAttempt));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      // 429(quota): 콘텐츠 시도 카운트 증가 없이 길게 대기 후 같은 요청 재시도
-      if (isQuotaError(msg) && quotaAttempt < QUOTA_RETRY) {
-        quotaAttempt++;
-        const wait = QUOTA_WAIT_MS * Math.min(quotaAttempt, 4); // 30s→120s 상한
-        console.warn(`  ⏳ ${word} quota 대기 ${(wait / 1000)}s (${quotaAttempt}/${QUOTA_RETRY})`);
+      // 네트워크/quota = 일시적. 대기 후 재시도하되 영구 실패로 카운트하지 않음
+      if (isQuotaError(msg) || isNetworkError(msg)) {
+        transientAttempt++;
+        if (transientAttempt > QUOTA_RETRY) {
+          console.warn(`  ⏭ ${word} 일시적 오류 재시도 소진 — 이번엔 건너뜀(다음 실행에 재시도)`);
+          return { status: "transient" };
+        }
+        const wait = QUOTA_WAIT_MS * Math.min(transientAttempt, 4); // 30s→120s 상한
+        const kind = isQuotaError(msg) ? "quota" : "네트워크";
+        console.warn(`  ⏳ ${word} ${kind} 대기 ${(wait / 1000)}s (${transientAttempt}/${QUOTA_RETRY})`);
         await new Promise((r) => setTimeout(r, wait));
         continue;
       }
-      console.warn(`  ⚠ ${word} 시도 ${contentAttempt + 1} 실패: ${msg}`);
+      // 그 외 알 수 없는 오류 — 안전하게 일시적 취급(영구 블랙리스트 안 함)
+      console.warn(`  ⚠ ${word} 알 수 없는 오류: ${msg}`);
       contentAttempt++;
       await new Promise((r) => setTimeout(r, 1500 * contentAttempt));
     }
   }
-  return null;
+  // contentAttempt 소진 = 안전필터로 끝까지 막힘 → 영구 스킵 대상
+  return { status: "blocked" };
 }
 
 // 안전필터 등으로 영구 실패한 단어 — 재시작마다 또 재시도하지 않도록 기록
@@ -262,17 +281,22 @@ async function main() {
         const outPath = join(OUT_DIR, `${slug}.webp`);
         if (existsSync(outPath) || failedWords.has(word)) { skipped++; return; }
 
-        const buf = await withRetry(word);
-        if (buf) {
-          writeFileSync(outPath, buf);
+        const res = await withRetry(word);
+        if (res.status === "ok") {
+          writeFileSync(outPath, res.buf);
           done++;
           anyGenerated = true;
-          console.log(`  ✓ ${word} → ${slug}.webp (${(buf.length / 1024).toFixed(1)}KB)`);
-        } else {
+          console.log(`  ✓ ${word} → ${slug}.webp (${(res.buf.length / 1024).toFixed(1)}KB)`);
+        } else if (res.status === "blocked") {
+          // 안전필터로 영구 차단된 단어만 스킵 목록에 추가
           failed++;
           failedWords.add(word);
           saveFailedWords(failedWords);
-          console.error(`  ✗ ${word} 실패 (영구 스킵 목록에 추가)`);
+          console.error(`  ✗ ${word} 안전필터 차단 (영구 스킵 목록에 추가)`);
+        } else {
+          // transient(네트워크/quota): 영구 처리 안 함 — 다음 실행에 재시도
+          failed++;
+          console.warn(`  ↻ ${word} 일시적 실패 (다음 실행에 재시도)`);
         }
       }),
     );
