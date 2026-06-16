@@ -531,10 +531,8 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "손가락", targetPhonemes: ["ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "손가락 다섯 개가 있어요." },
   { word: "가슴", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "가슴이 철렁했어요." },
   { word: "엉덩이", targetPhonemes: ["ㅇ", "ㄷ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "엉덩이를 탁탁 치지 마요." },
-  { word: "정강이", targetPhonemes: ["ㅈ", "ㄱ", "ㅇ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "정강이가 아파요." },
   { word: "발목", targetPhonemes: ["ㅂ", "ㅁ", "ㄹ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "발목이 삐끗했어요." },
   { word: "발톱", targetPhonemes: ["ㅂ", "ㅌ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "발톱을 깎아요." },
-  { word: "근육", targetPhonemes: ["ㄱ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "근육이 커야 세요." },
   { word: "뼈", targetPhonemes: ["ㅃ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "뼈가 부러졌어요." },
   { word: "뇌", targetPhonemes: ["ㄴ"], difficulty: "medium", ageGroup: "5-6세", sampleSentence: "뇌는 중요한 기관이에요." },
 
@@ -1013,7 +1011,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "군고구마", targetPhonemes: ["ㄱ", "ㄴ", "ㅁ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "군고구마가 달아요." },
   { word: "호떡", targetPhonemes: ["ㅎ", "ㄸ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "호떡이 달아요." },
   { word: "붕어빵", targetPhonemes: ["ㅂ", "ㅇ", "ㅃ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "붕어빵을 먹어요." },
-  { word: "타코야끼", targetPhonemes: ["ㅌ", "ㄲ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "타코야끼가 동그래요." },
   { word: "오징어볶음", targetPhonemes: ["ㅈ", "ㅇ", "ㅂ", "ㄲ", "ㅁ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "오징어볶음이 매워요." },
 
   // ── 탈것·교통 (Transportation) ────────────────────────────────────────────
@@ -1038,8 +1035,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "발톱", targetPhonemes: ["ㅂ", "ㄹ", "ㅌ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "발톱을 깎아요." },
   { word: "무릎", targetPhonemes: ["ㅁ", "ㄹ", "ㅍ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "무릎이 아파요." },
   { word: "발뒤꿈치", targetPhonemes: ["ㅂ", "ㄹ", "ㄷ", "ㄲ", "ㅁ", "ㅊ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "발뒤꿈치가 아파요." },
-  { word: "갈비뼈", targetPhonemes: ["ㄱ", "ㄹ", "ㅂ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "갈비뼈가 있어요." },
-  { word: "척추", targetPhonemes: ["ㅊ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "척추를 펴요." },
 
   // ── 집·가구 심화 (Home/Furniture) ────────────────────────────────────────
   { word: "세탁기", targetPhonemes: ["ㅅ", "ㅌ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "세탁기로 빨아요." },
@@ -1063,7 +1058,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "스케이트", targetPhonemes: ["ㅅ", "ㅋ", "ㅌ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "스케이트를 타요." },
   { word: "볼링", targetPhonemes: ["ㅂ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "볼링을 해요." },
   { word: "훌라후프", targetPhonemes: ["ㅎ", "ㄹ", "ㅍ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "훌라후프를 돌려요." },
-  { word: "평행봉", targetPhonemes: ["ㅍ", "ㅇ", "ㅎ", "ㅂ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "평행봉에서 운동해요." },
 
   // ── 직업 (Occupations) ────────────────────────────────────────────────────
   { word: "간호사", targetPhonemes: ["ㄱ", "ㄴ", "ㅎ", "ㅅ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "간호사가 도와줘요." },
@@ -1082,8 +1076,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "은색", targetPhonemes: ["ㄴ", "ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "은색이 빛나요." },
   { word: "연두색", targetPhonemes: ["ㄴ", "ㄷ", "ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "연두색 새싹이에요." },
   { word: "자주색", targetPhonemes: ["ㅈ", "ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "자주색 포도예요." },
-  { word: "살구색", targetPhonemes: ["ㅅ", "ㄹ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "살구색 얼굴이에요." },
-  { word: "베이지", targetPhonemes: ["ㅂ", "ㅈ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "베이지색 바지예요." },
 
   // ── 숫자·수학 개념 (Numbers/Math) ────────────────────────────────────────
 
@@ -1117,12 +1109,9 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "돌멩이", targetPhonemes: ["ㄷ", "ㄹ", "ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "돌멩이를 던져요." },
   { word: "조개", targetPhonemes: ["ㅈ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "조개를 주워요." },
   { word: "모래성", targetPhonemes: ["ㅁ", "ㄹ", "ㅅ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "모래성을 쌓아요." },
-  { word: "산봉우리", targetPhonemes: ["ㅅ", "ㄴ", "ㅂ", "ㄹ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "산봉우리가 높아요." },
   { word: "계곡", targetPhonemes: ["ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "계곡이 시원해요." },
   { word: "폭포", targetPhonemes: ["ㅍ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "폭포가 떨어져요." },
   { word: "사막", targetPhonemes: ["ㅅ", "ㅁ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "사막이 뜨거워요." },
-  { word: "열대우림", targetPhonemes: ["ㄹ", "ㄷ", "ㅁ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "열대우림이 울창해요." },
-  { word: "빙하", targetPhonemes: ["ㅂ", "ㅎ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "빙하가 녹아요." },
 
   // ── 식물 (Plants) ─────────────────────────────────────────────────────────
   { word: "민들레", targetPhonemes: ["ㅁ", "ㄴ", "ㄷ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "민들레가 피었어요." },
@@ -1132,10 +1121,8 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "코스모스", targetPhonemes: ["ㅋ", "ㅅ", "ㅁ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "코스모스가 흔들려요." },
   { word: "수선화", targetPhonemes: ["ㅅ", "ㄴ", "ㅎ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "수선화가 예뻐요." },
   { word: "선인장", targetPhonemes: ["ㅅ", "ㄴ", "ㅈ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "선인장이 뾰족해요." },
-  { word: "이끼", targetPhonemes: ["ㄲ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "이끼가 초록색이에요." },
   { word: "단풍잎", targetPhonemes: ["ㄷ", "ㄴ", "ㅍ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "단풍잎이 빨개요." },
   { word: "소나무", targetPhonemes: ["ㅅ", "ㄴ", "ㅁ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "소나무가 늘 푸르러요." },
-  { word: "느티나무", targetPhonemes: ["ㄴ", "ㅌ", "ㅁ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "느티나무가 시원해요." },
 
   // ── 날씨·계절 심화 (Seasons/Weather) ────────────────────────────────────
   { word: "태풍", targetPhonemes: ["ㅌ", "ㅍ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "태풍이 강해요." },
@@ -1220,7 +1207,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "난쟁이", targetPhonemes: ["ㄴ", "ㅈ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "난쟁이가 작아요." },
   { word: "보물", targetPhonemes: ["ㅂ", "ㅁ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "보물을 찾아요." },
   { word: "성", targetPhonemes: ["ㅅ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "성이 커요." },
-  { word: "성곽", targetPhonemes: ["ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "성곽이 튼튼해요." },
 
   // ── 하루 일과 (Daily Routine) ─────────────────────────────────────────────
 
@@ -1272,7 +1258,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   // ── 직업 심화 (Advanced Occupations) ─────────────────────────────────────
   { word: "수의사", targetPhonemes: ["ㅅ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "수의사가 동물을 치료해요." },
   { word: "약사", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "약사가 약을 줘요." },
-  { word: "건축가", targetPhonemes: ["ㄱ", "ㄴ", "ㅊ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "건축가가 집을 설계해요." },
   { word: "작가", targetPhonemes: ["ㅈ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "작가가 책을 써요." },
   { word: "기자", targetPhonemes: ["ㄱ", "ㅈ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "기자가 소식을 전해요." },
   { word: "우체부", targetPhonemes: ["ㅊ", "ㅂ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "우체부가 편지를 가져요." },
@@ -1285,14 +1270,11 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "배구", targetPhonemes: ["ㅂ", "ㄱ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "배구를 해요." },
   { word: "테니스", targetPhonemes: ["ㅌ", "ㄴ", "ㅅ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "테니스를 쳐요." },
   { word: "골프", targetPhonemes: ["ㄱ", "ㄹ", "ㅍ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "골프를 쳐요." },
-  { word: "권투", targetPhonemes: ["ㄱ", "ㄴ", "ㅌ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "권투를 해요." },
   { word: "유도", targetPhonemes: ["ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "유도를 해요." },
   { word: "스케이팅", targetPhonemes: ["ㅅ", "ㅋ", "ㅇ", "ㅌ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "스케이팅을 해요." },
   { word: "서핑", targetPhonemes: ["ㅅ", "ㅍ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "서핑을 해요." },
   { word: "사이클", targetPhonemes: ["ㅅ", "ㅋ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "사이클을 타요." },
   { word: "마라톤", targetPhonemes: ["ㅁ", "ㄹ", "ㅌ", "ㄴ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "마라톤을 달려요." },
-  { word: "양궁", targetPhonemes: ["ㅇ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "양궁을 해요." },
-  { word: "펜싱", targetPhonemes: ["ㅍ", "ㄴ", "ㅅ", "ㅇ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "펜싱을 해요." },
   { word: "역도", targetPhonemes: ["ㄱ", "ㄷ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "역도를 해요." },
 
   // ── 여행·장소 (Travel/Places) ─────────────────────────────────────────────
@@ -1346,7 +1328,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "하트", targetPhonemes: ["ㅎ", "ㅌ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "하트를 그려요." },
   { word: "다이아몬드", targetPhonemes: ["ㄷ", "ㅁ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "다이아몬드 모양이에요." },
   { word: "줄무늬", targetPhonemes: ["ㅈ", "ㄹ", "ㅁ", "ㄴ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "줄무늬가 있어요." },
-  { word: "물결무늬", targetPhonemes: ["ㅁ", "ㄹ", "ㄱ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "물결무늬가 예뻐요." },
   { word: "점박이", targetPhonemes: ["ㅈ", "ㅁ", "ㅂ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "점박이 무늬예요." },
   { word: "구불구불", targetPhonemes: ["ㄱ", "ㅂ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "구불구불 선이에요.", soundEffect: "구불구불" },
   { word: "반짝반짝", targetPhonemes: ["ㅂ", "ㄴ", "ㅉ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "반짝반짝 빛나요.", soundEffect: "반짝반짝" },
@@ -1368,12 +1349,10 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "연두색", targetPhonemes: ["ㄴ", "ㄷ", "ㅅ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "연두색 풀이에요." },
   { word: "보라색", targetPhonemes: ["ㅂ", "ㄹ", "ㅅ", "ㄱ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "보라색 꽃이에요." },
   { word: "갈색", targetPhonemes: ["ㄱ", "ㄹ", "ㅅ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "갈색 곰이에요." },
-  { word: "베이지색", targetPhonemes: ["ㅂ", "ㅈ", "ㅅ", "ㄱ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "베이지색 벽이에요." },
   { word: "투명", targetPhonemes: ["ㅌ", "ㅁ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "유리가 투명해요." },
   { word: "무지개색", targetPhonemes: ["ㅁ", "ㅈ", "ㄱ", "ㅅ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "무지개색이 예뻐요." },
 
   // ── 시간·날짜 (Time/Date) ─────────────────────────────────────────────────
-  { word: "자정", targetPhonemes: ["ㅈ", "ㅇ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "자정에는 자요." },
   { word: "새벽", targetPhonemes: ["ㅅ", "ㅂ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "새벽에는 어두워요." },
   { word: "모레", targetPhonemes: ["ㅁ", "ㄹ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "모레에 가요." },
   { word: "그저께", targetPhonemes: ["ㄱ", "ㅈ", "ㄲ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "그저께 왔어요." },
@@ -1549,8 +1528,6 @@ export const WORD_DATABASE: PracticeWord[] = [
 
   // ── 직업 심화2 (More Occupations) ────────────────────────────────────────
   { word: "디자이너", targetPhonemes: ["ㄷ", "ㅈ", "ㄴ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "디자이너가 만들어요." },
-  { word: "영양사", targetPhonemes: ["ㅇ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "영양사가 식단을 짜요." },
-  { word: "사진사", targetPhonemes: ["ㅅ", "ㅈ", "ㄴ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "사진사가 찍어요." },
   { word: "마술사", targetPhonemes: ["ㅁ", "ㅅ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "마술사가 마술을 해요." },
   { word: "배우", targetPhonemes: ["ㅂ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "배우가 연기해요." },
   { word: "가수", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "가수가 노래해요." },
@@ -1743,7 +1720,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "영화", targetPhonemes: ["ㅇ", "ㅎ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "영화를 봐요." },
   { word: "유튜브", targetPhonemes: ["ㅌ", "ㅂ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "유튜브를 봐요." },
   { word: "라디오", targetPhonemes: ["ㄹ", "ㄷ"], difficulty: "easy", ageGroup: "2-3세", sampleSentence: "라디오를 들어요." },
-  { word: "음악방송", targetPhonemes: ["ㅇ", "ㅁ", "ㄱ", "ㅂ", "ㅅ"], difficulty: "hard", ageGroup: "5-6세", sampleSentence: "음악방송을 봐요." },
   { word: "뉴스", targetPhonemes: ["ㄴ", "ㅅ"], difficulty: "easy", ageGroup: "3-4세", sampleSentence: "뉴스를 봐요." },
   { word: "콘서트", targetPhonemes: ["ㅋ", "ㄴ", "ㅅ", "ㅌ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "콘서트에 가요." },
   { word: "뮤지컬", targetPhonemes: ["ㅁ", "ㅈ", "ㅋ", "ㄹ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "뮤지컬을 봐요." },
@@ -2561,24 +2537,20 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "거문고", targetPhonemes: ["ㄱ", "ㅁ", "ㄴ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "거문고는 멋진 소리가 나요." },
   { word: "나각", targetPhonemes: ["ㄴ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "나각은 소라 껍데기로 만들어요." },
   { word: "대금", targetPhonemes: ["ㄷ", "ㄱ", "ㅁ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "대금은 소리가 길어요." },
-  { word: "마림바", targetPhonemes: ["ㅁ", "ㄹ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "마림바는 큰 실로폰 같아요." },
   { word: "만돌린", targetPhonemes: ["ㅁ", "ㄴ", "ㄷ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "만돌린은 기타와 비슷해요." },
   { word: "박", targetPhonemes: ["ㅂ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "박은 짝 소리가 나요." },
-  { word: "바순", targetPhonemes: ["ㅂ", "ㅅ", "ㄴ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "바순은 구불구불해요." },
   { word: "벤조", targetPhonemes: ["ㅂ", "ㄴ", "ㅈ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "벤조는 줄이 네 개예요." },
   { word: "베이스", targetPhonemes: ["ㅂ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "베이스는 소리가 낮아요." },
   { word: "봉고", targetPhonemes: ["ㅂ", "ㅇ", "ㄱ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "봉고는 작은 드럼이에요." },
   { word: "북채", targetPhonemes: ["ㅂ", "ㄱ", "ㅊ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "북채로 북을 쳐요." },
   { word: "악보", targetPhonemes: ["ㄱ", "ㅂ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "악보를 보고 연주해요." },
   { word: "앰프", targetPhonemes: ["ㅁ", "ㅍ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "앰프는 소리를 크게 만들어요." },
-  { word: "오보에", targetPhonemes: ["ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "오보에는 소리가 예뻐요." },
   { word: "음표", targetPhonemes: ["ㅁ", "ㅍ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "음표는 노래를 그려 놓은 거예요." },
   { word: "작은북", targetPhonemes: ["ㅈ", "ㄱ", "ㄴ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "작은북은 스틱으로 쳐요." },
   { word: "젬베", targetPhonemes: ["ㅈ", "ㅁ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "젬베는 아프리카 악기예요." },
   { word: "징", targetPhonemes: ["ㅈ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "징은 웅장한 소리를 내요." },
   { word: "축", targetPhonemes: ["ㅊ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "축은 나무 상자 같아요." },
   { word: "큰북", targetPhonemes: ["ㅋ", "ㄴ", "ㅂ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "큰북은 소리가 커요." },
-  { word: "튜바", targetPhonemes: ["ㅌ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "튜바는 아주 큰 악기예요." },
   { word: "트라이앵글", targetPhonemes: ["ㅌ", "ㄹ", "ㅇ", "ㄱ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "트라이앵글은 세모 모양이에요." },
   { word: "탐탐", targetPhonemes: ["ㅌ", "ㅁ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "탐탐은 드럼의 한 부분이에요." },
   { word: "팬플루트", targetPhonemes: ["ㅍ", "ㄴ", "ㄹ", "ㅌ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "팬플루트는 여러 개를 붙여 만들어요." },
@@ -2633,7 +2605,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "주걱", targetPhonemes: ["ㅈ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "주걱으로 밥을 퍼요." },
   { word: "나침반", targetPhonemes: ["ㄴ", "ㅊ", "ㅁ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "나침반은 방향을 알려줘요." },
   { word: "삽", targetPhonemes: ["ㅅ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "삽으로 흙을 퍼요." },
-  { word: "괭이", targetPhonemes: ["ㄱ", "ㅇ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "괭이로 밭을 일궈요." },
   { word: "곡괭이", targetPhonemes: ["ㄱ", "ㅇ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "곡괭이로 땅을 파요." },
   { word: "몽키", targetPhonemes: ["ㅁ", "ㅇ", "ㅋ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "몽키로 나사를 돌려요." },
   { word: "송곳", targetPhonemes: ["ㅅ", "ㅇ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "송곳으로 종이에 구멍을 뚫어요." },
@@ -2654,7 +2625,6 @@ export const WORD_DATABASE: PracticeWord[] = [
   { word: "수갑", targetPhonemes: ["ㅅ", "ㄱ", "ㅂ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "경찰 아저씨는 수갑을 가지고 있어요." },
   { word: "무전기", targetPhonemes: ["ㅁ", "ㅈ", "ㄴ", "ㄱ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "무전기로 이야기해요." },
   { word: "곡식", targetPhonemes: ["ㄱ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "농부 아저씨가 곡식을 키워요." },
-  { word: "낫", targetPhonemes: ["ㄴ", "ㅅ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "농부 아저씨가 낫으로 풀을 베요." },
   { word: "호미", targetPhonemes: ["ㅎ", "ㅁ"], difficulty: "easy", ageGroup: "4-5세", sampleSentence: "호미로 밭을 일궈요." },
   { word: "모종삽", targetPhonemes: ["ㅁ", "ㅈ", "ㅇ", "ㅅ", "ㅂ"], difficulty: "hard", ageGroup: "4-5세", sampleSentence: "작은 모종삽으로 씨앗을 심어요." },
   { word: "비료", targetPhonemes: ["ㅂ", "ㄹ"], difficulty: "medium", ageGroup: "4-5세", sampleSentence: "비료를 주면 식물이 잘 자라요." },
