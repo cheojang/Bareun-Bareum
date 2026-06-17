@@ -35,7 +35,9 @@ AI 기반 아동 조음 홈케어 SaaS. 부모가 발음 오류를 입력 → AI
 - [x] ~~**🔥 최우선: `npx prisma db push`**~~ — ✅ 2026-06-12 완료. ① UserConsent 테이블 ② User.trialEndsAt 컬럼 생성됨. (모바일 환경이라 일회용 마이그레이션 API로 프로덕션 DB에 직접 DDL 실행 후 엔드포인트 삭제). 신규 가입자에게 자동 7일 체험 부여 활성. ⚠️ 로컬/다른 환경에서 스키마 추가 변경 시엔 정식으로 `npx prisma db push` 실행 필요
 - [x] ~~**🔥 푸시 알림 활성화 3단계**~~ — ✅ 2026-06-12 완료. ① Vercel 환경변수 4개 설정 ② PushSubscription 테이블 생성(일회용 마이그레이션 API, 실행 후 엔드포인트 삭제) ③ Vercel Cron 매일 19:00 KST 발송 활성. 사용자는 설정 페이지 🔔 토글로 켜야 수신 (iOS는 홈 화면 추가 필요)
 - [ ] Supabase DB 비밀번호 교체 안내 (git 이력 노출 — 사용자 직접)
-- [ ] 단어 이미지 생성: `npm run generate:word-images` (754개, GEMINI_API_KEY 필요, ~$29)
+- [ ] 단어 이미지 생성: `npm run generate:word-images` (Vertex Imagen, 서비스계정 키 필요, ~3000개·GCP 크레딧)
+- [ ] **TTS pre-warm (예정)** — 단어·예문을 Google Cloud TTS로 미리 생성해 Supabase `tts-cache` 버킷에 채우기. ① bareun-baleum 프로젝트에서 TTS API 키 발급(크레딧 적용) 또는 서비스계정 호출 ② Supabase service role 키 필요 ③ 기본 보이스 ko-KR-Neural2-A, ~8000개·~160MB·~$3. DB 저장 불필요(오디오=Storage, DB=문장텍스트). AI 즉석 문장(3단계)은 제외
+- [ ] GCP 서비스계정 키(`gcp-key.json`) 사용 후 콘솔에서 교체/삭제 (채팅 노출됨)
 - [ ] /subscribe 환불·청약철회 정책 고지 확인 (결제 오픈 전)
 
 ## 핵심 설정

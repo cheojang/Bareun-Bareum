@@ -46,3 +46,8 @@ next-env.d.ts
 gemini_error_debug.log
 
 .env*
+
+# GCP 서비스 계정 키 (이미지 생성용 — 절대 커밋 금지)
+gcp-key.json
+*-sa-key.json
+service-account*.json

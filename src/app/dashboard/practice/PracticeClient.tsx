@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { MascotCharacter } from "@/components/child/MascotCharacter";
+import { ListenPickGame } from "@/components/child/ListenPickGame";
+import { ShadowMatchGame } from "@/components/child/ShadowMatchGame";
+import { PuzzleGame } from "@/components/child/PuzzleGame";
+import type { PickCard } from "@/lib/mini-game";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
 import { postJson } from "@/lib/client-fetch";
@@ -254,7 +258,7 @@ interface Props {
   mascotLevel: number;
   stage1Words: ErrorWord[];
   stage2Words: SimilarWord[];
-  wordInfos: Record<string, { imageSlug?: string }>;
+  wordInfos: Record<string, { imageSlug?: string; difficulty?: string; ageGroup?: string }>;
   errorPattern?: string;
   /** 오늘의 루틴 2단계로 진입 — 완료 화면이 루틴 피날레가 됨 */
   routineMode?: boolean;
@@ -430,6 +434,29 @@ export function PracticeClient({
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
+  // ── 단계 사이 미니게임 ─────────────────────────────────────────────────────────
+  // 전환마다 세 게임이 번갈아 나오도록 로테이션
+  const MINI_GAMES = ["listen", "shadow", "puzzle"] as const;
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  const [gameType, setGameType] = useState<(typeof MINI_GAMES)[number]>("listen");
+  const interstitialCountRef = useRef(0);
+  // 그림 있는 단어 후보 — 1·2단계 단어 중 이미지 보유 단어(중복 제거)
+  const gamePool = useMemo<PickCard[]>(() => {
+    const seen = new Set<string>();
+    const out: PickCard[] = [];
+    for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
+      const info = wordInfos[w];
+      // 2-3세·3-4세 단어만 허용 — 아이가 확실히 아는 친숙한 단어만 미니게임에 사용
+      const familiarAge = info?.ageGroup === "2-3세" || info?.ageGroup === "3-4세";
+      if (!info?.imageSlug || !familiarAge) continue;
+      if (!seen.has(w)) {
+        seen.add(w);
+        out.push({ word: w, imageSlug: info.imageSlug });
+      }
+    }
+    return out;
+  }, [stage1Words, stage2Words, wordInfos]);
+
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
   const filledCount = currentSlots.filter((s) => s !== null).length;
@@ -450,8 +477,6 @@ export function PracticeClient({
   useEffect(() => {
     const text = currentItem?.text;
     if (!text || stage3Loading) return;
-    // 문장(3단계)은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
-    if (currentItem?.kind === "sentence") return;
     // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
     // → phase가 "practice"로 바뀐 직후(사용자 클릭 이후)에 첫 단어 재생
     if (phase !== "practice") return;
@@ -683,13 +708,8 @@ export function PracticeClient({
     setCurrentIndex(prevItems.length - 1); // 마지막 아이템으로
   }, [currentIndex, stage, stage2Words, makeItems]);
 
-  // ── 다음 아이템 ───────────────────────────────────────────────────────────────
-  const handleNext = useCallback(() => {
-    if (currentIndex + 1 < items.length) {
-      setCurrentIndex((i) => i + 1);
-      return;
-    }
-    // 현재 단계 완료
+  // 현재 단계 기준으로 실제 다음 단계로 전환 (미니게임 후 호출)
+  const proceedToNextStage = useCallback(() => {
     if (stage === 1 && stage2Words.length > 0) {
       transitionToStage(2);
     } else if (stage === 1 || stage === 2) {
@@ -698,7 +718,29 @@ export function PracticeClient({
       // 3단계 마지막 → 모든 문장 리뷰 화면 표시
       setShowSentenceReview(true);
     }
-  }, [currentIndex, items.length, stage, stage2Words.length, transitionToStage]);
+  }, [stage, stage2Words.length, transitionToStage]);
+
+  // ── 다음 아이템 ───────────────────────────────────────────────────────────────
+  const handleNext = useCallback(() => {
+    if (currentIndex + 1 < items.length) {
+      setCurrentIndex((i) => i + 1);
+      return;
+    }
+    // 단계 완료 — 3단계 마지막은 게임 없이 바로 리뷰로
+    if (stage === 3) {
+      setShowSentenceReview(true);
+      return;
+    }
+    // 단계 사이: 그림 단어가 2개 이상이면 미니게임, 아니면 바로 다음 단계
+    if (gamePool.length >= 2) {
+      const idx = interstitialCountRef.current++;
+      setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+      setShowInterstitial(true);
+    } else {
+      proceedToNextStage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, items.length, stage, gamePool.length, proceedToNextStage]);
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
   if (stage1Words.length === 0) {
@@ -826,6 +868,17 @@ export function PracticeClient({
         onDone={() => setPhase("practice")}
       />
     );
+  }
+
+  // ── 단계 사이 미니게임 (전환마다 로테이션) ─────────────────────────────────────
+  if (showInterstitial) {
+    const finishGame = () => {
+      setShowInterstitial(false);
+      proceedToNextStage();
+    };
+    if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={finishGame} />;
+    if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={finishGame} />;
+    return <ListenPickGame pool={gamePool} onDone={finishGame} />;
   }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
@@ -1035,15 +1088,6 @@ export function PracticeClient({
               </button>
             </div>
 
-            {!stage3Loading && currentItem?.kind === "sentence" && (
-              <div className="flex justify-center pb-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
-                  <span className="text-base">📖</span>
-                  부모님이 읽어주세요
-                </div>
-              </div>
-            )}
-
             {/* 훈련 팁 (2단계 처방전) — 단어 영역 아래에 별도 배치 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
@@ -1094,7 +1138,7 @@ export function PracticeClient({
                 onClick={() => {
                   fillDot("bad");
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1107,7 +1151,7 @@ export function PracticeClient({
                 onClick={() => {
                   fillDot("good");
                   // 마지막(5번째) 도트가 아닐 때만 TTS 재생
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}

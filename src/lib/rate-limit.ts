@@ -75,12 +75,6 @@ export const geminiLimiter = new RateLimiter({
   refillPerSecond: 10 / 60, // 1분에 10건
 });
 
-/** 종합 분석 (더 비싼): 사용자당 시간당 5건, 버스트 2건 */
-export const heavyAnalysisLimiter = new RateLimiter({
-  capacity: 2,
-  refillPerSecond: 5 / 3600, // 1시간에 5건
-});
-
 /** TTS: 사용자당 분당 30건 — Google TTS 비용 방어 */
 export const ttsLimiter = new RateLimiter({
   capacity: 30,
