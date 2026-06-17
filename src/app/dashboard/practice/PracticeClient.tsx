@@ -446,9 +446,7 @@ export function PracticeClient({
     const out: PickCard[] = [];
     for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
       const info = wordInfos[w];
-      // 2-3세·3-4세 단어만 허용 — 아이가 확실히 아는 친숙한 단어만 미니게임에 사용
-      const familiarAge = info?.ageGroup === "2-3세" || info?.ageGroup === "3-4세";
-      if (!info?.imageSlug || !familiarAge) continue;
+      if (!info?.imageSlug) continue;
       if (!seen.has(w)) {
         seen.add(w);
         out.push({ word: w, imageSlug: info.imageSlug });
@@ -1064,7 +1062,7 @@ export function PracticeClient({
                 return (
                   <div className="flex flex-col items-center gap-2">
                     {slug && (
-                      <WordImage word={text} imageSlug={slug} size="xl" />
+                      <WordImage word={text} imageSlug={slug} size="2xl" />
                     )}
                     <p
                       className="font-black text-[#3D3530] tracking-wide leading-snug"
