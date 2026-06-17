@@ -570,8 +570,6 @@ export function PracticeClient({
   useEffect(() => {
     const text = currentItem?.text;
     if (!text || stage3Loading) return;
-    // 문장은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
-    if (currentItem?.kind === "sentence") return;
     // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
     if (phase !== "practice") return;
 
@@ -1308,7 +1306,7 @@ export function PracticeClient({
               <button
                 onClick={() => {
                   fillDot("bad");
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1320,7 +1318,7 @@ export function PracticeClient({
               <button
                 onClick={() => {
                   fillDot("good");
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}

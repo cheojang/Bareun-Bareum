@@ -181,25 +181,47 @@ export default async function PracticePage({
   }
 
   // ── 3사이클 구성 ─────────────────────────────────────────────────────────────
-  // 각 사이클: 오답단어 1개 → 유사단어 2개 → DB sampleSentence 1개
+  // 각 사이클: 오답단어 1개 → 그 단어와 연관된 유사단어 2개 → DB sampleSentence 1개
+  // stage2Words[i].sourceWord 로 어느 오답단어의 유사단어인지 구분
   const NUM_CYCLES = 3;
   const cycles: PracticeCycle[] = [];
-  let s1i = 0, s2i = 0;
+
+  // sourceWord별로 유사단어 그룹핑
+  const similarBySource = new Map<string, Array<{ word: string; sourceWord: string }>>();
+  for (const sw of stage2Words) {
+    const key = sw.sourceWord;
+    if (!similarBySource.has(key)) similarBySource.set(key, []);
+    similarBySource.get(key)!.push(sw);
+  }
+  // sourceWord 없는(오답단어가 없을 때 fallback) 유사단어 풀
+  const unassigned: Array<{ word: string; sourceWord: string }> = [...(similarBySource.get("") ?? [])];
+
+  let s1i = 0;
   for (let ci = 0; ci < NUM_CYCLES; ci++) {
     let mainWord: PracticeCycle["mainWord"] = null;
+    let assignedSimilars: Array<{ word: string; sourceWord: string }> = [];
+
     if (s1i < stage1Words.length) {
       const w = stage1Words[s1i++];
       mainWord = { word: w.word, errorPattern: w.errorPattern, trainingTip: w.trainingTip, childPronunciation: w.childPronunciation };
-    } else if (s2i < stage2Words.length) {
-      mainWord = { word: stage2Words[s2i++].word };
+      // 이 오답단어와 연관된 유사단어 최대 2개
+      const pool = similarBySource.get(w.word) ?? [];
+      assignedSimilars = pool.splice(0, 2);
+      // 부족하면 미배정 풀에서 보충
+      if (assignedSimilars.length < 2) {
+        const need = 2 - assignedSimilars.length;
+        assignedSimilars.push(...unassigned.splice(0, need));
+      }
+    } else {
+      // 오답단어 없음 → 미배정 유사단어에서 첫 번째를 main으로
+      const first = unassigned.shift();
+      if (first) mainWord = { word: first.word };
+      assignedSimilars = unassigned.splice(0, 2);
     }
-    const similars: PracticeCycle["similarWords"] = [];
-    for (let j = 0; j < 2 && s2i < stage2Words.length; j++) {
-      const sw = stage2Words[s2i++];
-      similars.push({ word: sw.word, sourceWord: sw.sourceWord });
-    }
-    const sentWord = mainWord?.word ?? similars[0]?.word;
+
+    const sentWord = mainWord?.word ?? assignedSimilars[0]?.word;
     const sentence = sentWord ? (getWordByText(sentWord)?.sampleSentence ?? null) : null;
+    const similars = assignedSimilars.map((s) => ({ word: s.word, sourceWord: s.sourceWord }));
     if (mainWord || similars.length > 0) cycles.push({ mainWord, similarWords: similars, sentence });
   }
 
