@@ -1746,6 +1746,8 @@ export const WORD_IMAGE_SLUGS: Record<string, string> = {
   "광대": "gwangdae",
   "마디": "madi",
   "뒤꿈치": "dwikkumchi",
+  "담요": "damyo",
+  "튜튜": "tuttu",
 };
 
 export const IMAGED_WORDS: ReadonlySet<string> = new Set(Object.keys(WORD_IMAGE_SLUGS));
