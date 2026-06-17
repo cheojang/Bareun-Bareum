@@ -337,21 +337,6 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
                         size="xl"
                         className={goodCount === MAX_DOTS ? "wordimg-pop" : ""}
                       />
-                      {/* 별 채우기 — 정답 맞출 때마다 별이 하나씩 채워짐 */}
-                      <div className="flex gap-1">
-                        {Array.from({ length: MAX_DOTS }).map((_, i) => (
-                          <span
-                            key={i}
-                            className="text-xl transition-all duration-300"
-                            style={{
-                              filter: i < goodCount ? "none" : "grayscale(1) opacity(0.3)",
-                              transform: i === goodCount - 1 ? "scale(1.3)" : "scale(1)",
-                            }}
-                          >
-                            ⭐
-                          </span>
-                        ))}
-                      </div>
                       <p className="font-black text-[#3D3530] whitespace-nowrap leading-none" style={{ fontSize: size }}>
                         {w}
                       </p>

@@ -1063,12 +1063,7 @@ export function PracticeClient({
                 return (
                   <div className="flex flex-col items-center gap-2">
                     {slug && (
-                      <WordImage
-                        word={text}
-                        imageSlug={slug}
-                        size="2xl"
-                        reveal={currentGoodCount / MAX_DOTS}
-                      />
+                      <WordImage word={text} imageSlug={slug} size="2xl" />
                     )}
                     <p
                       className="font-black text-[#3D3530] tracking-wide leading-snug"
