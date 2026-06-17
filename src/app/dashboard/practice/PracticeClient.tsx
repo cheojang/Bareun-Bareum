@@ -20,7 +20,7 @@ import { useRecorder } from "@/lib/useRecorder";
 import type { PracticeCycle } from "./page";
 import Link from "next/link";
 
-// ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
+// ─── 완료 화면 컴포넌트 (코칭 카드 포함) ───────────────────────────────────────
 function CompletionScreen({
   childName, totalReps, repTarget, totalGood,
   masteredCount, needsWorkCount, practiceWords, errorPattern, childId, routineMode,
@@ -106,7 +106,7 @@ function CompletionScreen({
   );
 }
 
-// ─── 청각 폭격 컴포넌트 ────────────────────────────────────────────────────────
+// ─── 청각 폭격 컴포넌트 ─────────────────────────────────────────────
 function AuditoryBombardment({
   words,
   onDone,
@@ -238,8 +238,7 @@ function AuditoryBombardment({
   );
 }
 
-// ─── 타입 ──────────────────────────────────────────────────────────────────────
-
+// ─── 타입 ──────────────────────────────────────────────────────────
 interface ErrorWord {
   word: string;
   errorPattern: string;
@@ -326,8 +325,7 @@ function buildCycleItems(cycles: PracticeCycle[]): CycleItem[] {
 
 const MAX_DOTS = 5;
 
-// ─── 단계 메타 ─────────────────────────────────────────────────────────────────
-
+// ─── 단계 메타 ────────────────────────────────────────────────────
 const STAGE_META: Record<string, { label: string; desc: string; color: string; bg: string }> = {
   1: {
     label: "1단계 · 오답 단어",
@@ -355,8 +353,7 @@ const CYCLE_META = {
   sentence: { label: "문장연습", color: "#0D9488", bg: "#F0FAF8" },
 };
 
-// ─── 숙달 레벨 판정 ────────────────────────────────────────────────────────────
-
+// ─── 숙달 레벨 판정 ──────────────────────────────────────────────
 function getMastery(slots: DotResult[]): MasteryLevel {
   const goodCount = slots.filter((s) => s === "good").length;
   if (goodCount === MAX_DOTS) return "mastered";
@@ -379,8 +376,7 @@ function toQuality(goodCount: number): number {
   return 0;
 }
 
-// ─── 결과 도트 컴포넌트 ────────────────────────────────────────────────────────
-
+// ─── 결과 도트 컴포넌트 ────────────────────────────────────────────
 function ResultDots({ slots }: { slots: DotResult[] }) {
   return (
     <div className="flex items-center gap-2">
@@ -414,8 +410,7 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
   );
 }
 
-// ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
-
+// ─── 메인 컴포넌트 ─────────────────────────────────────────────
 export function PracticeClient({
   childId,
   childName,
@@ -478,11 +473,11 @@ export function PracticeClient({
   const [allDone, setAllDone] = useState(false);
   const [showTongue, setShowTongue] = useState(false);
 
-  // ── 반복 카운터 (운동학습 원리: 음소당 50회 이상이 효과적) ─────────────────────
+  // ── 반복 카운터 (운동학습 원리: 음소당 50회 이상이 효과적) ────────────────────
   const [totalReps, setTotalReps] = useState(0);
   const REP_TARGET = 50;
 
-  // ── 청각 폭격 페이즈 ─────────────────────────────────────────────────────────
+  // ── 청각 폭격 페이즈 ────────────────────────────────────────────
   const [phase, setPhase] = useState<"bombardment" | "practice">(
     (isCycleMode ? cycleItems.length > 0 : stage1Words.length > 0) ? "bombardment" : "practice"
   );
@@ -509,7 +504,7 @@ export function PracticeClient({
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
-  // ── 단계 사이 미니게임 ─────────────────────────────────────────────────────────
+  // ── 단계 사이 미니게임 ──────────────────────────────────────────
   const MINI_GAMES = ["listen", "shadow", "puzzle"] as const;
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [gameType, setGameType] = useState<(typeof MINI_GAMES)[number]>("listen");
@@ -557,21 +552,19 @@ export function PracticeClient({
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
 
-  // ── 조음 단면도(혀 모양): 현재 단어의 목표 음소 추출 ──────────────────────────────
+  // ── 조음 단면도(혀 모양): 현재 단어의 목표 음소 추출 ─────────────────────────
   const tonguePhoneme =
     currentItem?.kind === "sentence"
       ? null
       : phonemeFromPattern(currentItem?.badge) ?? phonemeFromPattern(errorPattern);
   const hasTongueDiagram = !!getArticulationSlug(tonguePhoneme);
 
-  // ── 단어 자동 재생 + 다시 듣기 버튼용 TTS ──────────────────────────────────────
+  // ── 단어 자동 재생 + 다시 듣기 버튼용 TTS ─────────────────────────────
   const { play: playWord, stop: stopWord } = useTTS();
 
   useEffect(() => {
     const text = currentItem?.text;
     if (!text || stage3Loading) return;
-    // 문장은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
-    if (currentItem?.kind === "sentence") return;
     // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
     if (phase !== "practice") return;
 
@@ -591,7 +584,7 @@ export function PracticeClient({
     if (text) playWord(text).catch(() => {});
   }, [currentItem?.text, playWord]);
 
-  // ── 녹음 훅 ──────────────────────────────────────────────────────────────────
+  // ── 녹음 훅 ───────────────────────────────────────────────────
   const { recState, startRec, stopRec, playRec, resetRec } = useRecorder();
 
   // 카드 변경 시 녹음 초기화
@@ -599,7 +592,7 @@ export function PracticeClient({
     resetRec();
   }, [currentIndex, resetRec]);
 
-  // ── 단계 전환 (비-사이클 모드 전용) ─────────────────────────────────────────────
+  // ── 단계 전환 (비-사이클 모드 전용) ───────────────────────────────
   const transitionToStage = useCallback(
     async (target: Stage) => {
       setCurrentIndex(0);
@@ -662,7 +655,7 @@ export function PracticeClient({
     [makeItems, stage1Words, stage2Words, errorPattern, prefetchedS3]
   );
 
-  // ── 3단계 사전 fetch — 비-사이클 모드 전용 ──────────────────────────────────────
+  // ── 3단계 사전 fetch — 비-사이클 모드 전용 ───────────────────────────
   useEffect(() => {
     if (isCycleMode) return; // 사이클 모드는 DB 문장 사용
     if (prefetchedS3 || prefetchInFlightRef.current) return;
@@ -686,7 +679,7 @@ export function PracticeClient({
       });
   }, [isCycleMode, stage, currentIndex, items.length, prefetchedS3, stage1Words, stage2Words, errorPattern]);
 
-  // ── 도트 채우기 ───────────────────────────────────────────────────────────────
+  // ── 도트 채우기 ───────────────────────────────────────────────
   const fillDot = useCallback(
     (result: "good" | "bad") => {
       if (isSlotsFull) return;
@@ -713,7 +706,7 @@ export function PracticeClient({
   // ── 단어별 세션 기록: 5도트 완료 즉시 저장 (중간 이탈해도 그날 기록 보존) ──────
   const recordWord = usePracticeRecorder(childId);
 
-  // ── 5개 채워졌을 때 처리: 저장 로직 ─────────────────────────────────────────────
+  // ── 5개 채워졌을 때 처리: 저장 로직 ────────────────────────────────
   useEffect(() => {
     if (!isSlotsFull || !currentItem) return;
 
@@ -791,7 +784,7 @@ export function PracticeClient({
     }
   }, [isCycleMode, items.length, proceedToNextStage]);
 
-  // ── 다음 아이템 ───────────────────────────────────────────────────────────────
+  // ── 다음 아이템 ─────────────────────────────────────────────
   const handleNext = useCallback(() => {
     if (isCycleMode) {
       const ci = (items[currentIndex] as CycleItem | undefined);
@@ -843,7 +836,7 @@ export function PracticeClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCycleMode, currentIndex, items, stage, gamePool.length, proceedToNextStage]);
 
-  // ── 5개 채워졌을 때: 2.5초 후 자동으로 다음으로 이동 ────────────────────────────
+  // ── 5개 채워졌을 때: 2.5초 후 자동으로 다음으로 이동 ────────────────────────
   useEffect(() => {
     if (!isSlotsFull) return;
 
@@ -855,7 +848,7 @@ export function PracticeClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSlotsFull, currentIndex]);
 
-  // ── 이전 아이템 ────────────────────────────────────────────────────────────────
+  // ── 이전 아이템 ─────────────────────────────────────────────
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((i) => i - 1);
@@ -884,7 +877,7 @@ export function PracticeClient({
     setCurrentIndex(prevItems.length - 1);
   }, [currentIndex, isCycleMode, stage, stage2Words, makeItems]);
 
-  // ── 빈 상태 ──────────────────────────────────────────────────────────────────
+  // ── 빈 상태 ─────────────────────────────────────────────────
   const isEmpty = isCycleMode ? cycleItems.length === 0 : stage1Words.length === 0;
   if (isEmpty) {
     return (
@@ -905,7 +898,7 @@ export function PracticeClient({
     );
   }
 
-  // ── 3단계 완료 후 모든 문장 다시 보기 (비-사이클 모드 전용) ──────────────────────
+  // ── 3단계 완료 후 모든 문장 다시 보기 (비-사이클 모드 전용) ────────────────
   if (showSentenceReview) {
     return (
       <div
@@ -953,7 +946,7 @@ export function PracticeClient({
     );
   }
 
-  // ── 혀 모양 단면도 팝업 모달 ──────────────────────────────────────────────────
+  // ── 혀 모양 단면도 팝업 모달 ───────────────────────────────────
   const tongueModal = showTongue && tonguePhoneme ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-6"
@@ -978,7 +971,7 @@ export function PracticeClient({
     </div>
   ) : null;
 
-  // ── 전체 완료 화면 ────────────────────────────────────────────────────────────
+  // ── 전체 완료 화면 ───────────────────────────────────────────
   if (allDone) {
     const masteredCount = [...autoSavedItems.values()].filter((v) => v === "mastered").length;
     const needsWorkCount = [...autoSavedItems.values()].filter((v) => v === "hard").length;
@@ -1001,7 +994,7 @@ export function PracticeClient({
     );
   }
 
-  // ── 청각 폭격 화면 ───────────────────────────────────────────────────────────
+  // ── 청각 폭격 화면 ──────────────────────────────────────────
   if (phase === "bombardment") {
     return (
       <AuditoryBombardment
@@ -1011,14 +1004,14 @@ export function PracticeClient({
     );
   }
 
-  // ── 단계 사이 미니게임 (전환마다 로테이션) ─────────────────────────────────────
+  // ── 단계 사이 미니게임 (전환마다 로테이션) ────────────────────────
   if (showInterstitial) {
     if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={proceedAfterGame} />;
     if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={proceedAfterGame} />;
     return <ListenPickGame pool={gamePool} onDone={proceedAfterGame} />;
   }
 
-  // ── 연습 화면 ─────────────────────────────────────────────────────────────────
+  // ── 연습 화면 ────────────────────────────────────────────
   const masteryInfo = currentMastery ? getMasteryLabel(currentMastery) : null;
   const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
   const goodCount = currentSlots.filter((s) => s === "good").length;
@@ -1205,7 +1198,7 @@ export function PracticeClient({
                       </div>
                       <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
                       <div className="text-center min-w-0">
-                        <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
+                        <p className="text-[10px] text-[#8B7E74] mb-0.5">옥은 표현</p>
                         <p className="font-black text-[#3D3530] whitespace-nowrap" style={{ fontSize: compareRight }}>
                           {text}
                         </p>
@@ -1254,7 +1247,7 @@ export function PracticeClient({
               <div className="flex justify-center pb-3">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
                   <span className="text-base">📖</span>
-                  부모님이 읽어주세요
+                  부모님과 함께 읽어요
                 </div>
               </div>
             )}
@@ -1308,7 +1301,7 @@ export function PracticeClient({
               <button
                 onClick={() => {
                   fillDot("bad");
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1320,7 +1313,7 @@ export function PracticeClient({
               <button
                 onClick={() => {
                   fillDot("good");
-                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
