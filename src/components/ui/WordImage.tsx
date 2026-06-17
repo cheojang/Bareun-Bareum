@@ -6,7 +6,7 @@ import { useState } from "react";
 interface Props {
   word: string;
   imageSlug?: string;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
   /**
    * 0~1 색칠 진행도. 지정하면 흑백 그림 위로 컬러가 아래에서 위로 차오릅니다
@@ -23,6 +23,7 @@ const SIZE_PX: Record<NonNullable<Props["size"]>, number> = {
   md: 80,
   lg: 120,
   xl: 160,
+  "2xl": 220,
 };
 
 /**
@@ -39,7 +40,7 @@ const SIZE_PX: Record<NonNullable<Props["size"]>, number> = {
  */
 export function WordImage({ word, imageSlug, size = "md", className = "", reveal, silhouette }: Props) {
   const px = SIZE_PX[size];
-  const rounded = size === "xl" || size === "lg" ? "rounded-2xl" : "rounded-xl";
+  const rounded = size === "2xl" || size === "xl" || size === "lg" ? "rounded-2xl" : "rounded-xl";
   const [failed, setFailed] = useState(false);
   const src = `/images/words/${imageSlug}.webp`;
 
