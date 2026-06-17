@@ -458,6 +458,7 @@ export function PracticeClient({
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
   const filledCount = currentSlots.filter((s) => s !== null).length;
+  const currentGoodCount = currentSlots.filter((s) => s === "good").length;
   const isSlotsFull = filledCount >= MAX_DOTS;
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
@@ -1062,7 +1063,12 @@ export function PracticeClient({
                 return (
                   <div className="flex flex-col items-center gap-2">
                     {slug && (
-                      <WordImage word={text} imageSlug={slug} size="2xl" />
+                      <WordImage
+                        word={text}
+                        imageSlug={slug}
+                        size="2xl"
+                        reveal={currentGoodCount / MAX_DOTS}
+                      />
                     )}
                     <p
                       className="font-black text-[#3D3530] tracking-wide leading-snug"
