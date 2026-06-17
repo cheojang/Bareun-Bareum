@@ -79,6 +79,11 @@ export default async function SettingsPage() {
           <p className="font-bold text-[#3D3530]">
             {isPremium ? "✨ 프리미엄 등급" : trialActive ? "🎁 프리미엄 체험 중" : "무료 등급"}
           </p>
+          {isPremium && subscription?.currentPeriodEnd && (
+            <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
+              다음 결제일 · {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
+            </p>
+          )}
           {trialActive && (
             <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
               체험 {trialDaysLeft}일 남음 · {new Date(user!.trialEndsAt!).toLocaleDateString("ko-KR")}까지 모든 기능 무료
