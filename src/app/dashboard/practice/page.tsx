@@ -125,7 +125,6 @@ export default async function PracticePage({
     // 루틴 모드: 분석단어 3개 + 유사패턴 5개로 축소 (전체 루틴 5~7분 유지)
     const MAX_TOTAL = routineMode ? 3 : 5;
     const MAX_PER_PHONEME = 2;
-    const STAGE2_MAX = routineMode ? 5 : 8;
     const stage1Seen = new Set<string>();
     const phonemeCount: Record<string, number> = {};
     // 선정된 stage1 단어의 음소 + 위치 (stage2 유사패턴 선택에 사용)
@@ -165,15 +164,18 @@ export default async function PracticePage({
       }
     }
 
-    // 유사패턴 단어: 아이 오류 음소별로 "이미지 있는" DB 단어를 모음 (Gemini 대체)
+    // 유사패턴 단어: 분석단어마다 "자기 몫"을 따로 확보 (Gemini 대체)
+    // ⚠️ 단어별 상한을 둬야 첫 단어가 전부 가져가서 2번째 단어 유사어가 0개가 되는 걸 막음
+    const SIMILAR_PER_WORD = 3;
     const stage2Seen = new Set<string>(stage1Seen);
     for (const sel of stage1Selected) {
-      if (stage2Words.length >= STAGE2_MAX) break;
+      let added = 0;
       for (const w of getSimilarPatternWords(sel.phoneme, sel.position, difficulty)) {
-        if (stage2Words.length >= STAGE2_MAX) break;
+        if (added >= SIMILAR_PER_WORD) break;
         if (stage2Seen.has(w.word)) continue;
         stage2Seen.add(w.word);
         stage2Words.push({ word: w.word, sourceWord: sel.word });
+        added++;
       }
     }
 
@@ -181,20 +183,40 @@ export default async function PracticePage({
   }
 
   // ── 3사이클 구성 ─────────────────────────────────────────────────────────────
-  // 각 사이클: 오답단어 1개 → 그 단어와 연관된 유사단어 2개 → DB sampleSentence 1개
-  // stage2Words[i].sourceWord 로 어느 오답단어의 유사단어인지 구분
+  // 각 사이클: 오답단어 1개 → 그 단어와 연관된 유사단어 2개 → 문장 1개
+  // 오답단어가 모자라면(또는 처음부터 없으면) 남은 유사단어로 사이클을 채움.
   const NUM_CYCLES = 3;
+  const SIMILAR_PER_CYCLE = 2;
   const cycles: PracticeCycle[] = [];
 
-  // sourceWord별로 유사단어 그룹핑
+  // sourceWord별로 유사단어 그룹핑 (해당 오답단어와 연관된 유사어만 뽑기 위함)
   const similarBySource = new Map<string, Array<{ word: string; sourceWord: string }>>();
   for (const sw of stage2Words) {
-    const key = sw.sourceWord;
-    if (!similarBySource.has(key)) similarBySource.set(key, []);
-    similarBySource.get(key)!.push(sw);
+    if (!similarBySource.has(sw.sourceWord)) similarBySource.set(sw.sourceWord, []);
+    similarBySource.get(sw.sourceWord)!.push(sw);
   }
-  // sourceWord 없는(오답단어가 없을 때 fallback) 유사단어 풀
-  const unassigned: Array<{ word: string; sourceWord: string }> = [...(similarBySource.get("") ?? [])];
+
+  // 이미 쓴 유사단어 추적 → 사이클 간 중복 방지
+  const usedSimilar = new Set<string>();
+  const leftoverSimilars = () => stage2Words.filter((s) => !usedSimilar.has(s.word));
+  // 특정 오답단어와 연관된 유사어를 n개 가져오고, 부족하면 남은 유사어로 보충
+  const takeSimilars = (sourceWord: string, n: number) => {
+    const out: Array<{ word: string; sourceWord: string }> = [];
+    for (const s of similarBySource.get(sourceWord) ?? []) {
+      if (out.length >= n) break;
+      if (usedSimilar.has(s.word)) continue;
+      usedSimilar.add(s.word);
+      out.push(s);
+    }
+    if (out.length < n) {
+      for (const s of leftoverSimilars()) {
+        if (out.length >= n) break;
+        usedSimilar.add(s.word);
+        out.push(s);
+      }
+    }
+    return out;
+  };
 
   let s1i = 0;
   for (let ci = 0; ci < NUM_CYCLES; ci++) {
@@ -204,23 +226,24 @@ export default async function PracticePage({
     if (s1i < stage1Words.length) {
       const w = stage1Words[s1i++];
       mainWord = { word: w.word, errorPattern: w.errorPattern, trainingTip: w.trainingTip, childPronunciation: w.childPronunciation };
-      // 이 오답단어와 연관된 유사단어 최대 2개
-      const pool = similarBySource.get(w.word) ?? [];
-      assignedSimilars = pool.splice(0, 2);
-      // 부족하면 미배정 풀에서 보충
-      if (assignedSimilars.length < 2) {
-        const need = 2 - assignedSimilars.length;
-        assignedSimilars.push(...unassigned.splice(0, need));
-      }
+      assignedSimilars = takeSimilars(w.word, SIMILAR_PER_CYCLE);
     } else {
-      // 오답단어 없음 → 미배정 유사단어에서 첫 번째를 main으로
-      const first = unassigned.shift();
-      if (first) mainWord = { word: first.word };
-      assignedSimilars = unassigned.splice(0, 2);
+      // 오답단어 소진/없음 → 남은 유사단어로 main + 유사어 구성
+      const left = leftoverSimilars();
+      if (left.length === 0) break; // 더 만들 게 없으면 종료
+      const first = left[0];
+      usedSimilar.add(first.word);
+      mainWord = { word: first.word };
+      assignedSimilars = takeSimilars(first.sourceWord, SIMILAR_PER_CYCLE);
     }
 
-    const sentWord = mainWord?.word ?? assignedSimilars[0]?.word;
-    const sentence = sentWord ? (getWordByText(sentWord)?.sampleSentence ?? null) : null;
+    // 문장: main이 DB에 있으면 그 예문, 없으면(부모 임의입력) 유사단어 예문으로 폴백
+    let sentence: string | null = null;
+    for (const cand of [mainWord?.word, ...assignedSimilars.map((s) => s.word)].filter(Boolean) as string[]) {
+      const s = getWordByText(cand)?.sampleSentence;
+      if (s) { sentence = s; break; }
+    }
+
     const similars = assignedSimilars.map((s) => ({ word: s.word, sourceWord: s.sourceWord }));
     if (mainWord || similars.length > 0) cycles.push({ mainWord, similarWords: similars, sentence });
   }

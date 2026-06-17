@@ -1248,15 +1248,6 @@ export function PracticeClient({
               </button>
             </div>
 
-            {!stage3Loading && currentItem?.kind === "sentence" && (
-              <div className="flex justify-center pb-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
-                  <span className="text-base">📖</span>
-                  부모님이 읽어주세요
-                </div>
-              </div>
-            )}
-
             {/* 훈련 팁 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
