@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
-import { MascotCharacter } from "@/components/child/MascotCharacter";
 import { ListenPickGame } from "@/components/child/ListenPickGame";
 import { ShadowMatchGame } from "@/components/child/ShadowMatchGame";
 import { PuzzleGame } from "@/components/child/PuzzleGame";
@@ -17,6 +16,8 @@ import { DIFFICULTY_LABEL, type Difficulty } from "@/lib/adaptive-difficulty";
 import { WordImage } from "@/components/ui/WordImage";
 import { ArticulationDiagram } from "@/components/ui/ArticulationDiagram";
 import { getArticulationSlug, phonemeFromPattern } from "@/lib/articulation-mapper";
+import { useRecorder } from "@/lib/useRecorder";
+import type { PracticeCycle } from "./page";
 import Link from "next/link";
 
 // ─── 완료 화면 컴포넌트 (코칭 카드 포함) ────────────────────────────────────────
@@ -264,6 +265,8 @@ interface Props {
   routineMode?: boolean;
   /** 적응형 난이도 — 최근 결과로 서버에서 계산 (3연속 성공 ↑, 2연속 실패 ↓) */
   difficulty?: Difficulty;
+  /** 3사이클 구조 — 제공되면 사이클 모드로 동작 */
+  cycles?: PracticeCycle[];
 }
 
 type Stage = 1 | 2 | 3;
@@ -278,6 +281,47 @@ interface PracticeItem {
   similarTo?: string;        // 2단계: 어떤 원본 분석 단어와 유사 패턴인지
   childPron?: string;        // 1단계 오답 단어에서 아이 발음 표시용
   scheduleId?: string;       // 복습 아이템: SM-2 ReviewSchedule ID
+}
+
+// 사이클 모드 아이템 (PracticeItem 확장)
+interface CycleItem extends PracticeItem {
+  cycleIdx: number;
+  cycleEnd: boolean; // 사이클의 마지막 아이템(문장 또는 마지막 단어)
+}
+
+// 사이클 아이템 빌더
+function buildCycleItems(cycles: PracticeCycle[]): CycleItem[] {
+  const items: CycleItem[] = [];
+  cycles.forEach((cycle, ci) => {
+    const cycleItems: CycleItem[] = [];
+    if (cycle.mainWord) {
+      cycleItems.push({
+        text: cycle.mainWord.word,
+        kind: "word",
+        badge: cycle.mainWord.errorPattern,
+        trainingTip: cycle.mainWord.trainingTip,
+        childPron: cycle.mainWord.childPronunciation,
+        cycleIdx: ci,
+        cycleEnd: false,
+      });
+    }
+    cycle.similarWords.forEach((s) => {
+      cycleItems.push({
+        text: s.word,
+        kind: "word",
+        similarTo: s.sourceWord,
+        cycleIdx: ci,
+        cycleEnd: false,
+      });
+    });
+    if (cycle.sentence) {
+      cycleItems.push({ text: cycle.sentence, kind: "sentence", cycleIdx: ci, cycleEnd: true });
+    } else if (cycleItems.length > 0) {
+      cycleItems[cycleItems.length - 1].cycleEnd = true;
+    }
+    items.push(...cycleItems);
+  });
+  return items;
 }
 
 const MAX_DOTS = 5;
@@ -303,6 +347,12 @@ const STAGE_META: Record<string, { label: string; desc: string; color: string; b
     color: "#0D9488",
     bg: "#F0FAF8",
   },
+};
+
+// 사이클 모드 카드 스타일
+const CYCLE_META = {
+  word: { label: "발음연습", color: "#FFB38A", bg: "#FFF5EE" },
+  sentence: { label: "문장연습", color: "#0D9488", bg: "#F0FAF8" },
 };
 
 // ─── 숙달 레벨 판정 ────────────────────────────────────────────────────────────
@@ -377,7 +427,11 @@ export function PracticeClient({
   errorPattern,
   routineMode,
   difficulty,
+  cycles,
 }: Props) {
+  // 사이클 모드 여부
+  const isCycleMode = !!(cycles && cycles.length > 0);
+
   // 항상 1단계부터 시작
   const startStage: Stage = 1;
 
@@ -399,12 +453,23 @@ export function PracticeClient({
     return [];
   }, [stage1Words, stage2Words]);
 
-  const [items, setItems] = useState<PracticeItem[]>(() => makeItems(startStage));
+  // 사이클 모드: 모든 아이템을 한 번에 flat하게 구성
+  const cycleItems = useMemo<CycleItem[]>(() => {
+    if (!isCycleMode || !cycles) return [];
+    return buildCycleItems(cycles);
+  }, [isCycleMode, cycles]);
+
+  const [items, setItems] = useState<PracticeItem[]>(() =>
+    isCycleMode ? cycleItems : makeItems(startStage)
+  );
   const [stage3Loading, setStage3Loading] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dotSlots, setDotSlots] = useState<DotResult[][]>(
-    () => Array.from({ length: Math.max(makeItems(startStage).length, 1) }, () => Array(MAX_DOTS).fill(null))
+    () => {
+      const len = isCycleMode ? cycleItems.length : Math.max(makeItems(startStage).length, 1);
+      return Array.from({ length: Math.max(len, 1) }, () => Array(MAX_DOTS).fill(null));
+    }
   );
 
   const [autoSavedItems, setAutoSavedItems] = useState<Map<string, MasteryLevel>>(new Map());
@@ -419,46 +484,75 @@ export function PracticeClient({
 
   // ── 청각 폭격 페이즈 ─────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<"bombardment" | "practice">(
-    stage1Words.length > 0 ? "bombardment" : "practice"
+    (isCycleMode ? cycleItems.length > 0 : stage1Words.length > 0) ? "bombardment" : "practice"
   );
-  const bombardmentWords = [
-    ...stage1Words.map((e) => e.word),
-    ...stage2Words.slice(0, Math.max(0, 6 - stage1Words.length)).map((w) => w.word),
-  ].slice(0, 6);
 
-  // 3단계 사전 fetch — 2단계 마지막 단어에서 미리 문장 받아두기
+  // 청각 폭격용 단어 목록 (사이클 모드: 사이클에서 추출, 기존: stage1+stage2)
+  const bombardmentWords = useMemo(() => {
+    if (isCycleMode && cycles) {
+      return cycles
+        .flatMap((c) => [c.mainWord?.word, ...c.similarWords.map((s) => s.word)])
+        .filter(Boolean)
+        .slice(0, 6) as string[];
+    }
+    return [
+      ...stage1Words.map((e) => e.word),
+      ...stage2Words.slice(0, Math.max(0, 6 - stage1Words.length)).map((w) => w.word),
+    ].slice(0, 6);
+  }, [isCycleMode, cycles, stage1Words, stage2Words]);
+
+  // 3단계 사전 fetch — 2단계 마지막 단어에서 미리 문장 받아두기 (비-사이클 모드 전용)
   const [prefetchedS3, setPrefetchedS3] = useState<string[] | null>(null);
   const prefetchInFlightRef = useRef(false);
 
-  // 3단계 완료 후 모든 문장 리뷰 화면
+  // 3단계 완료 후 모든 문장 리뷰 화면 (비-사이클 모드 전용)
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
   // ── 단계 사이 미니게임 ─────────────────────────────────────────────────────────
-  // 전환마다 세 게임이 번갈아 나오도록 로테이션
   const MINI_GAMES = ["listen", "shadow", "puzzle"] as const;
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [gameType, setGameType] = useState<(typeof MINI_GAMES)[number]>("listen");
   const interstitialCountRef = useRef(0);
-  // 그림 있는 단어 후보 — 1·2단계 단어 중 이미지 보유 단어(중복 제거)
+  // 미니게임 후 복귀할 다음 인덱스 (사이클 모드에서 사용)
+  const nextIndexAfterGameRef = useRef<number | null>(null);
+
+  // 현재 사이클 인덱스 (사이클 모드에서 파생)
+  const currentCycleIdx = isCycleMode
+    ? (items[currentIndex] as CycleItem | undefined)?.cycleIdx ?? 0
+    : 0;
+
+  // 그림 있는 단어 후보 — 사이클 모드: 현재 사이클 단어 중 이미지 있는 것
   const gamePool = useMemo<PickCard[]>(() => {
     const seen = new Set<string>();
-    const out: PickCard[] = [];
-    for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
-      const info = wordInfos[w];
-      if (!info?.imageSlug) continue;
-      if (!seen.has(w)) {
-        seen.add(w);
-        out.push({ word: w, imageSlug: info.imageSlug });
+    const out: PickCard[]= [];
+    if (isCycleMode) {
+      const cycleWordItems = (items as CycleItem[]).filter(
+        (it) => it.cycleIdx === currentCycleIdx && it.kind === "word"
+      );
+      for (const it of cycleWordItems) {
+        const info = wordInfos[it.text];
+        if (info?.imageSlug && !seen.has(it.text)) {
+          seen.add(it.text);
+          out.push({ word: it.text, imageSlug: info.imageSlug });
+        }
+      }
+    } else {
+      for (const w of [...stage1Words.map((e) => e.word), ...stage2Words.map((s) => s.word)]) {
+        const info = wordInfos[w];
+        if (!info?.imageSlug) continue;
+        if (!seen.has(w)) {
+          seen.add(w);
+          out.push({ word: w, imageSlug: info.imageSlug });
+        }
       }
     }
     return out;
-  }, [stage1Words, stage2Words, wordInfos]);
+  }, [isCycleMode, items, currentCycleIdx, wordInfos, stage1Words, stage2Words]);
 
   const totalGood = dotSlots.flat().filter((s) => s === "good").length;
   const currentSlots = dotSlots[currentIndex] ?? Array(MAX_DOTS).fill(null);
   const filledCount = currentSlots.filter((s) => s !== null).length;
-  const currentGoodCount = currentSlots.filter((s) => s === "good").length;
   const isSlotsFull = filledCount >= MAX_DOTS;
   const currentMastery = isSlotsFull ? getMastery(currentSlots) : null;
   const currentItem = items[currentIndex];
@@ -476,8 +570,9 @@ export function PracticeClient({
   useEffect(() => {
     const text = currentItem?.text;
     if (!text || stage3Loading) return;
+    // 문장은 TTS 사용하지 않음 — 부모님이 읽어주는 영역
+    if (currentItem?.kind === "sentence") return;
     // 청각폭격(bombardment) 중에는 메인 UI가 안 보이므로 자동재생 안 함
-    // → phase가 "practice"로 바뀐 직후(사용자 클릭 이후)에 첫 단어 재생
     if (phase !== "practice") return;
 
     let cancelled = false;
@@ -496,11 +591,17 @@ export function PracticeClient({
     if (text) playWord(text).catch(() => {});
   }, [currentItem?.text, playWord]);
 
-  // ── 단계 전환 ─────────────────────────────────────────────────────────────────
-  // 인트로 오버레이 없이 즉시 전환 — 버튼 한 번 누르면 바로 다음 단계
+  // ── 녹음 훅 ──────────────────────────────────────────────────────────────────
+  const { recState, startRec, stopRec, playRec, resetRec } = useRecorder();
+
+  // 카드 변경 시 녹음 초기화
+  useEffect(() => {
+    resetRec();
+  }, [currentIndex, resetRec]);
+
+  // ── 단계 전환 (비-사이클 모드 전용) ─────────────────────────────────────────────
   const transitionToStage = useCallback(
     async (target: Stage) => {
-      // 즉시 인덱스와 단계 상태 전환 (동기적)
       setCurrentIndex(0);
       setStage(target);
 
@@ -561,13 +662,12 @@ export function PracticeClient({
     [makeItems, stage1Words, stage2Words, errorPattern, prefetchedS3]
   );
 
-  // ── 3단계 사전 fetch — 2단계 마지막 단어 또는 2단계 없을 때 1단계 마지막 ──
+  // ── 3단계 사전 fetch — 비-사이클 모드 전용 ──────────────────────────────────────
   useEffect(() => {
+    if (isCycleMode) return; // 사이클 모드는 DB 문장 사용
     if (prefetchedS3 || prefetchInFlightRef.current) return;
     if (stage1Words.length === 0) return;
 
-    // 마지막에서 두 번째 단어 시점부터 미리 fetch
-    // (단어가 1개뿐이면 0번째에서 시작 — 그래도 일부 시간 단축됨)
     const triggerIdx = Math.max(0, items.length - 2);
     const isStage1Trigger = stage === 1 && currentIndex >= triggerIdx && stage2Words.length === 0;
     const isStage2Trigger = stage === 2 && currentIndex >= triggerIdx;
@@ -584,7 +684,7 @@ export function PracticeClient({
       .finally(() => {
         prefetchInFlightRef.current = false;
       });
-  }, [stage, currentIndex, items.length, prefetchedS3, stage1Words, stage2Words, errorPattern]);
+  }, [isCycleMode, stage, currentIndex, items.length, prefetchedS3, stage1Words, stage2Words, errorPattern]);
 
   // ── 도트 채우기 ───────────────────────────────────────────────────────────────
   const fillDot = useCallback(
@@ -663,74 +763,76 @@ export function PracticeClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSlotsFull]);
 
-  // ── 5개 채워졌을 때: 1.5초 후 자동으로 다음으로 이동 ────────────────────────────
-  useEffect(() => {
-    if (!isSlotsFull) return;
-
-    // 1.5초 후 자동 이동 (컴포넌트 언마운트 또는 아이템 변경 시 타이머 취소)
-    const timer = setTimeout(() => {
-      handleNext();
-    }, 2500);
-
-    return () => clearTimeout(timer); // 클린업: 타이머 누수 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSlotsFull, currentIndex]);
-
-  // ── 이전 아이템 (단계 역행 포함) ────────────────────────────────────────────────
-  const handlePrev = useCallback(() => {
-    if (currentIndex > 0) {
-      // 같은 단계 안에서 이전으로
-      setCurrentIndex((i) => i - 1);
-      return;
-    }
-
-    // currentIndex === 0 → 이전 단계의 마지막 아이템으로 이동
-    let prevStage: Stage | null = null;
-    if (stage === 3) {
-      prevStage = stage2Words.length > 0 ? 2 : 1;
-    } else if (stage === 2) {
-      prevStage = 1;
-    } else if (stage === 1) {
-      prevStage = null; // 1단계가 첫 단계
-    }
-
-    if (prevStage === null) return; // 이미 맨 처음
-
-    const prevItems = makeItems(prevStage);
-    setStage(prevStage);
-    setItems(prevItems);
-    setDotSlots((prev) => {
-      // 이전 단계 아이템 수만큼 dotSlots 복원 (빈 슬롯으로)
-      if (prev.length === prevItems.length) return prev;
-      return Array.from({ length: Math.max(prevItems.length, 1) }, () => Array(MAX_DOTS).fill(null));
-    });
-    setCurrentIndex(prevItems.length - 1); // 마지막 아이템으로
-  }, [currentIndex, stage, stage2Words, makeItems]);
-
-  // 현재 단계 기준으로 실제 다음 단계로 전환 (미니게임 후 호출)
+  // ── 현재 단계 기준으로 다음 단계로 전환 (비-사이클 모드, 미니게임 후 호출) ──────
   const proceedToNextStage = useCallback(() => {
     if (stage === 1 && stage2Words.length > 0) {
       transitionToStage(2);
     } else if (stage === 1 || stage === 2) {
       transitionToStage(3);
     } else {
-      // 3단계 마지막 → 모든 문장 리뷰 화면 표시
       setShowSentenceReview(true);
     }
   }, [stage, stage2Words.length, transitionToStage]);
 
+  // 미니게임 후 다음으로 진행 (사이클/비사이클 공통)
+  const proceedAfterGame = useCallback(() => {
+    setShowInterstitial(false);
+    if (isCycleMode) {
+      // 사이클 모드: 저장해둔 다음 인덱스로 이동 또는 완료
+      const nextIdx = nextIndexAfterGameRef.current;
+      if (nextIdx !== null && nextIdx < items.length) {
+        setCurrentIndex(nextIdx);
+        nextIndexAfterGameRef.current = null;
+      } else {
+        setAllDone(true);
+      }
+    } else {
+      proceedToNextStage();
+    }
+  }, [isCycleMode, items.length, proceedToNextStage]);
+
   // ── 다음 아이템 ───────────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
+    if (isCycleMode) {
+      const ci = (items[currentIndex] as CycleItem | undefined);
+      // 사이클 끝 아이템이고 더 아이템이 있으면 → 미니게임 (gamePool ≥ 2)
+      if (ci?.cycleEnd && currentIndex + 1 < items.length) {
+        if (gamePool.length >= 2) {
+          const idx = interstitialCountRef.current++;
+          setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+          nextIndexAfterGameRef.current = currentIndex + 1;
+          setShowInterstitial(true);
+        } else {
+          setCurrentIndex(currentIndex + 1);
+        }
+        return;
+      }
+      // 마지막 아이템
+      if (currentIndex + 1 >= items.length) {
+        if (ci?.cycleEnd && gamePool.length >= 2) {
+          const idx = interstitialCountRef.current++;
+          setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+          nextIndexAfterGameRef.current = null; // 게임 후 완료
+          setShowInterstitial(true);
+        } else {
+          setAllDone(true);
+        }
+        return;
+      }
+      // 일반 다음
+      setCurrentIndex((i) => i + 1);
+      return;
+    }
+
+    // 비-사이클 모드 (기존 로직)
     if (currentIndex + 1 < items.length) {
       setCurrentIndex((i) => i + 1);
       return;
     }
-    // 단계 완료 — 3단계 마지막은 게임 없이 바로 리뷰로
     if (stage === 3) {
       setShowSentenceReview(true);
       return;
     }
-    // 단계 사이: 그림 단어가 2개 이상이면 미니게임, 아니면 바로 다음 단계
     if (gamePool.length >= 2) {
       const idx = interstitialCountRef.current++;
       setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
@@ -739,10 +841,52 @@ export function PracticeClient({
       proceedToNextStage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, items.length, stage, gamePool.length, proceedToNextStage]);
+  }, [isCycleMode, currentIndex, items, stage, gamePool.length, proceedToNextStage]);
+
+  // ── 5개 채워졌을 때: 2.5초 후 자동으로 다음으로 이동 ────────────────────────────
+  useEffect(() => {
+    if (!isSlotsFull) return;
+
+    const timer = setTimeout(() => {
+      handleNext();
+    }, 2500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSlotsFull, currentIndex]);
+
+  // ── 이전 아이템 ────────────────────────────────────────────────────────────────
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((i) => i - 1);
+      return;
+    }
+    if (isCycleMode) return; // 사이클 모드에서 맨 처음이면 더 이상 뒤로 없음
+
+    // 비-사이클 모드: 이전 단계의 마지막 아이템으로
+    let prevStage: Stage | null = null;
+    if (stage === 3) {
+      prevStage = stage2Words.length > 0 ? 2 : 1;
+    } else if (stage === 2) {
+      prevStage = 1;
+    } else if (stage === 1) {
+      prevStage = null;
+    }
+    if (prevStage === null) return;
+
+    const prevItems = makeItems(prevStage);
+    setStage(prevStage);
+    setItems(prevItems);
+    setDotSlots((prev) => {
+      if (prev.length === prevItems.length) return prev;
+      return Array.from({ length: Math.max(prevItems.length, 1) }, () => Array(MAX_DOTS).fill(null));
+    });
+    setCurrentIndex(prevItems.length - 1);
+  }, [currentIndex, isCycleMode, stage, stage2Words, makeItems]);
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
-  if (stage1Words.length === 0) {
+  const isEmpty = isCycleMode ? cycleItems.length === 0 : stage1Words.length === 0;
+  if (isEmpty) {
     return (
       <div
         className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
@@ -761,7 +905,7 @@ export function PracticeClient({
     );
   }
 
-  // ── 3단계 완료 후 모든 문장 다시 보기 ─────────────────────────────────────────
+  // ── 3단계 완료 후 모든 문장 다시 보기 (비-사이클 모드 전용) ──────────────────────
   if (showSentenceReview) {
     return (
       <div
@@ -797,7 +941,6 @@ export function PracticeClient({
             variant="peach"
             size="xl"
             onClick={() => {
-              // 세션은 단어별로 이미 저장됨 (usePracticeRecorder) — 일괄 저장 불필요
               setShowSentenceReview(false);
               setAllDone(true);
             }}
@@ -839,6 +982,9 @@ export function PracticeClient({
   if (allDone) {
     const masteredCount = [...autoSavedItems.values()].filter((v) => v === "mastered").length;
     const needsWorkCount = [...autoSavedItems.values()].filter((v) => v === "hard").length;
+    const practiceWords = isCycleMode && cycles
+      ? cycles.flatMap((c) => [c.mainWord?.word, ...c.similarWords.map((s) => s.word)]).filter(Boolean) as string[]
+      : [...stage1Words.map((e) => e.word), ...stage2Words.map((w) => w.word)];
     return (
       <CompletionScreen
         childName={childName}
@@ -847,17 +993,13 @@ export function PracticeClient({
         totalGood={totalGood}
         masteredCount={masteredCount}
         needsWorkCount={needsWorkCount}
-        practiceWords={[
-          ...stage1Words.map((e) => e.word),
-          ...stage2Words.map((w) => w.word),
-        ]}
+        practiceWords={practiceWords}
         errorPattern={errorPattern}
         childId={childId}
         routineMode={routineMode}
       />
     );
   }
-
 
   // ── 청각 폭격 화면 ───────────────────────────────────────────────────────────
   if (phase === "bombardment") {
@@ -871,31 +1013,34 @@ export function PracticeClient({
 
   // ── 단계 사이 미니게임 (전환마다 로테이션) ─────────────────────────────────────
   if (showInterstitial) {
-    const finishGame = () => {
-      setShowInterstitial(false);
-      proceedToNextStage();
-    };
-    if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={finishGame} />;
-    if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={finishGame} />;
-    return <ListenPickGame pool={gamePool} onDone={finishGame} />;
+    if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={proceedAfterGame} />;
+    if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={proceedAfterGame} />;
+    return <ListenPickGame pool={gamePool} onDone={proceedAfterGame} />;
   }
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
-  const meta = STAGE_META[String(stage)];
   const masteryInfo = currentMastery ? getMasteryLabel(currentMastery) : null;
   const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
   const goodCount = currentSlots.filter((s) => s === "good").length;
 
-  // 단계 인디케이터 (3단계)
-  const stageSteps = (
+  // 사이클 모드: 카드 색상은 아이템 종류에 따라
+  const cycleMeta = isCycleMode
+    ? (currentItem?.kind === "sentence" ? CYCLE_META.sentence : CYCLE_META.word)
+    : null;
+
+  // 비-사이클 모드: 단계 인디케이터
+  const meta = STAGE_META[String(stage)];
+  const stageSteps = isCycleMode ? [] : (
     [
       { key: 1 as Stage, show: stage1Words.length > 0 },
       { key: 2 as Stage, show: stage2Words.length > 0 },
       { key: 3 as Stage, show: true },
     ] as { key: Stage; show: boolean }[]
   ).filter((s) => s.show);
-
   const stageIdx = stageSteps.findIndex((s) => s.key === stage);
+
+  // 카드 테두리 색상
+  const cardBorderColor = isCycleMode ? cycleMeta!.color : meta.color;
 
   return (
     <div
@@ -905,15 +1050,37 @@ export function PracticeClient({
       {tongueModal}
       <ConfettiEffect trigger={confetti} />
 
-      {/* 단계 표시 바 */}
+      {/* 진행 표시 바 */}
       <div className="max-w-lg mx-auto w-full px-5 py-2">
         <div className="flex items-center justify-between mb-1.5">
-          <span
-            className="text-xs font-bold px-3 py-1 rounded-full"
-            style={{ backgroundColor: meta.bg, color: meta.color }}
-          >
-            {meta.label}
-          </span>
+          {isCycleMode ? (
+            /* 사이클 모드: 사이클 진행 표시 */
+            <div className="flex items-center gap-2">
+              {cycles!.map((_, ci) => (
+                <div
+                  key={ci}
+                  className="rounded-full transition-all duration-300 flex items-center justify-center"
+                  style={{
+                    width: ci === currentCycleIdx ? 28 : 20,
+                    height: ci === currentCycleIdx ? 28 : 20,
+                    background: ci < currentCycleIdx ? "#7EDFD0" : ci === currentCycleIdx ? "#FFB38A" : "#F0E8E0",
+                    fontSize: 11,
+                    fontWeight: 900,
+                    color: ci <= currentCycleIdx ? "white" : "#C4B5A8",
+                  }}
+                >
+                  {ci < currentCycleIdx ? "✓" : ci + 1}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full"
+              style={{ backgroundColor: meta.bg, color: meta.color }}
+            >
+              {meta.label}
+            </span>
+          )}
           <span className="text-xs text-[#8B7E74] font-semibold">
             {difficulty && (
               <span className="mr-2 text-[#A89B8E]">
@@ -928,49 +1095,51 @@ export function PracticeClient({
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${((currentIndex + 1) / items.length) * 100}%`,
-              backgroundColor: meta.color,
+              backgroundColor: isCycleMode ? cycleMeta!.color : meta.color,
               opacity: 0.7,
             }}
           />
         </div>
       </div>
 
-      {/* 스텝 인디케이터 */}
-      <div className="max-w-lg mx-auto w-full flex justify-center gap-2 mb-1">
-        {stageSteps.map((s, i) => {
-          const sMeta = STAGE_META[String(s.key)];
-          const isPast = i < stageIdx;
-          const isCurrent = i === stageIdx;
-          return (
-            <div key={String(s.key)} className="flex items-center gap-1">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all"
-                style={{
-                  backgroundColor: isCurrent ? sMeta.color : isPast ? "#7EDFD0" : "#F0E8E0",
-                  color: isCurrent || isPast ? "white" : "#C4B5A8",
-                }}
-              >
-                {isPast ? "✓" : i + 1}
-              </div>
-              {i < stageSteps.length - 1 && (
+      {/* 비-사이클 모드: 스텝 인디케이터 */}
+      {!isCycleMode && (
+        <div className="max-w-lg mx-auto w-full flex justify-center gap-2 mb-1">
+          {stageSteps.map((s, i) => {
+            const sMeta = STAGE_META[String(s.key)];
+            const isPast = i < stageIdx;
+            const isCurrent = i === stageIdx;
+            return (
+              <div key={String(s.key)} className="flex items-center gap-1">
                 <div
-                  className="w-6 h-0.5 rounded"
-                  style={{ backgroundColor: isPast ? "#7EDFD0" : "#F0E8E0" }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all"
+                  style={{
+                    backgroundColor: isCurrent ? sMeta.color : isPast ? "#7EDFD0" : "#F0E8E0",
+                    color: isCurrent || isPast ? "white" : "#C4B5A8",
+                  }}
+                >
+                  {isPast ? "✓" : i + 1}
+                </div>
+                {i < stageSteps.length - 1 && (
+                  <div
+                    className="w-6 h-0.5 rounded"
+                    style={{ backgroundColor: isPast ? "#7EDFD0" : "#F0E8E0" }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 가운데 정렬(컴포넌트 간 여백 최소화) */}
+      {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 가운데 정렬 */}
       <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-4">
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
           {/* 연습 카드 */}
           <div
             className="relative w-full bg-white/90 rounded-[32px] shadow-lg text-center"
-            style={{ border: `2px solid ${meta.color}22` }}
+            style={{ border: `2px solid ${cardBorderColor}22` }}
           >
             {/* 혀 모양 팝업 버튼 — 목표 음소가 매핑될 때만 우상단에 표시 */}
             {hasTongueDiagram && !stage3Loading && (
@@ -982,7 +1151,7 @@ export function PracticeClient({
                 <span className="text-lg leading-none">👅</span>
               </button>
             )}
-            {/* 2단계 유사 패턴 라벨 — 좌상단에 작게 표시 */}
+            {/* 2단계 유사 패턴 라벨 */}
             {currentItem?.similarTo && (
               <span className="block text-[11px] font-semibold text-[#8B7E74] pt-4 pb-1">
                 🔗 <span className="text-[#FFB38A]">{currentItem.similarTo}</span>와 유사
@@ -992,20 +1161,22 @@ export function PracticeClient({
             {currentItem?.badge && (
               <span
                 className="inline-block text-xs font-bold px-3 py-1 rounded-full mt-4 mb-1"
-                style={{ backgroundColor: meta.bg, color: meta.color }}
+                style={{
+                  backgroundColor: isCycleMode ? cycleMeta!.bg : meta.bg,
+                  color: isCycleMode ? cycleMeta!.color : meta.color,
+                }}
               >
                 {stripEnglishParens(currentItem.badge)}
               </span>
             )}
 
-            {/* ── 단어 표시 영역: 버튼이 이 영역의 세로 중앙에 고정됨 ── */}
-            {/* relative를 카드 전체가 아닌 이 영역에만 적용 → 처방전 길이에 영향 없음 */}
+            {/* 단어 표시 영역 */}
             <div className="relative flex items-center justify-center px-14 py-6">
 
-              {/* ← 이전 (좌측 원형 화살표 버튼) */}
+              {/* ← 이전 */}
               <button
                 onClick={handlePrev}
-                disabled={currentIndex === 0 && stage === startStage}
+                disabled={currentIndex === 0 && (isCycleMode || stage === startStage)}
                 aria-label="이전"
                 className="group absolute left-3 top-1/2 -translate-y-1/2 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
               >
@@ -1014,15 +1185,13 @@ export function PracticeClient({
                 </span>
               </button>
 
-              {/* 단어 / 문장 콘텐츠 — 글자 수에 따라 크기 자동 조정 */}
+              {/* 단어 / 문장 콘텐츠 */}
               {(() => {
                 const text = currentItem?.text ?? "";
                 const childPron = currentItem?.childPron ?? "";
                 const maxLen = Math.max(text.length, childPron.length);
-                // 비교 뷰용 크기 (좌: 아이 발음, 우: 옳은 표현)
                 const compareLeft  = maxLen <= 2 ? "2.75rem" : maxLen === 3 ? "2.25rem" : maxLen === 4 ? "1.875rem" : "1.5rem";
                 const compareRight = maxLen <= 2 ? "3.5rem"  : maxLen === 3 ? "2.75rem" : maxLen === 4 ? "2.25rem" : "1.875rem";
-                // 단일 단어 뷰용 크기
                 const singleSize = text.length <= 2 ? "4rem" : text.length === 3 ? "3.25rem" : text.length === 4 ? "2.5rem" : "2rem";
 
                 if (currentItem?.childPron && currentItem?.kind !== "sentence") {
@@ -1030,20 +1199,14 @@ export function PracticeClient({
                     <div className="flex items-center justify-center gap-3">
                       <div className="text-center min-w-0">
                         <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
-                        <p
-                          className="font-bold text-[#FCA5A5] whitespace-nowrap"
-                          style={{ fontSize: compareLeft }}
-                        >
+                        <p className="font-bold text-[#FCA5A5] whitespace-nowrap" style={{ fontSize: compareLeft }}>
                           {childPron}
                         </p>
                       </div>
                       <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
                       <div className="text-center min-w-0">
                         <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
-                        <p
-                          className="font-black text-[#3D3530] whitespace-nowrap"
-                          style={{ fontSize: compareRight }}
-                        >
+                        <p className="font-black text-[#3D3530] whitespace-nowrap" style={{ fontSize: compareRight }}>
                           {text}
                         </p>
                       </div>
@@ -1075,7 +1238,7 @@ export function PracticeClient({
                 );
               })()}
 
-              {/* → 다음 (우측 원형 화살표 버튼 — 단계 전환도 가능) */}
+              {/* → 다음 */}
               <button
                 onClick={handleNext}
                 aria-label="다음"
@@ -1087,7 +1250,16 @@ export function PracticeClient({
               </button>
             </div>
 
-            {/* 훈련 팁 (2단계 처방전) — 단어 영역 아래에 별도 배치 */}
+            {!stage3Loading && currentItem?.kind === "sentence" && (
+              <div className="flex justify-center pb-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#EDE9FE] border border-[#C4B5FD] text-[#7C3AED] font-bold text-sm">
+                  <span className="text-base">📖</span>
+                  부모님이 읽어주세요
+                </div>
+              </div>
+            )}
+
+            {/* 훈련 팁 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
               <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
                 💡 {currentItem.trainingTip}
@@ -1130,14 +1302,13 @@ export function PracticeClient({
             </div>
           )}
 
-          {/* 평가 버튼 2개 — 콘텐츠 묶음 안에 배치 (별점 바로 아래, 로딩 중 비활성) */}
+          {/* 평가 버튼 2개 */}
           {!isSlotsFull && !stage3Loading && (
             <div className="flex gap-3 w-full mt-1">
               <button
                 onClick={() => {
                   fillDot("bad");
-                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생 — 다음 단어로 넘어가기 전 마지막엔 안 들려줌
-                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1149,8 +1320,7 @@ export function PracticeClient({
               <button
                 onClick={() => {
                   fillDot("good");
-                  // 마지막(5번째) 도트가 아닐 때만 TTS 재생
-                  if (currentItem?.text && filledCount < MAX_DOTS - 1) {
+                  if (currentItem?.kind !== "sentence" && currentItem?.text && filledCount < MAX_DOTS - 1) {
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
@@ -1161,6 +1331,46 @@ export function PracticeClient({
               </button>
             </div>
           )}
+
+          {/* 녹음 버튼 — 아이 발음 녹음 후 들어보기 */}
+          <div className="flex items-center justify-center gap-2 pt-1">
+            {recState === "idle" && (
+              <button
+                onClick={startRec}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
+                style={{ backgroundColor: "#EDE9FE", color: "#7C3AED", border: "1.5px solid #C4B5FF" }}
+              >
+                🎙 아이 발음 녹음
+              </button>
+            )}
+            {recState === "recording" && (
+              <button
+                onClick={stopRec}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold animate-pulse transition-all active:scale-95"
+                style={{ backgroundColor: "#FDF2F8", color: "#EC4899", border: "1.5px solid #F9A8D4" }}
+              >
+                ⏹ 녹음 중지
+              </button>
+            )}
+            {recState === "recorded" && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={playRec}
+                  className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
+                  style={{ backgroundColor: "#F0FAF8", color: "#0D9488", border: "1.5px solid #7EDFD0" }}
+                >
+                  ▶ 들어보기
+                </button>
+                <button
+                  onClick={resetRec}
+                  className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
+                  style={{ backgroundColor: "#F5F5F5", color: "#8B7E74", border: "1.5px solid #E0E0E0" }}
+                >
+                  🔄 다시
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

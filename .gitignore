@@ -51,3 +51,4 @@ gemini_error_debug.log
 gcp-key.json
 *-sa-key.json
 service-account*.json
+.claude/worktrees/

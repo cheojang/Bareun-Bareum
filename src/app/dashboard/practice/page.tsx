@@ -13,6 +13,18 @@ import { PracticeClient } from "./PracticeClient";
 
 export const dynamic = "force-dynamic";
 
+// 사이클 타입 — PracticeClient와 공유
+export interface PracticeCycle {
+  mainWord: {
+    word: string;
+    errorPattern?: string;
+    trainingTip?: string;
+    childPronunciation?: string;
+  } | null;
+  similarWords: Array<{ word: string; sourceWord?: string }>;
+  sentence: string | null;
+}
+
 // 음소 추출: ReviewSchedule.phoneme 우선, 없으면 errorPattern 첫 자음
 function pickPhoneme(reviewPhoneme: string | null | undefined, errorPattern: string | null | undefined): string {
   if (reviewPhoneme && reviewPhoneme !== "미분류") return reviewPhoneme;
@@ -168,13 +180,41 @@ export default async function PracticePage({
     errorPattern = stage1Words[0]?.errorPattern;
   }
 
-  // 카드 이미지용: stage1+stage2 단어 → imageSlug + difficulty + ageGroup 매핑
+  // ── 3사이클 구성 ─────────────────────────────────────────────────────────────
+  // 각 사이클: 오답단어 1개 → 유사단어 2개 → DB sampleSentence 1개
+  const NUM_CYCLES = 3;
+  const cycles: PracticeCycle[] = [];
+  let s1i = 0, s2i = 0;
+  for (let ci = 0; ci < NUM_CYCLES; ci++) {
+    let mainWord: PracticeCycle["mainWord"] = null;
+    if (s1i < stage1Words.length) {
+      const w = stage1Words[s1i++];
+      mainWord = { word: w.word, errorPattern: w.errorPattern, trainingTip: w.trainingTip, childPronunciation: w.childPronunciation };
+    } else if (s2i < stage2Words.length) {
+      mainWord = { word: stage2Words[s2i++].word };
+    }
+    const similars: PracticeCycle["similarWords"] = [];
+    for (let j = 0; j < 2 && s2i < stage2Words.length; j++) {
+      const sw = stage2Words[s2i++];
+      similars.push({ word: sw.word, sourceWord: sw.sourceWord });
+    }
+    const sentWord = mainWord?.word ?? similars[0]?.word;
+    const sentence = sentWord ? (getWordByText(sentWord)?.sampleSentence ?? null) : null;
+    if (mainWord || similars.length > 0) cycles.push({ mainWord, similarWords: similars, sentence });
+  }
+
+  // 카드 이미지용: 사이클에서 참조하는 모든 단어 → imageSlug 매핑
+  const allCycleWords = cycles.flatMap((c) => [
+    c.mainWord?.word,
+    ...c.similarWords.map((s) => s.word),
+  ]).filter(Boolean) as string[];
+
   const wordInfos: Record<string, { imageSlug?: string; difficulty?: string; ageGroup?: string }> = {};
-  for (const w of [...stage1Words, ...stage2Words]) {
-    if (wordInfos[w.word]) continue;
-    const info = getWordByText(w.word);
+  for (const word of [...new Set([...allCycleWords, ...stage1Words.map(w => w.word), ...stage2Words.map(w => w.word)])]) {
+    if (wordInfos[word]) continue;
+    const info = getWordByText(word);
     if (info) {
-      wordInfos[w.word] = { imageSlug: info.imageSlug, difficulty: info.difficulty, ageGroup: info.ageGroup };
+      wordInfos[word] = { imageSlug: info.imageSlug, difficulty: info.difficulty, ageGroup: info.ageGroup };
     }
   }
 
@@ -190,6 +230,7 @@ export default async function PracticePage({
       errorPattern={errorPattern}
       routineMode={routineMode}
       difficulty={difficulty}
+      cycles={cycles}
     />
   );
 }
