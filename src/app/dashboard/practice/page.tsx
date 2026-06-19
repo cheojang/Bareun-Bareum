@@ -9,6 +9,7 @@ import {
   type PhonemePosition,
 } from "@/lib/word-database";
 import { computeAdaptiveDifficulty } from "@/lib/adaptive-difficulty";
+import { shuffle } from "@/lib/mini-game";
 import { PracticeClient } from "./PracticeClient";
 
 export const dynamic = "force-dynamic";
@@ -98,8 +99,11 @@ export default async function PracticePage({
       // 음소 위치(초성/종성)까지 맞춰 선택 — 예) 노트북(받침 ㄱ 탈락)엔 받침 ㄱ 단어만
       const ph = pickPhoneme(record.reviewSchedule?.phoneme, record.errorPattern);
       const pos = phonemePositionFromError(record.errorPattern, record.errorType);
-      stage2Words = getSimilarPatternWords(ph, pos, difficulty)
-        .filter((w) => w.word !== record.targetWord)
+      // 🔀 세션마다 다양하게: 난이도 근접 상위 20개에서 셔플 후 8개 선택
+      // → 같은 오답단어로 다시 들어와도 유사단어·문장이 매번 바뀜
+      const pool = getSimilarPatternWords(ph, pos, difficulty)
+        .filter((w) => w.word !== record.targetWord);
+      stage2Words = shuffle(pool.slice(0, 20))
         .slice(0, 8)
         .map((w) => ({ word: w.word, sourceWord: record.targetWord }));
     }
@@ -166,16 +170,19 @@ export default async function PracticePage({
 
     // 유사패턴 단어: 분석단어마다 "자기 몫"을 따로 확보 (Gemini 대체)
     // ⚠️ 단어별 상한을 둬야 첫 단어가 전부 가져가서 2번째 단어 유사어가 0개가 되는 걸 막음
-    const SIMILAR_PER_WORD = 3;
+    // 🔀 세션마다 다양하게: 난이도 근접 상위 window에서 무작위 샘플 → 같은 오답단어라도
+    //    매번 유사단어(및 그 단어가 들어간 문장)가 바뀌도록 함
+    const SIMILAR_PER_WORD = 8;   // 3사이클(2개씩) + 오답소진 시 main 보충까지 넉넉히
+    const SIMILAR_WINDOW = 20;    // 난이도 근접 상위 N개 안에서 셔플 (난이도 적합성 유지)
     const stage2Seen = new Set<string>(stage1Seen);
     for (const sel of stage1Selected) {
-      let added = 0;
-      for (const w of getSimilarPatternWords(sel.phoneme, sel.position, difficulty)) {
-        if (added >= SIMILAR_PER_WORD) break;
-        if (stage2Seen.has(w.word)) continue;
+      const pool = getSimilarPatternWords(sel.phoneme, sel.position, difficulty)
+        .filter((w) => !stage2Seen.has(w.word));
+      // 난이도 근접 상위 window를 셔플 후 SIMILAR_PER_WORD개 선택
+      const picked = shuffle(pool.slice(0, SIMILAR_WINDOW)).slice(0, SIMILAR_PER_WORD);
+      for (const w of picked) {
         stage2Seen.add(w.word);
         stage2Words.push({ word: w.word, sourceWord: sel.word });
-        added++;
       }
     }
 
@@ -237,11 +244,15 @@ export default async function PracticePage({
       assignedSimilars = takeSimilars(first.sourceWord, SIMILAR_PER_CYCLE);
     }
 
-    // 문장: main이 DB에 있으면 그 예문, 없으면(부모 임의입력) 유사단어 예문으로 폴백
+    // 문장: 이 사이클 단어들(오답단어 + 유사단어) 중 예문이 있는 것에서 무작위 선택.
+    // → 같은 오답단어라도 매번 다른 문장이 나오도록 (항상 오답단어 예문만 반복되던 문제 해결)
     let sentence: string | null = null;
-    for (const cand of [mainWord?.word, ...assignedSimilars.map((s) => s.word)].filter(Boolean) as string[]) {
-      const s = getWordByText(cand)?.sampleSentence;
-      if (s) { sentence = s; break; }
+    const sentenceCands = [mainWord?.word, ...assignedSimilars.map((s) => s.word)]
+      .filter(Boolean) as string[];
+    const withSentence = sentenceCands.filter((c) => getWordByText(c)?.sampleSentence);
+    if (withSentence.length > 0) {
+      const pick = withSentence[Math.floor(Math.random() * withSentence.length)];
+      sentence = getWordByText(pick)!.sampleSentence ?? null;
     }
 
     const similars = assignedSimilars.map((s) => ({ word: s.word, sourceWord: s.sourceWord }));
