@@ -192,7 +192,7 @@ function RecordRow({
                 <p className="text-xs text-[#5B4E9B] leading-relaxed">{gemini.rootCause}</p>
               </div>
               <div>
-                <p className="text-[11px] font-bold text-[#8B7E74] mb-2">📚 선생님의 처방전</p>
+                <p className="text-[11px] font-bold text-[#8B7E74] mb-2">📚 부모님께서 해주시는 훈련법</p>
                 {(() => {
                   const ph = record.phoneme ?? phonemeFromPattern(record.errorPattern);
                   return ph && getArticulationSlug(ph) ? (
@@ -348,7 +348,7 @@ function CurrentAnalysisCard({
       {/* 4단계 훈련법 - 단계가 1개 이상 도착했거나 원인이 끝났고 다음을 기다리는 중일 때 */}
       {geminiResult && (geminiResult.trainingSteps.length > 0 || (geminiResult.rootCause && geminiLoading)) && (
         <BubbleCard>
-          <p className="text-sm font-bold text-[#3D3530] mb-3">📚 선생님의 처방전</p>
+          <p className="text-sm font-bold text-[#3D3530] mb-3">📚 부모님께서 해주시는 훈련법</p>
           {(() => {
             const ph = phonemeFromPattern(localResult.errorPattern);
             return ph && getArticulationSlug(ph) ? (
