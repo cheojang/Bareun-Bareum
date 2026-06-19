@@ -267,6 +267,8 @@ interface Props {
   difficulty?: Difficulty;
   /** 3사이클 구조 — 제공되면 사이클 모드로 동작 */
   cycles?: PracticeCycle[];
+  /** 이미 저장된 단어 — 저장 버튼 초기 채움 상태 */
+  initialSavedWords?: string[];
 }
 
 type Stage = 1 | 2 | 3;
@@ -428,6 +430,7 @@ export function PracticeClient({
   routineMode,
   difficulty,
   cycles,
+  initialSavedWords,
 }: Props) {
   // 사이클 모드 여부
   const isCycleMode = !!(cycles && cycles.length > 0);
@@ -473,7 +476,9 @@ export function PracticeClient({
   );
 
   const [autoSavedItems, setAutoSavedItems] = useState<Map<string, MasteryLevel>>(new Map());
-  const [saving, setSaving] = useState(false);
+  // 수동 저장 — 부모가 카드의 저장 버튼을 누른 단어만 SavedWord에 보관
+  const [savedWords, setSavedWords] = useState<Set<string>>(() => new Set(initialSavedWords ?? []));
+  const [savingWord, setSavingWord] = useState<string | null>(null);
   const [confetti, setConfetti] = useState(false);
   const [allDone, setAllDone] = useState(false);
   const [showTongue, setShowTongue] = useState(false);
@@ -733,33 +738,59 @@ export function PracticeClient({
       return;
     }
 
-    // 문장 단계 — 저장하지 않음
+    // 문장 단계 — 기록하지 않음
     if (currentItem.kind === "sentence") return;
 
-    // 이미 저장됐거나 저장 중이면 스킵
-    if (autoSavedItems.has(currentItem.text) || saving) return;
-
-    const mastery = getMastery(currentSlots);
-    setSaving(true);
-    fetch("/api/saved-words", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        childId,
-        word: currentItem.text,
-        targetPhoneme: currentItem.badge ?? errorPattern ?? "연습",
-        difficulty: mastery === "mastered" ? "easy" : mastery === "medium" ? "medium" : "hard",
-        masteryLevel: mastery,
-        goodCount,
-      }),
-    })
-      .then(() => {
-        setAutoSavedItems((prev) => new Map(prev).set(currentItem.text, mastery));
-      })
-      .catch(() => {})
-      .finally(() => setSaving(false));
+    // 완료 요약(잘함/더 연습)용 마스터리만 기록 — 실제 저장은 부모가 카드 저장 버튼으로 직접
+    if (autoSavedItems.has(currentItem.text)) return;
+    setAutoSavedItems((prev) => new Map(prev).set(currentItem.text, getMastery(currentSlots)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSlotsFull]);
+
+  // ── 수동 저장 토글 (카드 우상단 저장 버튼) ───────────────────────────────────────
+  const toggleSaveWord = useCallback(() => {
+    const item = items[currentIndex] as CycleItem | undefined;
+    if (!item || item.kind === "sentence") return;
+    const word = item.text;
+    if (savingWord === word) return;
+
+    const alreadySaved = savedWords.has(word);
+    setSavingWord(word);
+    if (alreadySaved) {
+      // 저장 해제 — 단일 단어 삭제
+      fetch(`/api/saved-words?word=${encodeURIComponent(word)}&childId=${encodeURIComponent(childId)}`, {
+        method: "DELETE",
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          setSavedWords((prev) => {
+            const next = new Set(prev);
+            next.delete(word);
+            return next;
+          });
+        })
+        .catch(() => {})
+        .finally(() => setSavingWord(null));
+    } else {
+      const mastery = getMastery(currentSlots);
+      fetch("/api/saved-words", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childId,
+          word,
+          targetPhoneme: item.badge ?? errorPattern ?? "연습",
+          difficulty: mastery === "mastered" ? "easy" : mastery === "medium" ? "medium" : "hard",
+        }),
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          setSavedWords((prev) => new Set(prev).add(word));
+        })
+        .catch(() => {})
+        .finally(() => setSavingWord(null));
+    }
+  }, [items, currentIndex, savedWords, savingWord, childId, errorPattern, currentSlots]);
 
   // ── 현재 단계 기준으로 다음 단계로 전환 (비-사이클 모드, 미니게임 후 호출) ──────
   const proceedToNextStage = useCallback(() => {
@@ -1018,8 +1049,6 @@ export function PracticeClient({
 
   // ── 연습 화면 ─────────────────────────────────────────────────────────────────
   const masteryInfo = currentMastery ? getMasteryLabel(currentMastery) : null;
-  const savedMastery = autoSavedItems.get(currentItem?.text ?? "");
-  const goodCount = currentSlots.filter((s) => s === "good").length;
 
   // 사이클 모드: 카드 색상은 아이템 종류에 따라
   const cycleMeta = isCycleMode
@@ -1139,14 +1168,34 @@ export function PracticeClient({
             className="relative w-full bg-white/90 rounded-[32px] shadow-lg text-center"
             style={{ border: `2px solid ${cardBorderColor}22` }}
           >
-            {/* 혀 모양 팝업 버튼 — 목표 음소가 매핑될 때만 우상단에 표시 */}
+            {/* 혀 모양 팝업 버튼 — 목표 음소가 매핑될 때만 좌상단에 표시 */}
             {hasTongueDiagram && !stage3Loading && (
               <button
                 onClick={() => setShowTongue(true)}
-                className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#FFF5EE] hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90 z-10"
+                className="absolute top-3 left-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#FFF5EE] hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90 z-10"
                 title="혀 위치 보기"
               >
                 <span className="text-lg leading-none">👅</span>
+              </button>
+            )}
+            {/* 저장 버튼 — 단어 카드 우상단 (문장 제외). 부모가 누른 단어만 단어장에 보관 */}
+            {currentItem && currentItem.kind !== "sentence" && !stage3Loading && (
+              <button
+                onClick={toggleSaveWord}
+                disabled={savingWord === currentItem.text}
+                className={`absolute top-3 right-3 flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 z-10 disabled:opacity-60 ${
+                  savedWords.has(currentItem.text)
+                    ? "bg-[#FFB38A] border-[#FF9B6A] text-white"
+                    : "bg-white hover:bg-[#FFF5EE] border-[#F0E8E0] text-[#8B7E74]"
+                }`}
+                title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
+              >
+                <span className="text-base leading-none">
+                  {savedWords.has(currentItem.text) ? "⭐" : "☆"}
+                </span>
+                <span className="text-xs font-bold leading-none">
+                  {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
+                </span>
               </button>
             )}
             {/* 2단계 유사 패턴 라벨 */}
@@ -1271,11 +1320,9 @@ export function PracticeClient({
               <p className="font-black" style={{ color: masteryInfo.color }}>
                 {masteryInfo.emoji} {masteryInfo.text}
               </p>
-              {!currentItem?.scheduleId && savedMastery && (
+              {!currentItem?.scheduleId && currentItem?.kind !== "sentence" && !savedWords.has(currentItem?.text ?? "") && (
                 <p className="text-xs mt-1 opacity-70" style={{ color: masteryInfo.color }}>
-                  {savedMastery === "mastered"
-                    ? "복습 주기가 길게 설정됐어요 🗓"
-                    : "복습 목록에 추가됐어요 📌"}
+                  ⭐ 저장 버튼을 누르면 단어장에 보관돼요
                 </p>
               )}
             </div>

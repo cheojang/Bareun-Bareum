@@ -4,7 +4,7 @@ import { requireUserId, requireChildOwner, apiErrorResponse } from "@/lib/api-au
 
 /**
  * POST /api/saved-words
- * 아이연습에서 5회 완료한 단어를 SavedWord에 저장
+ * 부모가 연습 카드의 저장 버튼을 누른 단어를 SavedWord에 저장 (수동)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -68,14 +68,26 @@ export async function GET(request: NextRequest) {
 
 /**
  * DELETE /api/saved-words
- * body: { childId } — 해당 아이의 저장 단어 전체 삭제
+ * - 쿼리 ?childId=&word= : 해당 단어 1개만 저장 해제
+ * - body { childId }     : 해당 아이의 저장 단어 전체 삭제
  */
 export async function DELETE(request: NextRequest) {
   try {
     const userId = await requireUserId();
+    const url = new URL(request.url);
+    const qChildId = url.searchParams.get("childId");
+    const qWord = url.searchParams.get("word");
+
+    // 단일 단어 저장 해제
+    if (qWord) {
+      await requireChildOwner(qChildId, userId);
+      await prisma.savedWord.deleteMany({ where: { childId: qChildId!, word: qWord } });
+      return NextResponse.json({ success: true, deleted: 1 });
+    }
+
+    // 전체 삭제 (body)
     const { childId } = await request.json();
     await requireChildOwner(childId, userId);
-
     const { count } = await prisma.savedWord.deleteMany({ where: { childId } });
     return NextResponse.json({ success: true, deleted: count });
   } catch (error) {
