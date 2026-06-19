@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import {
@@ -9,8 +10,9 @@ import {
 
 const CODE_TTL_MS = 5 * 60 * 1000; // 5분
 
+// 암호학적 난수(crypto.randomInt)로 6자리 코드 생성 — Math.random()은 예측 가능
 function randomCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
 export async function POST(req: NextRequest) {
