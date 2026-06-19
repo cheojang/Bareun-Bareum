@@ -1164,41 +1164,46 @@ export function PracticeClient({
       <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-4">
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
+          {/* 연습 카드 + 카드 밖 버튼들을 감싸는 래퍼 */}
+          <div className="relative w-full">
+
+            {/* 카드 밖 우상단 — 혀 버튼 + 저장 버튼 */}
+            <div className="absolute -top-4 right-1 flex items-center gap-1.5 z-10">
+              {hasTongueDiagram && !stage3Loading && (
+                <button
+                  onClick={() => setShowTongue(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90"
+                  title="혀 위치 보기"
+                >
+                  <span className="text-lg leading-none">👅</span>
+                </button>
+              )}
+              {currentItem && currentItem.kind !== "sentence" && !stage3Loading && (
+                <button
+                  onClick={toggleSaveWord}
+                  disabled={savingWord === currentItem.text}
+                  className={`flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 disabled:opacity-60 ${
+                    savedWords.has(currentItem.text)
+                      ? "bg-[#FFB38A] border-[#FF9B6A] text-white"
+                      : "bg-white hover:bg-[#FFF5EE] border-[#F0E8E0] text-[#8B7E74]"
+                  }`}
+                  title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
+                >
+                  {savedWords.has(currentItem.text)
+                    ? <BookmarkCheck size={15} strokeWidth={2.5} />
+                    : <Bookmark size={15} strokeWidth={2} />}
+                  <span className="text-xs font-bold leading-none">
+                    {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
+                  </span>
+                </button>
+              )}
+            </div>
+
           {/* 연습 카드 */}
           <div
             className="relative w-full bg-white/90 rounded-[32px] shadow-lg text-center"
             style={{ border: `2px solid ${cardBorderColor}22` }}
           >
-            {/* 혀 모양 팝업 버튼 — 목표 음소가 매핑될 때만 좌상단에 표시 */}
-            {hasTongueDiagram && !stage3Loading && (
-              <button
-                onClick={() => setShowTongue(true)}
-                className="absolute top-3 left-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#FFF5EE] hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90 z-10"
-                title="혀 위치 보기"
-              >
-                <span className="text-lg leading-none">👅</span>
-              </button>
-            )}
-            {/* 저장 버튼 — 단어 카드 우상단 (문장 제외). 부모가 누른 단어만 단어장에 보관 */}
-            {currentItem && currentItem.kind !== "sentence" && !stage3Loading && (
-              <button
-                onClick={toggleSaveWord}
-                disabled={savingWord === currentItem.text}
-                className={`absolute top-3 right-3 flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 z-10 disabled:opacity-60 ${
-                  savedWords.has(currentItem.text)
-                    ? "bg-[#FFB38A] border-[#FF9B6A] text-white"
-                    : "bg-white hover:bg-[#FFF5EE] border-[#F0E8E0] text-[#8B7E74]"
-                }`}
-                title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
-              >
-                {savedWords.has(currentItem.text)
-                  ? <BookmarkCheck size={15} strokeWidth={2.5} />
-                  : <Bookmark size={15} strokeWidth={2} />}
-                <span className="text-xs font-bold leading-none">
-                  {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
-                </span>
-              </button>
-            )}
             {/* 2단계 유사 패턴 라벨 */}
             {currentItem?.similarTo && (
               <span className="block text-[11px] font-semibold text-[#8B7E74] pt-4 pb-1">
@@ -1305,6 +1310,7 @@ export function PracticeClient({
               </p>
             )}
           </div>
+          </div>{/* /카드 래퍼 */}
 
           {/* 도트 (5개) */}
           <ResultDots slots={currentSlots} />
