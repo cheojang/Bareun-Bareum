@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { ListenPickGame } from "@/components/child/ListenPickGame";
@@ -1190,9 +1191,9 @@ export function PracticeClient({
                 }`}
                 title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
               >
-                <span className="text-base leading-none">
-                  {savedWords.has(currentItem.text) ? "⭐" : "☆"}
-                </span>
+                {savedWords.has(currentItem.text)
+                  ? <BookmarkCheck size={15} strokeWidth={2.5} />
+                  : <Bookmark size={15} strokeWidth={2} />}
                 <span className="text-xs font-bold leading-none">
                   {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
                 </span>
@@ -1322,7 +1323,7 @@ export function PracticeClient({
               </p>
               {!currentItem?.scheduleId && currentItem?.kind !== "sentence" && !savedWords.has(currentItem?.text ?? "") && (
                 <p className="text-xs mt-1 opacity-70" style={{ color: masteryInfo.color }}>
-                  ⭐ 저장 버튼을 누르면 단어장에 보관돼요
+                  🔖 저장 버튼을 누르면 단어장에 보관돼요
                 </p>
               )}
             </div>
