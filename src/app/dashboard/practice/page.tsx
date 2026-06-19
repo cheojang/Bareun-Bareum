@@ -263,6 +263,13 @@ export default async function PracticePage({
     }
   }
 
+  // 이미 저장된 단어 — 저장 버튼 초기 채움 상태용
+  const savedRows = await prisma.savedWord.findMany({
+    where: { childId: child.id },
+    select: { word: true },
+  });
+  const initialSavedWords = savedRows.map((r) => r.word);
+
   return (
     <PracticeClient
       childId={child.id}
@@ -276,6 +283,7 @@ export default async function PracticePage({
       routineMode={routineMode}
       difficulty={difficulty}
       cycles={cycles}
+      initialSavedWords={initialSavedWords}
     />
   );
 }
