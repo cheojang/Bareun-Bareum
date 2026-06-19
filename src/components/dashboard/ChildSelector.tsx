@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { setSelectedChild } from "@/lib/child-cookie";
 
@@ -105,16 +104,8 @@ export function ChildSelector({ children, selectedId }: Props) {
             );
           })}
 
-          {/* 구분선 + 계정 메뉴 (설정·로그아웃) */}
+          {/* 구분선 + 계정 메뉴 (로그아웃) — 설정은 하단 탭에 있어 제외 */}
           <div className="border-t border-[#F0E8E0]">
-            <Link
-              href="/dashboard/settings"
-              onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FFF5EE] transition-colors"
-            >
-              <span className="text-base">⚙️</span>
-              <span className="text-sm font-bold text-[#3D3530]">설정</span>
-            </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FEF2F2] transition-colors"
