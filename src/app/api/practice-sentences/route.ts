@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { decomposeChar } from "@/lib/jamo-analysis";
 import { sanitizePromptInput, withFastConfig } from "@/lib/gemini-client";
+import { geminiLimiter } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/usage-limit";
 
 // 문장 생성용 모델 순서: lite(저렴) → pro(고품질 보조)
 const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
@@ -104,6 +106,12 @@ export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 사용자별 레이트리밋 — Gemini 비용 버스트 방어
+  const limitKey = session.user.isGuest ? `ip:${getClientIp(request)}` : session.user.id;
+  if (!geminiLimiter.allow(limitKey)) {
+    return NextResponse.json({ error: "요청이 많아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
   }
 
   let body: { words?: string[]; errorPattern?: string; targetPhoneme?: string } = {};

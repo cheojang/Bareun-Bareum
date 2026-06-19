@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing payment data" }, { status: 400 });
   }
 
+  // orderId는 `${userId}_${timestamp}` 형식 — 결제 주문이 인증된 본인 소유인지 검증.
+  // (타인의 미승인 paymentKey/orderId를 가로채 본인 계정에 프리미엄을 붙이는 것 차단)
+  if (typeof orderId !== "string" || !orderId.startsWith(`${session.user.id}_`)) {
+    return NextResponse.json({ error: "Invalid order" }, { status: 403 });
+  }
+
   // 클라이언트가 보낸 amount가 서버 가격과 일치하는지 검증 (변조 방지)
   if (amount !== PREMIUM_MONTHLY_PRICE) {
     return NextResponse.json({ error: "Invalid payment amount" }, { status: 400 });

@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { LRUCache } from "@/lib/lru-cache";
 import { sanitizePromptInput, withFastConfig } from "@/lib/gemini-client";
+import { auth } from "@/lib/auth";
+import { geminiLimiter } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/usage-limit";
 
 interface CoachingCardsResult {
   cards: { context: string; phrases: string[] }[];
@@ -17,12 +20,24 @@ const coachingLRU = new LRUCache<string, CoachingCardsResult>(500);
 // 응답: { cards: { context: string; emoji: string; phrases: string[] }[] }
 export async function POST(req: NextRequest) {
   try {
+    // 인증 필수 — 익명의 유료 Gemini 호출(비용 어뷰징) 차단
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { words, errorPattern, childName } = await req.json();
     if (!words?.length) return NextResponse.json({ cards: [] });
 
     const cacheKey = `${errorPattern ?? ""}::${[...words].sort().join(",")}`;
     const hit = coachingLRU.get(cacheKey);
     if (hit) return NextResponse.json(hit);
+
+    // 사용자별 레이트리밋 (게스트는 IP 기준) — 캐시 미스 시 유료 호출 버스트 방어
+    const limitKey = session.user.isGuest ? `ip:${getClientIp(req)}` : session.user.id;
+    if (!geminiLimiter.allow(limitKey)) {
+      return NextResponse.json({ error: "요청이 많아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return NextResponse.json({ cards: [] });
