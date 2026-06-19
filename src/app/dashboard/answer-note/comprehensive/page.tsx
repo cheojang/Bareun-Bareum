@@ -346,24 +346,24 @@ export default async function ComprehensivePage({
                     <PastelBadge color={meta.color}>{meta.label}</PastelBadge>
                     <span className="text-[10px] text-[#8B7E74]">{meta.sublabel}</span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {group.map((w) => {
                       const isTrainable = level === "집중교정필요" || level === "꾸준한연습필요";
                       const card = (
-                        <div className="bg-white/80 rounded-xl px-3 py-2 shadow-sm h-full">
-                          <p className="text-base font-black text-[#3D3530] leading-none mb-1">{w.phoneme}</p>
+                        <div className="bg-white rounded-2xl px-3.5 py-3 shadow-sm border border-[#EFE7DE] h-full">
+                          <p className="text-xl font-black text-[#3D3530] leading-none mb-1.5">{w.phoneme}</p>
                           {PHONEME_AGE[w.phoneme] && (
-                            <p className="text-[9px] text-[#8B7E74] font-semibold leading-none">
+                            <p className="text-[10px] text-[#8B7E74] font-bold leading-none mb-1">
                               습득 {PHONEME_AGE[w.phoneme]}
                             </p>
                           )}
                           {PHONEME_HOW[w.phoneme] && (
-                            <p className="text-[9px] text-[#C4B5A8] mt-0.5 leading-tight max-w-[10rem]">
+                            <p className="text-[10px] text-[#9C8F85] leading-snug">
                               {PHONEME_HOW[w.phoneme]}
                             </p>
                           )}
                           {isTrainable && (
-                            <p className="text-[9px] font-bold text-[#FFB38A] mt-1 leading-none">
+                            <p className="text-[10px] font-bold text-[#FFB38A] mt-1.5 leading-none">
                               🎯 대립쌍 훈련 →
                             </p>
                           )}
@@ -373,12 +373,12 @@ export default async function ComprehensivePage({
                         <Link
                           key={w.phoneme}
                           href={`/dashboard/practice/minimal-pairs?phoneme=${encodeURIComponent(w.phoneme)}&childId=${child.id}`}
-                          className="hover:scale-105 transition-transform active:scale-95"
+                          className="block h-full hover:scale-[1.03] transition-transform active:scale-95"
                         >
                           {card}
                         </Link>
                       ) : (
-                        <div key={w.phoneme}>{card}</div>
+                        <div key={w.phoneme} className="h-full">{card}</div>
                       );
                     })}
                   </div>
