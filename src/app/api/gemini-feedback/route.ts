@@ -100,6 +100,15 @@ export async function POST(request: NextRequest) {
     }
 
     const isGuest = session.user.isGuest === true;
+
+    // 사용자별 레이트리밋 — 프리미엄(무제한) 포함 모든 등급의 호출 버스트 방어
+    const { geminiLimiter } = await import("@/lib/rate-limit");
+    const burstIp = (request.headers.get("x-forwarded-for")?.split(",")[0].trim()) ?? "unknown";
+    const burstKey = isGuest ? `ip:${burstIp}` : session.user.id;
+    if (!geminiLimiter.allow(burstKey)) {
+      return NextResponse.json({ error: "요청이 많아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
+    }
+
     const body = await request.json();
 
     // 월간 제한은 캐시 미스 시에만 적용 (아래 캐시 확인 후)

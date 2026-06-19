@@ -87,7 +87,8 @@ export async function POST(req: NextRequest) {
       },
     }),
     prisma.child.update({
-      where: { id: childId },
+      // IDOR 방어: body의 childId가 아니라 소유권이 검증된 세션의 child를 갱신
+      where: { id: practiceSession.childId },
       data: {
         totalWords: newTotalWords,
         lastPractice: now,

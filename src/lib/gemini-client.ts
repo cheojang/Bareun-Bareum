@@ -46,8 +46,11 @@ function is503(e: any) {
  * SDK 0.24.1 타입엔 thinkingConfig가 없지만, 설정 객체는 그대로 REST API로 전달된다.
  */
 export function withFastConfig(modelName: string, base: Record<string, unknown>) {
-  if (modelName.includes('pro')) return base as any;
-  return { ...base, thinkingConfig: { thinkingBudget: 0 } } as any;
+  // 출력 토큰 상한 — 호출당 최대 길이 생성으로 인한 비용/DoS 증폭 방어.
+  // 호출자가 명시하면 그 값을 우선한다(...base가 뒤에 오므로).
+  const withTokens = { maxOutputTokens: 2048, ...base };
+  if (modelName.includes('pro')) return withTokens as any;
+  return { ...withTokens, thinkingConfig: { thinkingBudget: 0 } } as any;
 }
 
 /**

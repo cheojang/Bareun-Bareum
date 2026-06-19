@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateSessionBriefing } from "@/lib/gemini-ai";
+import { geminiLimiter } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/usage-limit";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 사용자별 레이트리밋 — Gemini 비용 버스트 방어
+    const limitKey = session.user.isGuest ? `ip:${getClientIp(req)}` : session.user.id;
+    if (!geminiLimiter.allow(limitKey)) {
+      return NextResponse.json({ error: "요청이 많아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
     }
 
     const { searchParams } = new URL(req.url);
