@@ -98,3 +98,9 @@ export const adminSeedLimiter = new RateLimiter({
   capacity: 3,
   refillPerSecond: 12 / 3600,
 });
+
+/** 센터 초대코드 가입 시도: 사용자당 시간당 10건 — 초대코드 브루트포스 방어 */
+export const centerJoinLimiter = new RateLimiter({
+  capacity: 10,
+  refillPerSecond: 10 / 3600,
+});

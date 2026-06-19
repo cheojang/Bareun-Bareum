@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
+
+/** 길이 노출 없이 상수시간으로 두 문자열 비교 (타이밍 사이드채널 방어) */
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // TossPayments sends webhook events for subscription status changes
 export async function POST(req: NextRequest) {
@@ -13,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   const expectedAuth = "Basic " + Buffer.from(`${secretKey}:`).toString("base64");
-  if (!authHeader || authHeader !== expectedAuth) {
+  if (!authHeader || !safeEqual(authHeader, expectedAuth)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

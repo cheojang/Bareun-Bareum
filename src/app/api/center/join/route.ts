@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { centerJoinLimiter } from "@/lib/rate-limit";
 
 /**
  * POST /api/center/join
@@ -10,6 +11,14 @@ import { auth } from "@/lib/auth";
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
+
+  // 초대코드 브루트포스 방어 — 사용자당 시간당 10회
+  if (!centerJoinLimiter.allow(session.user.id)) {
+    return NextResponse.json(
+      { error: "시도가 너무 많아요. 잠시 후 다시 시도해주세요." },
+      { status: 429 }
+    );
+  }
 
   const { childId, inviteCode } = await request.json();
   if (!childId || !inviteCode?.trim()) {
