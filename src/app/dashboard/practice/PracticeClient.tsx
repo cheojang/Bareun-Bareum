@@ -1271,15 +1271,15 @@ export function PracticeClient({
               </span>
             )}
 
-            {/* 단어 표시 영역 */}
-            <div className="relative flex items-center justify-center px-14 py-6">
+            {/* 단어 표시 영역 — 화살표를 콘텐츠와 같은 행에 배치(겹침 방지) */}
+            <div className="flex items-center justify-center gap-1 px-2 py-6">
 
               {/* ← 이전 */}
               <button
                 onClick={handlePrev}
                 disabled={currentIndex === 0 && (isCycleMode || stage === startStage)}
                 aria-label="이전"
-                className="group absolute left-3 top-1/2 -translate-y-1/2 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
+                className="group flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
               >
                 <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-enabled:group-hover:bg-[#FFF5EE] group-enabled:group-hover:border-[#FFB38A] group-enabled:group-hover:text-[#FFB38A] transition-colors shadow-sm">
                   ←
@@ -1287,6 +1287,7 @@ export function PracticeClient({
               </button>
 
               {/* 단어 / 문장 콘텐츠 */}
+              <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
               {(() => {
                 const text = currentItem?.text ?? "";
                 const childPron = currentItem?.childPron ?? "";
@@ -1338,12 +1339,13 @@ export function PracticeClient({
                   </div>
                 );
               })()}
+              </div>
 
               {/* → 다음 */}
               <button
                 onClick={handleNext}
                 aria-label="다음"
-                className="group absolute right-3 top-1/2 -translate-y-1/2 transition-all active:scale-90"
+                className="group flex-shrink-0 transition-all active:scale-90"
               >
                 <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-hover:bg-[#FFF5EE] group-hover:border-[#FFB38A] group-hover:text-[#FFB38A] transition-colors shadow-sm">
                   →
