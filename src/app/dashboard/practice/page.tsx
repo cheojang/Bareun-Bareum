@@ -36,7 +36,7 @@ function pickPhoneme(reviewPhoneme: string | null | undefined, errorPattern: str
 export default async function PracticePage({
   searchParams,
 }: {
-  searchParams: Promise<{ errorRecordId?: string; routine?: string }>;
+  searchParams: Promise<{ errorRecordId?: string; routine?: string; words?: string }>;
 }) {
   const session = await auth();
   const userId = session!.user!.id!;
@@ -57,6 +57,10 @@ export default async function PracticePage({
 
   const params = await searchParams;
   const errorRecordId = params.errorRecordId;
+  // 선택 단어 모드: 복습목록에서 체크한 저장 단어만 연습 (?words=자동차,기차)
+  const selectedWords = params.words
+    ? params.words.split(",").map((w) => w.trim()).filter(Boolean).slice(0, 12)
+    : [];
   // 루틴 모드: 세션 상한 축소 (아동 집중력 — 5~7분 안에 끝나는 분량)
   const routineMode = params.routine === "1";
 
@@ -78,7 +82,32 @@ export default async function PracticePage({
   let stage2Words: { word: string; sourceWord: string }[] = [];
   let errorPattern: string | undefined;
 
-  if (errorRecordId) {
+  if (selectedWords.length > 0) {
+    // ── 선택 단어 모드: 복습목록에서 체크한 저장 단어만 연습 ──────────────────
+    // 본인 아이가 저장한 단어인지 확인 후, 각 단어를 분석단어(stage1)로 구성
+    const savedRows = await prisma.savedWord.findMany({
+      where: { childId: child.id, word: { in: selectedWords } },
+      select: { word: true, targetPhoneme: true },
+    });
+    // 사용자가 체크한 순서 유지
+    const phonemeByWord = new Map(savedRows.map((r) => [r.word, r.targetPhoneme]));
+    const ordered = selectedWords.filter((w) => phonemeByWord.has(w));
+
+    const stage2Seen = new Set<string>(ordered);
+    for (const word of ordered) {
+      const ph = pickPhoneme(phonemeByWord.get(word), undefined);
+      stage1Words.push({ word, errorPattern: ph !== "전체" ? ph : "연습" });
+      // 유사패턴 단어: 같은 음소를 가진 이미지 있는 DB 단어에서 선택
+      const pool = getSimilarPatternWords(ph, "any", difficulty)
+        .filter((w) => !stage2Seen.has(w.word));
+      const picked = shuffle(pool.slice(0, 20)).slice(0, 8);
+      for (const w of picked) {
+        stage2Seen.add(w.word);
+        stage2Words.push({ word: w.word, sourceWord: word });
+      }
+    }
+    errorPattern = stage1Words[0]?.errorPattern;
+  } else if (errorRecordId) {
     // 분석 직후 연결: 해당 오류 기록 + 추천 단어
     const record = await prisma.errorRecord.findUnique({
       where: { id: errorRecordId },
@@ -192,7 +221,10 @@ export default async function PracticePage({
   // ── 3사이클 구성 ─────────────────────────────────────────────────────────────
   // 각 사이클: 오답단어 1개 → 그 단어와 연관된 유사단어 2개 → 문장 1개
   // 오답단어가 모자라면(또는 처음부터 없으면) 남은 유사단어로 사이클을 채움.
-  const NUM_CYCLES = 3;
+  // 선택 단어 모드는 체크한 단어를 모두 다루도록 사이클 수를 늘림 (최대 12)
+  const NUM_CYCLES = selectedWords.length > 0
+    ? Math.min(12, Math.max(3, stage1Words.length))
+    : 3;
   const SIMILAR_PER_CYCLE = 2;
   const cycles: PracticeCycle[] = [];
 

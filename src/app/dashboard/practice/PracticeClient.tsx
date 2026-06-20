@@ -1165,38 +1165,86 @@ export function PracticeClient({
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
 
           {/* 연습 카드 + 카드 밖 버튼들을 감싸는 래퍼 */}
-          <div className="relative w-full">
+          <div className="relative w-full mt-12">
 
-            {/* 카드 밖 우상단 — 혀 버튼 + 저장 버튼 */}
-            <div className="absolute -top-4 right-1 flex items-center gap-1.5 z-10">
-              {hasTongueDiagram && !stage3Loading && (
-                <button
-                  onClick={() => setShowTongue(true)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white hover:bg-[#FFEAD9] border border-[#FFD4B8] shadow-sm transition-all active:scale-90"
-                  title="혀 위치 보기"
-                >
-                  <span className="text-lg leading-none">👅</span>
-                </button>
-              )}
-              {currentItem && currentItem.kind !== "sentence" && !stage3Loading && (
-                <button
-                  onClick={toggleSaveWord}
-                  disabled={savingWord === currentItem.text}
-                  className={`flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 disabled:opacity-60 ${
-                    savedWords.has(currentItem.text)
-                      ? "bg-[#FFB38A] border-[#FF9B6A] text-white"
-                      : "bg-white hover:bg-[#FFF5EE] border-[#F0E8E0] text-[#8B7E74]"
-                  }`}
-                  title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
-                >
-                  {savedWords.has(currentItem.text)
-                    ? <BookmarkCheck size={15} strokeWidth={2.5} />
-                    : <Bookmark size={15} strokeWidth={2} />}
-                  <span className="text-xs font-bold leading-none">
-                    {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
-                  </span>
-                </button>
-              )}
+            {/* 카드 밖 상단 — 혀(좌) / 녹음+저장(우) */}
+            <div className="absolute -top-11 left-0 right-0 flex items-center justify-between px-1 z-10">
+              {/* 왼쪽: 혀 위치 버튼 */}
+              <div>
+                {hasTongueDiagram && !stage3Loading ? (
+                  <button
+                    onClick={() => setShowTongue(true)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#FFD4B8] shadow-sm transition-all active:scale-90 hover:bg-[#FFEAD9]"
+                    title="혀 위치 보기"
+                  >
+                    <span className="text-lg leading-none">👅</span>
+                  </button>
+                ) : <span />}
+              </div>
+
+              {/* 오른쪽: 녹음 + 저장 */}
+              <div className="flex items-center gap-1.5">
+                {/* 녹음 버튼 상태 */}
+                {!stage3Loading && (
+                  <>
+                    {recState === "idle" && (
+                      <button
+                        onClick={startRec}
+                        className="flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 bg-white hover:bg-[#F0FAF8] border-[#7EDFD0] text-[#0D9488]"
+                      >
+                        <span className="text-sm leading-none">🎙</span>
+                        <span className="text-xs font-bold leading-none">녹음</span>
+                      </button>
+                    )}
+                    {recState === "recording" && (
+                      <button
+                        onClick={stopRec}
+                        className="flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 animate-pulse bg-[#FEF2F2] border-[#FCA5A5] text-[#EF4444]"
+                      >
+                        <span className="text-sm leading-none">⏹</span>
+                        <span className="text-xs font-bold leading-none">중지</span>
+                      </button>
+                    )}
+                    {recState === "recorded" && (
+                      <>
+                        <button
+                          onClick={playRec}
+                          className="flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 bg-white hover:bg-[#F0FAF8] border-[#7EDFD0] text-[#0D9488]"
+                        >
+                          <span className="text-xs font-bold leading-none">▶ 듣기</span>
+                        </button>
+                        <button
+                          onClick={resetRec}
+                          className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#F0E8E0] shadow-sm text-[#8B7E74] transition-all active:scale-90 hover:bg-[#FFF5EE]"
+                          title="다시 녹음"
+                        >
+                          <span className="text-sm leading-none">🔄</span>
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+                {/* 저장 버튼 */}
+                {currentItem && currentItem.kind !== "sentence" && !stage3Loading && (
+                  <button
+                    onClick={toggleSaveWord}
+                    disabled={savingWord === currentItem.text}
+                    className={`flex items-center gap-1 h-9 px-3 rounded-full border shadow-sm transition-all active:scale-90 disabled:opacity-60 ${
+                      savedWords.has(currentItem.text)
+                        ? "bg-[#FFB38A] border-[#FF9B6A] text-white"
+                        : "bg-white hover:bg-[#FFF5EE] border-[#F0E8E0] text-[#8B7E74]"
+                    }`}
+                    title={savedWords.has(currentItem.text) ? "저장됨 — 누르면 해제" : "단어장에 저장"}
+                  >
+                    {savedWords.has(currentItem.text)
+                      ? <BookmarkCheck size={15} strokeWidth={2.5} />
+                      : <Bookmark size={15} strokeWidth={2} />}
+                    <span className="text-xs font-bold leading-none">
+                      {savedWords.has(currentItem.text) ? "저장됨" : "저장"}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
 
           {/* 연습 카드 */}
@@ -1223,15 +1271,15 @@ export function PracticeClient({
               </span>
             )}
 
-            {/* 단어 표시 영역 */}
-            <div className="relative flex items-center justify-center px-14 py-6">
+            {/* 단어 표시 영역 — 화살표를 콘텐츠와 같은 행에 배치(겹침 방지) */}
+            <div className="flex items-center justify-center gap-1 px-2 py-6">
 
               {/* ← 이전 */}
               <button
                 onClick={handlePrev}
                 disabled={currentIndex === 0 && (isCycleMode || stage === startStage)}
                 aria-label="이전"
-                className="group absolute left-3 top-1/2 -translate-y-1/2 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
+                className="group flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
               >
                 <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-enabled:group-hover:bg-[#FFF5EE] group-enabled:group-hover:border-[#FFB38A] group-enabled:group-hover:text-[#FFB38A] transition-colors shadow-sm">
                   ←
@@ -1239,6 +1287,7 @@ export function PracticeClient({
               </button>
 
               {/* 단어 / 문장 콘텐츠 */}
+              <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
               {(() => {
                 const text = currentItem?.text ?? "";
                 const childPron = currentItem?.childPron ?? "";
@@ -1290,12 +1339,13 @@ export function PracticeClient({
                   </div>
                 );
               })()}
+              </div>
 
               {/* → 다음 */}
               <button
                 onClick={handleNext}
                 aria-label="다음"
-                className="group absolute right-3 top-1/2 -translate-y-1/2 transition-all active:scale-90"
+                className="group flex-shrink-0 transition-all active:scale-90"
               >
                 <span className="w-10 h-10 rounded-full bg-white border-2 border-[#F0E8E0] flex items-center justify-center text-xl font-bold text-[#8B7E74] group-hover:bg-[#FFF5EE] group-hover:border-[#FFB38A] group-hover:text-[#FFB38A] transition-colors shadow-sm">
                   →
@@ -1375,45 +1425,6 @@ export function PracticeClient({
             </div>
           )}
 
-          {/* 녹음 버튼 — 아이 발음 녹음 후 들어보기 */}
-          <div className="flex items-center justify-center gap-2 pt-1">
-            {recState === "idle" && (
-              <button
-                onClick={startRec}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
-                style={{ backgroundColor: "#EDE9FE", color: "#7C3AED", border: "1.5px solid #C4B5FF" }}
-              >
-                🎙 아이 발음 녹음
-              </button>
-            )}
-            {recState === "recording" && (
-              <button
-                onClick={stopRec}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold animate-pulse transition-all active:scale-95"
-                style={{ backgroundColor: "#FDF2F8", color: "#EC4899", border: "1.5px solid #F9A8D4" }}
-              >
-                ⏹ 녹음 중지
-              </button>
-            )}
-            {recState === "recorded" && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={playRec}
-                  className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
-                  style={{ backgroundColor: "#F0FAF8", color: "#0D9488", border: "1.5px solid #7EDFD0" }}
-                >
-                  ▶ 들어보기
-                </button>
-                <button
-                  onClick={resetRec}
-                  className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
-                  style={{ backgroundColor: "#F5F5F5", color: "#8B7E74", border: "1.5px solid #E0E0E0" }}
-                >
-                  🔄 다시
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
