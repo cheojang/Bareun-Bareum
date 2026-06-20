@@ -1287,26 +1287,27 @@ export function PracticeClient({
               </button>
 
               {/* 단어 / 문장 콘텐츠 */}
-              <div className="flex-1 min-w-0 flex items-center justify-center overflow-hidden">
+              <div className="flex-1 min-w-0 flex items-center justify-center px-1">
               {(() => {
                 const text = currentItem?.text ?? "";
                 const childPron = currentItem?.childPron ?? "";
                 const maxLen = Math.max(text.length, childPron.length);
-                const compareLeft  = maxLen <= 2 ? "2.75rem" : maxLen === 3 ? "2.25rem" : maxLen === 4 ? "1.875rem" : "1.5rem";
-                const compareRight = maxLen <= 2 ? "3.5rem"  : maxLen === 3 ? "2.75rem" : maxLen === 4 ? "2.25rem" : "1.875rem";
+                // 화살표 버튼이 물리적 공간을 차지하므로 비교 모드는 폰트를 보수적으로 설정
+                const compareLeft  = maxLen <= 2 ? "2rem"   : maxLen === 3 ? "1.75rem" : maxLen === 4 ? "1.5rem" : "1.125rem";
+                const compareRight = maxLen <= 2 ? "2.5rem" : maxLen === 3 ? "2rem"    : maxLen === 4 ? "1.75rem" : "1.375rem";
                 const singleSize = text.length <= 2 ? "4rem" : text.length === 3 ? "3.25rem" : text.length === 4 ? "2.5rem" : "2rem";
 
                 if (currentItem?.childPron && currentItem?.kind !== "sentence") {
                   return (
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="text-center min-w-0">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="text-center min-w-0 flex-shrink-0">
                         <p className="text-[10px] text-[#8B7E74] mb-0.5">아이 발음</p>
                         <p className="font-bold text-[#FCA5A5] whitespace-nowrap" style={{ fontSize: compareLeft }}>
                           {childPron}
                         </p>
                       </div>
-                      <span className="text-2xl text-[#C4B5A8] flex-shrink-0">→</span>
-                      <div className="text-center min-w-0">
+                      <span className="text-xl text-[#C4B5A8] flex-shrink-0">→</span>
+                      <div className="text-center min-w-0 flex-shrink-0">
                         <p className="text-[10px] text-[#8B7E74] mb-0.5">옳은 표현</p>
                         <p className="font-black text-[#3D3530] whitespace-nowrap" style={{ fontSize: compareRight }}>
                           {text}
