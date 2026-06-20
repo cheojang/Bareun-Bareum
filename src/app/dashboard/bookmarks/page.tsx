@@ -4,14 +4,8 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { getSelectedChildId } from "@/lib/child-cookie";
 import Link from "next/link";
-import { ResetSavedWordsButton } from "./ResetSavedWordsButton";
+import { SavedWordsList } from "./SavedWordsList";
 import { getKSTEndOfDay } from "@/lib/kst-utils";
-
-const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
-  hard:   { label: "집중 연습", color: "pink" },
-  medium: { label: "유사 패턴", color: "yellow" },
-  easy:   { label: "쉬운 단어", color: "mint" },
-};
 
 export default async function BookmarksPage() {
   const session = await auth();
@@ -146,62 +140,18 @@ export default async function BookmarksPage() {
             </section>
           )}
 
-          {/* ── 저장한 단어 목록 ─────────────────────────────────────────── */}
-          {savedWords.length > 0 && (() => {
-            // 날짜별 그룹화
-            const groups: { dateLabel: string; words: typeof savedWords }[] = [];
-            for (const sw of savedWords) {
-              const label = new Date(sw.savedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" });
-              const last = groups[groups.length - 1];
-              if (last && last.dateLabel === label) {
-                last.words.push(sw);
-              } else {
-                groups.push({ dateLabel: label, words: [sw] });
-              }
-            }
-            return (
-              <section>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-bold text-[#3D3530]">
-                    저장한 단어
-                    <span className="ml-2 text-sm font-normal text-[#8B7E74]">{savedWords.length}개</span>
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <ResetSavedWordsButton childId={child.id} />
-                    <Link href="/dashboard/practice" className="text-xs text-[#FFB38A] font-semibold leading-none">
-                      다시 연습하기 →
-                    </Link>
-                  </div>
-                </div>
-                <BubbleCard padding="sm">
-                  {groups.map((group, gi) => (
-                    <div key={group.dateLabel}>
-                      {/* 날짜 구분선 */}
-                      <div className={`flex items-center gap-3 ${gi > 0 ? "mt-1" : ""} py-2`}>
-                        <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
-                        <span className="text-[11px] font-black text-[#C4B5A8] tracking-wider">{group.dateLabel}</span>
-                        <div className="h-[1px] flex-1 bg-[#F0E8E0]" />
-                      </div>
-                      {/* 해당 날짜 단어들 */}
-                      {group.words.map((sw: any, wi: number) => {
-                        const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
-                        const isLast = gi === groups.length - 1 && wi === group.words.length - 1;
-                        return (
-                          <div
-                            key={sw.id}
-                            className={`flex items-center gap-2 py-3 px-1 ${!isLast ? "border-b border-[#F5F0EB]" : ""}`}
-                          >
-                            <span className="text-base font-black text-[#3D3530] flex-1 truncate">{sw.word}</span>
-                            <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </BubbleCard>
-              </section>
-            );
-          })()}
+          {/* ── 저장한 단어 목록 (체크 후 선택 연습) ──────────────────────── */}
+          {savedWords.length > 0 && (
+            <SavedWordsList
+              childId={child.id}
+              savedWords={savedWords.map((sw) => ({
+                id: sw.id,
+                word: sw.word,
+                difficulty: sw.difficulty,
+                savedAt: sw.savedAt.toISOString(),
+              }))}
+            />
+          )}
 
         </>
       )}
