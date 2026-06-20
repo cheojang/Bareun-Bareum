@@ -203,18 +203,6 @@ export default async function BookmarksPage() {
             );
           })()}
 
-          {/* 분석단어 훈련 CTA */}
-          <BubbleCard color="peach" className="text-center">
-            <p className="font-bold text-[#3D3530] mb-1">저장한 단어로 연습할까요?</p>
-            <p className="text-xs text-[#8B7E74] mb-3">
-              발음 분석 단어 + AI 추천 단어 단계별 훈련
-            </p>
-            <Link href="/dashboard/practice">
-              <span className="inline-block px-6 py-3 bg-white rounded-full text-sm font-black text-[#FFB38A] shadow-sm">
-                분석단어 훈련 시작하기 🎮
-              </span>
-            </Link>
-          </BubbleCard>
         </>
       )}
     </div>
