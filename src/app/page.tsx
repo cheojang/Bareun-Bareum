@@ -85,7 +85,7 @@ export default function LandingPage() {
             />
             <PainCard
               emoji="💸"
-              text="언어치료센터에 다니고 싶은데, 1회 5만원이면 매주 가기 부담돼요..."
+              text="언어치료센터에 다니고 싶은데, 1회 6만원이면 매주 가기 부담돼요..."
             />
             <PainCard
               emoji="⏰"
@@ -177,12 +177,12 @@ export default function LandingPage() {
             {/* 센터 */}
             <BubbleCard className="text-center border-2 border-[#F0E8E0]">
               <p className="text-sm text-[#8B7E74] mb-2">일반 언어치료센터</p>
-              <p className="text-3xl font-black text-[#3D3530]">50,000원</p>
-              <p className="text-xs text-[#C4B5A8] mt-1">1회 방문 기준</p>
+              <p className="text-3xl font-black text-[#3D3530]">60,000원</p>
+              <p className="text-xs text-[#C4B5A8] mt-1">1회 방문 평균 비용</p>
               <div className="h-[1px] bg-[#F0E8E0] my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="📅" text="주 1~2회 방문" muted />
-                <CompareItem icon="💰" text="월 20~40만원" muted />
+                <CompareItem icon="💰" text="월 24~48만원" muted />
                 <CompareItem icon="🚗" text="예약 & 이동 필요" muted />
                 <CompareItem icon="⏳" text="방문일 외 연습 어려움" muted />
               </div>
