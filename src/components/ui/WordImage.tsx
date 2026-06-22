@@ -57,7 +57,7 @@ export function WordImage({ word, imageSlug, size = "md", className = "", reveal
         height={px}
         onError={() => setFailed(true)}
         className={`object-contain flex-shrink-0 ${rounded} ${className}`}
-        style={{ filter: "brightness(0.15) saturate(0) opacity(0.75)" }}
+        style={{ filter: "grayscale(1) contrast(1000%)" }}
       />
     );
   }

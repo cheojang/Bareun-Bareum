@@ -82,7 +82,7 @@ export function ShadowMatchGame({ pool, onDone, rounds = 2 }: Props) {
       <p className="text-sm text-[#8B7E74] mb-4">같은 모양을 찾아봐요</p>
 
       {/* 정답 실루엣(그림자) — 맞히면 컬러로 변신 */}
-      <div className="bg-white/70 rounded-3xl p-4 mb-6 shadow-inner">
+      <div className="bg-white rounded-3xl p-6 mb-6 shadow-inner">
         {solved ? (
           <div className="wordimg-pop flex flex-col items-center">
             <WordImage word={round.target.word} imageSlug={round.target.imageSlug} size="xl" />
