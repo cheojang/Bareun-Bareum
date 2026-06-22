@@ -3,14 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { BubbleCard } from "@/components/ui/BubbleCard";
-import { PastelBadge } from "@/components/ui/PastelBadge";
 import { ResetSavedWordsButton } from "./ResetSavedWordsButton";
-
-const DIFFICULTY_META: Record<string, { label: string; color: "pink" | "yellow" | "mint" }> = {
-  hard:   { label: "집중 연습", color: "pink" },
-  medium: { label: "유사 패턴", color: "yellow" },
-  easy:   { label: "쉬운 단어", color: "mint" },
-};
 
 export interface SavedWordItem {
   id: string;
@@ -98,7 +91,6 @@ export function SavedWordsList({
             </div>
             {/* 해당 날짜 단어들 */}
             {group.words.map((sw, wi) => {
-              const diff = DIFFICULTY_META[sw.difficulty] ?? DIFFICULTY_META.medium;
               const isLast = gi === groups.length - 1 && wi === group.words.length - 1;
               const checked = selected.has(sw.word);
               return (
@@ -113,7 +105,6 @@ export function SavedWordsList({
                     className="w-5 h-5 rounded-md accent-[#FFB38A] flex-shrink-0 cursor-pointer"
                   />
                   <span className="text-base font-black text-[#3D3530] flex-1 truncate">{sw.word}</span>
-                  <PastelBadge color={diff.color}>{diff.label}</PastelBadge>
                 </label>
               );
             })}
