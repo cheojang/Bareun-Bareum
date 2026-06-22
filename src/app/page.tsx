@@ -279,7 +279,7 @@ export default function LandingPage() {
         <div className="max-w-lg mx-auto">
           <SoriMascot size={100} variant="full" animated />
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mt-6 mb-4">
-            지금 시작하면<br />오늘부터 달라져요
+            오늘 시작하면<br />내일부터 달라져요
           </h2>
           <p className="text-sm text-[#8B7E74] leading-relaxed">
             가입 즉시 무료로 사용할 수 있어요.<br />
@@ -291,8 +291,7 @@ export default function LandingPage() {
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="text-center py-8 px-5 border-t border-[#F0E8E0] bg-white">
         <p className="text-xs text-[#C4B5A8] mb-3 leading-relaxed">
-          바른발음은 학습 보조 도구이며 의료기기가 아닙니다.<br />
-          발음 문제가 우려되면 전문 언어재활사와 상담하세요.
+          바른발음은 학습 보조 도구이며 의료기기가 아닙니다.
         </p>
         <div className="flex justify-center gap-4 text-xs text-[#8B7E74]">
           <Link href="/terms" className="hover:underline">이용약관</Link>
