@@ -270,6 +270,8 @@ interface Props {
   cycles?: PracticeCycle[];
   /** 이미 저장된 단어 — 저장 버튼 초기 채움 상태 */
   initialSavedWords?: string[];
+  /** 청각폭격(먼저 들어볼게요) 단계 생략 — 저장단어 선택 연습 시 사용 */
+  skipBombardment?: boolean;
 }
 
 type Stage = 1 | 2 | 3;
@@ -432,6 +434,7 @@ export function PracticeClient({
   difficulty,
   cycles,
   initialSavedWords,
+  skipBombardment,
 }: Props) {
   // 사이클 모드 여부
   const isCycleMode = !!(cycles && cycles.length > 0);
@@ -490,7 +493,9 @@ export function PracticeClient({
 
   // ── 청각 폭격 페이즈 ─────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<"bombardment" | "practice">(
-    (isCycleMode ? cycleItems.length > 0 : stage1Words.length > 0) ? "bombardment" : "practice"
+    !skipBombardment && (isCycleMode ? cycleItems.length > 0 : stage1Words.length > 0)
+      ? "bombardment"
+      : "practice"
   );
 
   // 청각 폭격용 단어 목록 (사이클 모드: 사이클에서 추출, 기존: stage1+stage2)

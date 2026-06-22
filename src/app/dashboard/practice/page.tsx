@@ -327,6 +327,7 @@ export default async function PracticePage({
       difficulty={difficulty}
       cycles={cycles}
       initialSavedWords={initialSavedWords}
+      skipBombardment={selectedWords.length > 0}
     />
   );
 }
