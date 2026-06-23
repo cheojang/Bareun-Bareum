@@ -74,11 +74,12 @@ export function ReviewBonusClient({
       setMessage({ type: "error", text: "URL과 채널을 모두 입력해주세요" });
       return;
     }
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      setMessage({
-        type: "error",
-        text: "http:// 또는 https://로 시작하는 URL을 입력해주세요",
-      });
+    let cleanUrl = url.trim();
+    if (cleanUrl && !cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+      cleanUrl = "https://" + cleanUrl;
+    }
+    if (!cleanUrl) {
+      setMessage({ type: "error", text: "URL을 입력해주세요" });
       return;
     }
 
@@ -89,7 +90,7 @@ export function ReviewBonusClient({
       const res = await fetch("/api/review-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), channel }),
+        body: JSON.stringify({ url: cleanUrl, channel }),
       });
 
       const data = await res.json();
@@ -272,7 +273,8 @@ export function ReviewBonusClient({
               </label>
               <input
                 id="review-url"
-                type="url"
+                type="text"
+                inputMode="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://blog.naver.com/..."
