@@ -149,6 +149,22 @@ export default async function SettingsPage() {
         )}
       </BubbleCard>
 
+      {/* 후기 인증 — 홍보글 1개당 1주 연장 */}
+      <BubbleCard color="mint">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl flex-shrink-0">🎁</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-[#3D3530]">홍보글 쓰면 1주일 무료 연장!</p>
+            <p className="text-xs text-[#8B7E74] mt-0.5 leading-relaxed">
+              블로그·SNS·커뮤니티에 후기 남기고 링크 제출 → 인증 1건당 프리미엄 1주 연장 (최대 10주)
+            </p>
+          </div>
+          <Link href="/dashboard/review-bonus" className="flex-shrink-0">
+            <BubbleButton variant="mint" size="sm">참여하기 →</BubbleButton>
+          </Link>
+        </div>
+      </BubbleCard>
+
       {/* Children */}
       <BubbleCard>
         <div className="flex items-center justify-between mb-3">
