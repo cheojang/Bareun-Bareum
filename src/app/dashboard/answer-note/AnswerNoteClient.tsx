@@ -128,16 +128,18 @@ function parsePartialJson(jsonString: string): any {
   };
 }
 
-// ─── 누적 기록 행 컴포넌트 (단일 카드 내 행으로 표시) ─────────────────────────
+// ─── 누적 기록 행 컴포넌트 (체크박스 + 클릭 펼침) ─────────────────────────────
 
 function RecordRow({
   record,
-  onDelete,
   isLast,
+  isSelected,
+  onToggle,
 }: {
   record: PastRecord;
-  onDelete: (id: string, e: React.MouseEvent) => void;
   isLast: boolean;
+  isSelected: boolean;
+  onToggle: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const categoryStyle = CATEGORY_STYLE[record.errorCategory] ?? DEFAULT_STYLE;
@@ -157,6 +159,15 @@ function RecordRow({
         className="flex items-center gap-2 py-3 px-1 cursor-pointer hover:bg-[#FAFAF8] rounded-xl transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
+        {/* 체크박스 */}
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggle(record.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="w-4 h-4 rounded border-[#D9CFC9] flex-shrink-0 cursor-pointer accent-[#FFB38A]"
+        />
+
         {/* 단어 비교 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-base font-black text-[#3D3530] truncate">{record.targetWord}</span>
@@ -166,33 +177,6 @@ function RecordRow({
 
         {/* AI 완료 여부 */}
         <span className="text-xs flex-shrink-0">{gemini ? "✅" : "⏳"}</span>
-
-        {/* PDF 내보내기 버튼 (AI 분석 완료 기록만) */}
-        {gemini && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(`/dashboard/answer-note/print/${record.id}`, "_blank");
-            }}
-            className="text-[#D9CFC9] hover:text-[#A8D8CF] transition-colors p-1 flex-shrink-0"
-            title="PDF로 내보내기"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
-            </svg>
-          </button>
-        )}
-
-        {/* 삭제 버튼 */}
-        <button
-          onClick={(e) => onDelete(record.id, e)}
-          className="text-[#D9CFC9] hover:text-[#EF4444] transition-colors p-1 flex-shrink-0"
-          title="삭제하기"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
-          </svg>
-        </button>
 
         {/* 펼치기 화살표 */}
         <span className={`text-[#C4B5A8] text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>▾</span>
@@ -478,20 +462,13 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
   const [targetWordError, setTargetWordError] = useState("");
   const [pronunciationError, setPronunciationError] = useState("");
 
-  // 삭제 관련 상태
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
-  const [tempSkipCheck, setTempSkipCheck] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("sori_skip_delete_confirm");
-    if (saved === "true") setSkipDeleteConfirm(true);
-  }, []);
+  // 체크박스 선택 상태
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // 아이 변경 시 props로 받은 새 pastRecords로 state 동기화 + 진행중 분석 초기화
   useEffect(() => {
     setRecords(pastRecords);
+    setSelectedIds(new Set());
     setLocalResult(null);
     setGeminiResult(null);
     setGeminiError("");
@@ -741,32 +718,6 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
     }
   }
 
-  // 삭제 요청 인입
-  function handleDeleteClick(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (skipDeleteConfirm) {
-      executeDelete(id);
-    } else {
-      setPendingDeleteId(id);
-      setShowConfirmModal(true);
-    }
-  }
-
-  // 모달 내 최종 확인
-  async function handleModalConfirm() {
-    if (!pendingDeleteId) return;
-    
-    // '다시 보지 않기' 체크했다면 설정 저장
-    if (tempSkipCheck) {
-      setSkipDeleteConfirm(true);
-      localStorage.setItem("sori_skip_delete_confirm", "true");
-    }
-
-    await executeDelete(pendingDeleteId);
-    setShowConfirmModal(false);
-    setPendingDeleteId(null);
-  }
-
   // 전체 초기화 요청
   async function handleResetAll() {
     if (!confirm("분석 기록을 전부 삭제할까요?\n복습 스케줄도 함께 삭제돼요.")) return;
@@ -778,6 +729,7 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
       });
       if (res.ok) {
         setRecords([]);
+        setSelectedIds(new Set());
         setLocalResult(null);
       } else {
         alert("초기화에 실패했습니다.");
@@ -801,9 +753,37 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
       } else {
         alert("삭제에 실패했습니다.");
       }
-    } catch (err) {
+    } catch {
       alert("네트워크 오류가 발생했습니다.");
     }
+  }
+
+  // 체크박스 토글
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // 일괄 삭제
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`선택한 ${selectedIds.size}개의 분석 기록을 삭제할까요?`)) return;
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      await executeDelete(id);
+    }
+    setSelectedIds(new Set());
+  }
+
+  // 일괄 내보내기 (새 탭에서 인쇄 페이지 열기)
+  function handleBulkExport() {
+    if (selectedIds.size === 0) return;
+    const ids = [...selectedIds].join(",");
+    window.open(`/dashboard/answer-note/print/bulk?ids=${ids}`, "_blank");
   }
 
   return (
@@ -962,20 +942,52 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
             <span className="text-xs text-[#8B7E74] bg-[#F5F3FF] px-2 py-0.5 rounded-full">
               총 {records.length}개
             </span>
-            <Link
-              href={`/dashboard/answer-note/comprehensive?childId=${childId}`}
-              className="ml-auto text-xs font-semibold text-[#C4B5A8] hover:text-[#0D9488] transition-colors leading-none"
-            >
-              📊 종합 분석하기
-            </Link>
-            <button
-              onClick={handleResetAll}
-              className="text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors leading-none"
-            >
-              🗑 전체 초기화
-            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-xs font-bold text-[#FFB38A] bg-[#FFF5EE] px-2 py-0.5 rounded-full">
+                {selectedIds.size}개 선택
+              </span>
+            )}
+            <div className="ml-auto flex items-center gap-3">
+              {selectedIds.size > 0 ? (
+                <>
+                  <button
+                    onClick={handleBulkExport}
+                    className="text-xs font-semibold text-[#7EDFD0] hover:text-[#0D9488] transition-colors"
+                  >
+                    📄 내보내기
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="text-xs font-semibold text-[#EF4444] hover:text-[#DC2626] transition-colors"
+                  >
+                    🗑 선택 삭제
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-xs font-semibold text-[#C4B5A8] hover:text-[#8B7E74] transition-colors"
+                  >
+                    취소
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/dashboard/answer-note/comprehensive?childId=${childId}`}
+                    className="text-xs font-semibold text-[#C4B5A8] hover:text-[#0D9488] transition-colors leading-none"
+                  >
+                    📊 종합 분석하기
+                  </Link>
+                  <button
+                    onClick={handleResetAll}
+                    className="text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors leading-none"
+                  >
+                    🗑 전체 초기화
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-          
+
           <BubbleCard padding="sm">
             {records.map((record, index) => {
               const curDateObj = new Date(record.createdAt);
@@ -999,8 +1011,9 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
                   )}
                   <RecordRow
                     record={record}
-                    onDelete={handleDeleteClick}
                     isLast={index === records.length - 1}
+                    isSelected={selectedIds.has(record.id)}
+                    onToggle={toggleSelect}
                   />
                 </div>
               );
@@ -1016,46 +1029,6 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
           <p className="font-bold text-[#3D3530]">아직 분석 기록이 없어요</p>
           <p className="text-sm text-[#8B7E74] mt-2">위에서 목표 단어와 {childName}의 발음을 입력해보세요!</p>
         </BubbleCard>
-      )}
-
-      {/* 🛠️ 커스텀 삭제 확인 모달 */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-[320px] shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="text-center mb-5">
-              <div className="bg-[#FEF2F2] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🗑️</span>
-              </div>
-              <h3 className="text-lg font-black text-[#3D3530]">분석 기록 삭제</h3>
-              <p className="text-sm text-[#8B7E74] mt-1">이 분석 기록을 정말 삭제할까요?</p>
-            </div>
-
-            <label className="flex items-center gap-2 mb-6 cursor-pointer group justify-center">
-              <input 
-                type="checkbox" 
-                checked={tempSkipCheck}
-                onChange={(e) => setTempSkipCheck(e.target.checked)}
-                className="w-4 h-4 rounded border-[#F0E8E0] text-[#FFB38A] focus:ring-[#FFB38A]"
-              />
-              <span className="text-xs text-[#8B7E74] group-hover:text-[#3D3530]">다시는 이 메시지를 보지 않기</span>
-            </label>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setShowConfirmModal(false); setPendingDeleteId(null); }}
-                className="flex-1 py-3 rounded-2xl bg-[#F0E8E0] text-[#8B7E74] font-bold text-sm hover:bg-[#E5DCD4] transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleModalConfirm}
-                className="flex-1 py-3 rounded-2xl bg-[#EF4444] text-white font-bold text-sm hover:bg-[#DC2626] shadow-md shadow-red-200 transition-colors"
-              >
-                삭제하기
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
     </div>
