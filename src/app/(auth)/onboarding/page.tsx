@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
@@ -20,17 +20,59 @@ const PRESETS = [
   { path: "/avatars/koala.svg", label: "코알라" },
 ];
 
+async function compressToSquare(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const SIZE = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d")!;
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = e.target!.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<"남아" | "여아" | "">("");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
+  const displayImage = photoPreview ?? selectedAvatar;
+
+  async function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("이미지 파일만 선택해주세요."); return; }
+    try {
+      const compressed = await compressToSquare(file);
+      setPhotoPreview(compressed);
+      setSelectedAvatar(null);
+    } catch {
+      setError("사진 처리 중 오류가 발생했어요.");
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,10 +81,11 @@ export default function OnboardingPage() {
 
     setLoading(true);
     try {
+      const image = photoPreview ?? selectedAvatar ?? null;
       const res = await fetch("/api/children", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), birthDate: birthDate || null, gender: gender || null, image: selectedAvatar }),
+        body: JSON.stringify({ name: name.trim(), birthDate: birthDate || null, gender: gender || null, image }),
       });
 
       if (res.ok) {
@@ -62,17 +105,18 @@ export default function OnboardingPage() {
       style={{ background: "linear-gradient(160deg, #FFF5EE 0%, #F0FAF8 60%, #EDE9FE 100%)" }}
     >
       <div className="text-center mb-8">
-        {/* 아바타 선택 영역 */}
         <button
           type="button"
           onClick={() => setShowAvatarPicker(true)}
           className="relative inline-block mb-4 group"
         >
-          <div className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
-            style={{ backgroundColor: "#FFD4B8" }}>
-            {selectedAvatar ? (
+          <div
+            className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
+            style={{ backgroundColor: "#FFD4B8" }}
+          >
+            {displayImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={selectedAvatar} alt="선택된 캐릭터" className="w-full h-full object-cover" />
+              <img src={displayImage} alt="아이 사진" className="w-full h-full object-cover" />
             ) : (
               <span className="text-5xl">👶</span>
             )}
@@ -82,13 +126,21 @@ export default function OnboardingPage() {
           </div>
         </button>
         <p className="text-xs text-[#C4B5A8] mb-3">
-          {selectedAvatar ? "캐릭터를 변경하려면 탭하세요" : "캐릭터를 선택해보세요 (선택사항)"}
+          {displayImage ? "사진을 변경하려면 탭하세요" : "캐릭터 또는 사진을 선택해보세요 (선택사항)"}
         </p>
         <h1 className="text-2xl font-black text-[#3D3530]">아이 정보를 알려주세요</h1>
         <p className="text-[#8B7E74] mt-2 text-sm">
           아이에게 맞는 단어와 연습법을 추천해드려요
         </p>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoFile}
+      />
 
       <BubbleCard className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -159,7 +211,7 @@ export default function OnboardingPage() {
         </form>
       </BubbleCard>
 
-      {/* 아바타 선택 모달 */}
+      {/* 아바타/사진 선택 모달 */}
       {showAvatarPicker && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
@@ -175,11 +227,11 @@ export default function OnboardingPage() {
                 <button
                   key={p.path}
                   type="button"
-                  onClick={() => { setSelectedAvatar(p.path); setShowAvatarPicker(false); }}
+                  onClick={() => { setSelectedAvatar(p.path); setPhotoPreview(null); setShowAvatarPicker(false); }}
                   className="flex flex-col items-center gap-1 group"
                 >
                   <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition-all ${
-                    selectedAvatar === p.path
+                    selectedAvatar === p.path && !photoPreview
                       ? "ring-[#FF9B7B] scale-105"
                       : "ring-transparent group-hover:ring-[#FFD4B8]"
                   }`}>
@@ -192,8 +244,15 @@ export default function OnboardingPage() {
             </div>
             <button
               type="button"
+              onClick={() => { setShowAvatarPicker(false); fileInputRef.current?.click(); }}
+              className="w-full py-2.5 rounded-xl border border-[#E8DDD5] text-sm text-[#8B7E74] hover:bg-[#FFF5F0] transition-colors mb-2"
+            >
+              📷 직접 사진 업로드
+            </button>
+            <button
+              type="button"
               onClick={() => setShowAvatarPicker(false)}
-              className="w-full py-2.5 rounded-xl border border-[#E8DDD5] text-sm text-[#8B7E74] hover:bg-[#FFF5F0] transition-colors"
+              className="w-full py-2 text-xs text-[#C4B5A8]"
             >
               나중에 설정할게요
             </button>
