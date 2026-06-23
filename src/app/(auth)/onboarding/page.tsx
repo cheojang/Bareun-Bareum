@@ -13,9 +13,12 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const today = new Date().toISOString().split("T")[0];
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("아이 이름을 입력해주세요"); return; }
+    if (!name.trim()) { setError("아이 이름 또는 별명을 입력해주세요"); return; }
+    if (birthDate && birthDate > today) { setError("생년월일은 오늘 이전 날짜여야 해요"); return; }
 
     setLoading(true);
     try {
@@ -53,13 +56,13 @@ export default function OnboardingPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-semibold text-[#3D3530] mb-2">
-              아이 이름 <span className="text-[#FFB38A]">*</span>
+              아이 이름 또는 별명 <span className="text-[#FFB38A]">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="예: 민준"
+              placeholder="별명이나 이름을 등록해주세요"
               className="w-full rounded-[16px] border-2 border-[#F0E8E0] bg-white px-4 py-3 text-[#3D3530] placeholder-[#C4B5A8] focus:border-[#FFB38A] focus:outline-none transition-colors"
               maxLength={20}
             />
@@ -97,6 +100,7 @@ export default function OnboardingPage() {
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
+              max={today}
               className="w-full rounded-[16px] border-2 border-[#F0E8E0] bg-white px-4 py-3 text-[#3D3530] focus:border-[#FFB38A] focus:outline-none transition-colors"
             />
           </div>
