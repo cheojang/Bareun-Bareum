@@ -60,6 +60,9 @@ export function ReviewBonusClient({
 
   const [url, setUrl] = useState("");
   const [channel, setChannel] = useState<string>("");
+  const [screenshot, setScreenshot] = useState<string | null>(null); // base64
+  const [screenshotName, setScreenshotName] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -68,29 +71,66 @@ export function ReviewBonusClient({
 
   const daysLeft = trialDaysLeft(currentTrialEndsAt);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!url.trim() || !channel) {
-      setMessage({ type: "error", text: "URL과 채널을 모두 입력해주세요" });
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: "error", text: "이미지 파일이 너무 커요 (최대 5MB)" });
       return;
     }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setScreenshot(ev.target?.result as string);
+      setScreenshotName(file.name);
+      setUrl(""); // 이미지 선택 시 URL 초기화
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!channel) {
+      setMessage({ type: "error", text: "채널을 선택해주세요" });
+      return;
+    }
+    if (!url.trim() && !screenshot) {
+      setMessage({ type: "error", text: "후기 URL 또는 캡처본 이미지 중 하나를 제출해주세요" });
+      return;
+    }
+
     let cleanUrl = url.trim();
     if (cleanUrl && !cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
       cleanUrl = "https://" + cleanUrl;
-    }
-    if (!cleanUrl) {
-      setMessage({ type: "error", text: "URL을 입력해주세요" });
-      return;
     }
 
     setLoading(true);
     setMessage(null);
 
     try {
+      // 스크린샷 있으면 먼저 업로드
+      let screenshotUrl: string | null = null;
+      if (screenshot) {
+        setUploadingImage(true);
+        const upRes = await fetch("/api/review-bonus/screenshot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: screenshot }),
+        });
+        setUploadingImage(false);
+        if (!upRes.ok) {
+          const err = await upRes.json().catch(() => ({}));
+          setMessage({ type: "error", text: err.error ?? "이미지 업로드에 실패했어요" });
+          setLoading(false);
+          return;
+        }
+        const upData = await upRes.json();
+        screenshotUrl = upData.url;
+      }
+
       const res = await fetch("/api/review-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: cleanUrl, channel }),
+        body: JSON.stringify({ url: cleanUrl || undefined, screenshotUrl: screenshotUrl || undefined, channel }),
       });
 
       const data = await res.json();
@@ -100,6 +140,8 @@ export function ReviewBonusClient({
         setMessage({ type: "success", text: data.message ?? "승인되었어요!" });
         setUrl("");
         setChannel("");
+        setScreenshot(null);
+        setScreenshotName("");
 
         if (data.newTrialEndsAt) {
           setCurrentTrialEndsAt(data.newTrialEndsAt);
@@ -263,27 +305,59 @@ export function ReviewBonusClient({
               </div>
             </div>
 
-            {/* URL 입력 */}
-            <div>
-              <label
-                htmlFor="review-url"
-                className="text-xs font-semibold text-[#8B7E74] mb-1.5 block"
-              >
-                후기 URL
-              </label>
-              <input
-                id="review-url"
-                type="text"
-                inputMode="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://blog.naver.com/..."
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] bg-[#FFF9F5] text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors"
-                disabled={loading}
-              />
-              <p className="text-xs text-[#B0A89E] mt-1">
-                후기를 작성한 페이지의 주소(URL)를 붙여넣어주세요
-              </p>
+            {/* URL 또는 캡처본 */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-[#8B7E74]">후기 URL 또는 캡처본 <span className="text-[#FFB38A]">(둘 중 하나)</span></p>
+
+              {/* URL 입력 */}
+              <div>
+                <input
+                  id="review-url"
+                  type="text"
+                  inputMode="url"
+                  value={url}
+                  onChange={(e) => { setUrl(e.target.value); if (e.target.value) setScreenshot(null); }}
+                  placeholder="https://blog.naver.com/..."
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] bg-[#FFF9F5] text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+                  disabled={loading || !!screenshot}
+                />
+                <p className="text-xs text-[#B0A89E] mt-1">후기를 작성한 페이지 주소를 붙여넣어주세요</p>
+              </div>
+
+              {/* 구분선 */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-[#F0E8E0]" />
+                <span className="text-xs text-[#C4B5A8] font-semibold">또는</span>
+                <div className="flex-1 h-px bg-[#F0E8E0]" />
+              </div>
+
+              {/* 캡처본 업로드 */}
+              <div>
+                {screenshot ? (
+                  <div className="relative rounded-xl overflow-hidden border-2 border-[#A8D8CF]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={screenshot} alt="캡처본" className="w-full max-h-48 object-contain bg-[#F8F8F8]" />
+                    <button
+                      type="button"
+                      onClick={() => { setScreenshot(null); setScreenshotName(""); }}
+                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
+                    >✕</button>
+                  </div>
+                ) : (
+                  <label className={`flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed border-[#F0E8E0] bg-[#FAFAF8] cursor-pointer hover:border-[#FFB38A] transition-colors ${url.trim() ? "opacity-40 pointer-events-none" : ""}`}>
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs font-semibold text-[#8B7E74]">캡처본 이미지 선택</span>
+                    <span className="text-[11px] text-[#C4B5A8]">JPEG / PNG / WebP · 최대 5MB</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                      disabled={loading || !!url.trim()}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* 메시지 */}
@@ -304,9 +378,9 @@ export function ReviewBonusClient({
               type="submit"
               variant="peach"
               className="w-full"
-              disabled={loading || !url.trim() || !channel}
+              disabled={loading || (!url.trim() && !screenshot) || !channel}
             >
-              {loading ? "확인 중..." : "후기 제출하기"}
+              {uploadingImage ? "이미지 업로드 중..." : loading ? "확인 중..." : "후기 제출하기"}
             </BubbleButton>
           </div>
         </form>
