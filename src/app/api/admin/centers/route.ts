@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
 
   const center = await prisma.center.create({
     data: {
-      name: name.trim(),
-      phone: phone?.trim() || null,
-      address: address?.trim() || null,
+      name: name.trim().slice(0, 50),
+      phone: phone?.trim().slice(0, 20) || null,
+      address: address?.trim().slice(0, 200) || null,
       plan: plan ?? "basic",
     },
   });
@@ -64,9 +64,9 @@ export async function PATCH(request: NextRequest) {
   if (!centerId) return NextResponse.json({ error: "centerId 필수" }, { status: 400 });
 
   const data: Record<string, unknown> = {};
-  if (name) data.name = name.trim();
-  if (phone !== undefined) data.phone = phone?.trim() || null;
-  if (address !== undefined) data.address = address?.trim() || null;
+  if (name) data.name = name.trim().slice(0, 50);
+  if (phone !== undefined) data.phone = phone?.trim().slice(0, 20) || null;
+  if (address !== undefined) data.address = address?.trim().slice(0, 200) || null;
   if (plan) data.plan = plan;
   if (regenerateCode) {
     const { randomBytes } = await import("crypto");

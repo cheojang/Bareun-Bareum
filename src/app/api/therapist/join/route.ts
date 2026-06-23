@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id!,
         centerId: center.id,
-        name: name.trim(),
+        name: name.trim().slice(0, 50),
         role: centerRole,
-        license: license?.trim() || null,
-        phone: phone?.trim() || null,
+        license: license?.trim().slice(0, 50) || null,
+        phone: phone?.trim().slice(0, 20) || null,
       },
     });
   });
