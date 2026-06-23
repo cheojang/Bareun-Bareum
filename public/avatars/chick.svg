@@ -1,0 +1,17 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#FFFBE0"/>
+  <circle cx="100" cy="118" r="66" fill="#FFD940"/>
+  <ellipse cx="48" cy="122" rx="22" ry="15" fill="#F0C020" transform="rotate(-20 48 122)"/>
+  <ellipse cx="152" cy="122" rx="22" ry="15" fill="#F0C020" transform="rotate(20 152 122)"/>
+  <circle cx="100" cy="82" r="48" fill="#FFE050"/>
+  <ellipse cx="88" cy="38" rx="7" ry="13" fill="#FFE050" transform="rotate(-20 88 38)"/>
+  <ellipse cx="100" cy="34" rx="7" ry="13" fill="#FFE050"/>
+  <ellipse cx="112" cy="38" rx="7" ry="13" fill="#FFE050" transform="rotate(20 112 38)"/>
+  <circle cx="82" cy="76" r="10" fill="#3D3530"/>
+  <circle cx="118" cy="76" r="10" fill="#3D3530"/>
+  <circle cx="86" cy="72" r="3.5" fill="white"/>
+  <circle cx="122" cy="72" r="3.5" fill="white"/>
+  <polygon points="100,90 91,103 109,103" fill="#FF9B30"/>
+  <circle cx="67" cy="88" r="11" fill="#FFB090" opacity="0.45"/>
+  <circle cx="133" cy="88" r="11" fill="#FFB090" opacity="0.45"/>
+</svg>

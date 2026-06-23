@@ -1,0 +1,21 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#FFF3D4"/>
+  <circle cx="100" cy="108" r="78" fill="#E8902A"/>
+  <circle cx="100" cy="108" r="60" fill="#F5B040"/>
+  <circle cx="78" cy="98" r="9" fill="#3D2010"/>
+  <circle cx="122" cy="98" r="9" fill="#3D2010"/>
+  <circle cx="82" cy="94" r="3" fill="white"/>
+  <circle cx="126" cy="94" r="3" fill="white"/>
+  <ellipse cx="100" cy="122" rx="26" ry="18" fill="#E8A030"/>
+  <ellipse cx="100" cy="116" rx="8" ry="6" fill="#3D2010"/>
+  <path d="M 88 128 Q 100 138 112 128" stroke="#8B5020" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="100" cy="60" r="16" fill="#F5B040"/>
+  <circle cx="66" cy="70" r="14" fill="#F5B040"/>
+  <circle cx="134" cy="70" r="14" fill="#F5B040"/>
+  <circle cx="68" cy="120" r="13" fill="#FFD090" opacity="0.4"/>
+  <circle cx="132" cy="120" r="13" fill="#FFD090" opacity="0.4"/>
+  <line x1="62" y1="108" x2="88" y2="116" stroke="#C07828" stroke-width="1.5" opacity="0.5"/>
+  <line x1="62" y1="116" x2="88" y2="120" stroke="#C07828" stroke-width="1.5" opacity="0.5"/>
+  <line x1="138" y1="108" x2="112" y2="116" stroke="#C07828" stroke-width="1.5" opacity="0.5"/>
+  <line x1="138" y1="116" x2="112" y2="120" stroke="#C07828" stroke-width="1.5" opacity="0.5"/>
+</svg>

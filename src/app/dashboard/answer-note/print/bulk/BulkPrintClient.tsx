@@ -222,8 +222,21 @@ export function BulkPrintClient({ childName, records }: Props) {
     <>
       <style>{`
         @media print {
-          .no-print { display: none !important; }
+          /* 레이아웃 전체 숨기기 — print wrapper만 표시 */
+          body * { visibility: hidden; }
+          #bulk-print-wrapper,
+          #bulk-print-wrapper * { visibility: visible !important; }
+          #bulk-print-wrapper {
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+          }
+          /* 마지막 페이지 뒤 빈 페이지 방지 */
           .print-page { page-break-after: always; }
+          .print-page:last-child { page-break-after: avoid !important; }
+          @page { margin: 0; }
           body { background: white !important; }
         }
       `}</style>
@@ -270,7 +283,7 @@ export function BulkPrintClient({ childName, records }: Props) {
       </div>
 
       {/* 인쇄 전용: 각 레코드를 페이지 구분해 렌더 */}
-      <div className="hidden print:block">
+      <div id="bulk-print-wrapper" className="hidden print:block">
         {records.map((record) => (
           <div key={record.id} className="print-page">
             <RecordDocument record={record} childName={childName} />

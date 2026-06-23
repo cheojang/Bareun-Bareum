@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "게스트는 자녀를 등록할 수 없어요. 회원가입 후 이용해주세요." }, { status: 403 });
   }
 
-  const { name, birthDate, gender } = await req.json();
+  const { name, birthDate, gender, image } = await req.json();
   if (!name?.trim() || name.trim().length > MAX_NAME_LENGTH) {
     return NextResponse.json({ error: "이름을 1~50자로 입력해주세요" }, { status: 400 });
   }
@@ -52,12 +52,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const ALLOWED_PRESETS = [
+    "/avatars/bunny.svg", "/avatars/bear.svg", "/avatars/cat.svg",
+    "/avatars/dog.svg", "/avatars/frog.svg", "/avatars/penguin.svg",
+    "/avatars/fox.svg", "/avatars/panda.svg", "/avatars/chick.svg",
+    "/avatars/hamster.svg", "/avatars/lion.svg", "/avatars/koala.svg",
+  ];
+  const imageUrl = typeof image === "string" && ALLOWED_PRESETS.includes(image) ? image : null;
+
   const child = await prisma.child.create({
     data: {
       userId: session.user.id,
       name: name.trim(),
       birthDate: birthDate ? new Date(birthDate) : null,
       gender: gender === "남아" || gender === "여아" ? gender : null,
+      image: imageUrl,
     },
   });
 
