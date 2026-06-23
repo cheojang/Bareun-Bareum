@@ -35,6 +35,12 @@ export async function POST(req: NextRequest) {
   if (!name?.trim() || name.trim().length > MAX_NAME_LENGTH) {
     return NextResponse.json({ error: "이름을 1~50자로 입력해주세요" }, { status: 400 });
   }
+  if (birthDate) {
+    const parsed = new Date(birthDate);
+    if (isNaN(parsed.getTime()) || parsed > new Date()) {
+      return NextResponse.json({ error: "생년월일은 오늘 이전 날짜여야 해요" }, { status: 400 });
+    }
+  }
 
   const childCount = await prisma.child.count({
     where: { userId: session.user.id },
@@ -67,6 +73,12 @@ export async function PATCH(req: NextRequest) {
   const { id, name, birthDate, gender } = await req.json();
   if (name !== undefined && (!name?.trim() || name.trim().length > MAX_NAME_LENGTH)) {
     return NextResponse.json({ error: "이름을 1~50자로 입력해주세요" }, { status: 400 });
+  }
+  if (birthDate) {
+    const parsed = new Date(birthDate);
+    if (isNaN(parsed.getTime()) || parsed > new Date()) {
+      return NextResponse.json({ error: "생년월일은 오늘 이전 날짜여야 해요" }, { status: 400 });
+    }
   }
 
   const child = await prisma.child.findFirst({
