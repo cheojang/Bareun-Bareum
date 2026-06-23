@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
 
 export const FREE_AI_MONTHLY_LIMIT = 10;
+export const FREE_PRACTICE_MONTHLY_LIMIT = 10;
 export const GUEST_AI_MONTHLY_LIMIT = 5;
 export const GUEST_COOKIE_NAME = "ai_guest_usage";
 
@@ -37,6 +38,13 @@ export async function countMonthlyGeminiUsage(userId: string): Promise<number> {
       createdAt: { gte: getMonthStart() },
       errorRecord: { child: { userId } },
     },
+  });
+}
+
+/** 이번 달 발음연습 세션 수 (무료 회원 월 상한 체크용) */
+export async function countMonthlyPracticeUsage(userId: string): Promise<number> {
+  return prisma.practiceSession.count({
+    where: { userId, startedAt: { gte: getMonthStart() } },
   });
 }
 

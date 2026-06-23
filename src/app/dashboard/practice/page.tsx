@@ -11,6 +11,11 @@ import {
 import { computeAdaptiveDifficulty } from "@/lib/adaptive-difficulty";
 import { shuffle } from "@/lib/mini-game";
 import { PracticeClient } from "./PracticeClient";
+import {
+  getAccessInfo,
+  countMonthlyPracticeUsage,
+  FREE_PRACTICE_MONTHLY_LIMIT,
+} from "@/lib/usage-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -41,15 +46,23 @@ export default async function PracticePage({
   const session = await auth();
   const userId = session!.user!.id!;
 
-  // 아이 목록 + 선택 ID 병렬 조회, select로 불필요 컬럼 제외
-  const [children, savedId] = await Promise.all([
+  // 아이 목록 + 선택 ID + 접근 등급 + 이번달 연습 횟수 병렬 조회
+  const [children, savedId, access, practiceUsed] = await Promise.all([
     prisma.child.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, image: true, mascotLevel: true },
     }),
     getSelectedChildId(),
+    getAccessInfo(userId),
+    countMonthlyPracticeUsage(userId),
   ]);
+
+  // 무료 회원: 월 발음연습 횟수 제한
+  const practiceRemaining =
+    access.level === "free"
+      ? Math.max(0, FREE_PRACTICE_MONTHLY_LIMIT - practiceUsed)
+      : undefined; // premium/trial: 제한 없음
 
   if (children.length === 0) redirect("/onboarding");
 
@@ -328,6 +341,8 @@ export default async function PracticePage({
       cycles={cycles}
       initialSavedWords={initialSavedWords}
       skipBombardment={selectedWords.length > 0}
+      practiceRemaining={practiceRemaining}
+      practiceLimit={FREE_PRACTICE_MONTHLY_LIMIT}
     />
   );
 }

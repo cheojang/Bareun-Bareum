@@ -272,6 +272,10 @@ interface Props {
   initialSavedWords?: string[];
   /** 청각폭격(먼저 들어볼게요) 단계 생략 — 저장단어 선택 연습 시 사용 */
   skipBombardment?: boolean;
+  /** 무료 회원 이번 달 남은 발음연습 횟수 (undefined = 제한 없음) */
+  practiceRemaining?: number;
+  /** 무료 회원 월 발음연습 상한 */
+  practiceLimit?: number;
 }
 
 type Stage = 1 | 2 | 3;
@@ -435,6 +439,8 @@ export function PracticeClient({
   cycles,
   initialSavedWords,
   skipBombardment,
+  practiceRemaining,
+  practiceLimit,
 }: Props) {
   // 사이클 모드 여부
   const isCycleMode = !!(cycles && cycles.length > 0);
@@ -918,6 +924,30 @@ export function PracticeClient({
     });
     setCurrentIndex(prevItems.length - 1);
   }, [currentIndex, isCycleMode, stage, stage2Words, makeItems]);
+
+  // ── 무료 회원 월 발음연습 횟수 초과 ──────────────────────────────────────────
+  if (practiceRemaining === 0) {
+    return (
+      <div
+        className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
+        style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
+      >
+        <div className="text-7xl mb-5 animate-float">🔒</div>
+        <h2 className="text-2xl font-black text-[#3D3530] mb-2">이번 달 연습을 모두 사용했어요</h2>
+        <p className="text-[#8B7E74] mb-2 leading-relaxed">
+          무료 회원은 매월 {practiceLimit ?? 10}회까지<br />
+          발음연습을 이용할 수 있어요.
+        </p>
+        <p className="text-sm text-[#B0A398] mb-8">다음 달 1일에 자동으로 초기화돼요.</p>
+        <Link href="/subscribe">
+          <BubbleButton variant="peach" size="lg">프리미엄으로 무제한 연습하기 →</BubbleButton>
+        </Link>
+        <Link href="/dashboard" className="mt-3 text-sm text-[#B0A398] underline underline-offset-2">
+          홈으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
 
   // ── 빈 상태 ──────────────────────────────────────────────────────────────────
   const isEmpty = isCycleMode ? cycleItems.length === 0 : stage1Words.length === 0;
