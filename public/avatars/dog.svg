@@ -1,15 +1,26 @@
 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="100" cy="100" r="100" fill="#F0EEFF"/>
-  <ellipse cx="60" cy="112" rx="27" ry="42" fill="#E8C050" transform="rotate(-12 60 112)"/>
-  <ellipse cx="140" cy="112" rx="27" ry="42" fill="#E8C050" transform="rotate(12 140 112)"/>
-  <circle cx="100" cy="105" r="72" fill="#F4D060"/>
-  <ellipse cx="100" cy="130" rx="28" ry="20" fill="#F8E090"/>
-  <circle cx="78" cy="96" r="10" fill="#3D2010"/>
-  <circle cx="122" cy="96" r="10" fill="#3D2010"/>
-  <circle cx="82" cy="92" r="3.5" fill="white"/>
-  <circle cx="126" cy="92" r="3.5" fill="white"/>
-  <ellipse cx="100" cy="118" rx="9" ry="7" fill="#3D2010"/>
-  <path d="M 88 128 Q 100 138 112 128" stroke="#8B6020" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <circle cx="68" cy="118" r="12" fill="#FFB090" opacity="0.4"/>
-  <circle cx="132" cy="118" r="12" fill="#FFB090" opacity="0.4"/>
+  <circle cx="100" cy="100" r="100" fill="#FFF5E8"/>
+  <!-- 축 늘어진 플로피 귀 (강아지 특징) -->
+  <ellipse cx="56" cy="122" rx="28" ry="44" fill="#A05818"/>
+  <ellipse cx="144" cy="122" rx="28" ry="44" fill="#A05818"/>
+  <ellipse cx="56" cy="125" rx="18" ry="32" fill="#C87838"/>
+  <ellipse cx="144" cy="125" rx="18" ry="32" fill="#C87838"/>
+  <!-- 얼굴 -->
+  <circle cx="100" cy="100" r="66" fill="#C87838"/>
+  <!-- 주둥이 -->
+  <ellipse cx="100" cy="122" rx="30" ry="22" fill="#A05818"/>
+  <!-- 눈 -->
+  <circle cx="80" cy="94" r="11" fill="#2A1A08"/>
+  <circle cx="120" cy="94" r="11" fill="#2A1A08"/>
+  <circle cx="84" cy="90" r="3.5" fill="white"/>
+  <circle cx="124" cy="90" r="3.5" fill="white"/>
+  <!-- 코 -->
+  <ellipse cx="100" cy="114" rx="10" ry="8" fill="#1A0A00"/>
+  <!-- 코 하이라이트 -->
+  <ellipse cx="97" cy="112" rx="3" ry="2" fill="#5A3010" opacity="0.5"/>
+  <!-- 입 -->
+  <path d="M 88 126 Q 100 136 112 126" stroke="#6A3810" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 볼터치 -->
+  <circle cx="66" cy="116" r="13" fill="#FF9070" opacity="0.35"/>
+  <circle cx="134" cy="116" r="13" fill="#FF9070" opacity="0.35"/>
 </svg>
