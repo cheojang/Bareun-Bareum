@@ -155,12 +155,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const url: unknown = body?.url;
+    const screenshotUrl: unknown = body?.screenshotUrl;
     const channel: unknown = body?.channel;
 
-    // 입력 검증
-    if (typeof url !== "string" || !url.startsWith("http")) {
+    // URL 또는 스크린샷 중 하나 필수
+    const hasUrl = typeof url === "string" && url.startsWith("http");
+    const hasScreenshot = typeof screenshotUrl === "string" && screenshotUrl.startsWith("http");
+    if (!hasUrl && !hasScreenshot) {
       return NextResponse.json(
-        { error: "올바른 URL을 입력해주세요 (http:// 또는 https://로 시작)" },
+        { error: "후기 URL 또는 캡처본 이미지 중 하나를 제출해주세요" },
         { status: 400 },
       );
     }
@@ -169,17 +172,14 @@ export async function POST(request: NextRequest) {
       !ALLOWED_CHANNELS.includes(channel as Channel)
     ) {
       return NextResponse.json(
-        {
-          error:
-            "채널을 선택해주세요 (blog, sns, community, playstore 중 하나)",
-        },
+        { error: "채널을 선택해주세요 (blog, sns, community, playstore 중 하나)" },
         { status: 400 },
       );
     }
 
-    const urlHash = createHash("sha256")
-      .update(url.toLowerCase().trim())
-      .digest("hex");
+    const urlHash = hasUrl
+      ? createHash("sha256").update((url as string).toLowerCase().trim()).digest("hex")
+      : null;
 
     // DB 접근 (마이그레이션 확인)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 중복 URL 체크
+    // 중복 URL 체크 (URL 제출 시만)
     if (existingByHash) {
       return NextResponse.json(
         { error: "이미 제출한 URL이에요" },
@@ -246,8 +246,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // URL 크롤링 & 검증
-    const result = await verifyUrl(url, channel);
+    // 스크린샷 제출 시 자동 승인, URL 제출 시 크롤링 검증
+    const result = hasScreenshot
+      ? { status: "approved" as const, approvedAt: new Date() }
+      : await verifyUrl(url as string, channel);
 
     const now = new Date();
 
@@ -266,8 +268,9 @@ export async function POST(request: NextRequest) {
         (prisma as any).reviewBonus.create({
           data: {
             userId,
-            url,
+            url: hasUrl ? url : null,
             urlHash,
+            screenshotUrl: hasScreenshot ? screenshotUrl : null,
             channel,
             status: "approved",
             charCount: result.charCount ?? null,
@@ -294,8 +297,9 @@ export async function POST(request: NextRequest) {
       await (prisma as any).reviewBonus.create({
         data: {
           userId,
-          url,
+          url: hasUrl ? url : null,
           urlHash,
+          screenshotUrl: hasScreenshot ? screenshotUrl : null,
           channel,
           status: "rejected",
           charCount: result.charCount ?? null,

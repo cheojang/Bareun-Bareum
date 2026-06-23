@@ -469,17 +469,18 @@ model Message {
 
 // ReviewBonus: 후기 인증 → 1주일 무료 연장 기록
 model ReviewBonus {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  url          String
-  urlHash      String    @unique
-  channel      String    // "blog" | "sns" | "community" | "playstore"
-  status       String    @default("approved") // "approved" | "rejected"
-  charCount    Int?
-  rejectReason String?
-  createdAt    DateTime  @default(now())
-  approvedAt   DateTime?
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url           String?   // URL 또는 스크린샷 중 하나
+  urlHash       String?   @unique
+  screenshotUrl String?   // Supabase Storage 스크린샷 URL
+  channel       String    // "blog" | "sns" | "community" | "playstore"
+  status        String    @default("approved") // "approved" | "rejected"
+  charCount     Int?
+  rejectReason  String?
+  createdAt     DateTime  @default(now())
+  approvedAt    DateTime?
 
   @@index([userId])
 }
