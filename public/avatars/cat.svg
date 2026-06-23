@@ -1,0 +1,20 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#E8F8F0"/>
+  <polygon points="60,88 50,44 90,70" fill="#F5A05A"/>
+  <polygon points="140,88 150,44 110,70" fill="#F5A05A"/>
+  <polygon points="63,83 55,52 88,72" fill="#FFD4A8"/>
+  <polygon points="137,83 145,52 112,72" fill="#FFD4A8"/>
+  <circle cx="100" cy="112" r="72" fill="#F5A05A"/>
+  <ellipse cx="78" cy="103" rx="10" ry="11" fill="#3D3530"/>
+  <ellipse cx="122" cy="103" rx="10" ry="11" fill="#3D3530"/>
+  <circle cx="82" cy="99" r="3.5" fill="white"/>
+  <circle cx="126" cy="99" r="3.5" fill="white"/>
+  <polygon points="100,119 94,126 106,126" fill="#FF9BB5"/>
+  <path d="M 94 127 Q 100 132 106 127" stroke="#FF9BB5" stroke-width="2" fill="none"/>
+  <line x1="65" y1="108" x2="90" y2="113" stroke="#C07040" stroke-width="1.5" opacity="0.6"/>
+  <line x1="65" y1="116" x2="90" y2="117" stroke="#C07040" stroke-width="1.5" opacity="0.6"/>
+  <line x1="135" y1="108" x2="110" y2="113" stroke="#C07040" stroke-width="1.5" opacity="0.6"/>
+  <line x1="135" y1="116" x2="110" y2="117" stroke="#C07040" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="68" cy="122" r="13" fill="#FFB090" opacity="0.3"/>
+  <circle cx="132" cy="122" r="13" fill="#FFB090" opacity="0.3"/>
+</svg>

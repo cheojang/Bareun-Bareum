@@ -3,7 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin, STORAGE_BUCKET, CHILD_IMAGES_PATH } from "@/lib/supabase-admin";
 
-// PATCH /api/children/[id]/image — 아이 사진 업로드 (Supabase Storage)
+const ALLOWED_PRESETS = [
+  "/avatars/bunny.svg", "/avatars/bear.svg", "/avatars/cat.svg",
+  "/avatars/dog.svg", "/avatars/frog.svg", "/avatars/penguin.svg",
+  "/avatars/fox.svg", "/avatars/panda.svg", "/avatars/chick.svg",
+  "/avatars/hamster.svg", "/avatars/lion.svg", "/avatars/koala.svg",
+];
+
+// PATCH /api/children/[id]/image — 아이 사진 업로드 (Supabase Storage) 또는 프리셋 선택
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,7 +21,19 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const { image } = await req.json();
+  const body = await req.json();
+  const { image, preset } = body;
+
+  // 프리셋 선택
+  if (typeof preset === "string") {
+    if (!ALLOWED_PRESETS.includes(preset)) {
+      return NextResponse.json({ error: "허용되지 않은 프리셋입니다." }, { status: 400 });
+    }
+    const child = await prisma.child.findFirst({ where: { id, userId: session.user.id } });
+    if (!child) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    await prisma.child.update({ where: { id }, data: { image: preset } });
+    return NextResponse.json({ ok: true, url: preset });
+  }
 
   if (typeof image !== "string") {
     return NextResponse.json({ error: "올바른 형식이 아니에요." }, { status: 400 });
