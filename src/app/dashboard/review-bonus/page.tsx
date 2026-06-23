@@ -22,29 +22,25 @@ export default async function ReviewBonusPage() {
   let migrationNeeded = false;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = prisma as any;
     const [user, rawSubmissions] = await Promise.all([
-      prisma.user.findUnique({
+      p.user.findUnique({
         where: { id: userId },
-        // reviewBonusCount는 마이그레이션 후 존재
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        select: { trialEndsAt: true, reviewBonusCount: true } as any,
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (prisma as any).reviewBonus.findMany({
+        select: { trialEndsAt: true, reviewBonusCount: true },
+      }) as Promise<{ trialEndsAt: Date | null; reviewBonusCount: number } | null>,
+      p.reviewBonus.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
-      }),
+      }) as Promise<any[]>,
     ]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    bonusCount = (user as any)?.reviewBonusCount ?? 0;
+    bonusCount = user?.reviewBonusCount ?? 0;
     trialEndsAt = user?.trialEndsAt ?? null;
     submissions = rawSubmissions;
 
-    const lastApproved = submissions.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s: any) => s.status === "approved",
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lastApproved = submissions.find((s: any) => s.status === "approved");
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const canSubmitByTime =
       !lastApproved ||

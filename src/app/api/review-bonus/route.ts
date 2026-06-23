@@ -274,12 +274,12 @@ export async function POST(request: NextRequest) {
             approvedAt: result.approvedAt ?? now,
           },
         }),
-        prisma.user.update({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma.user as any).update({
           where: { id: userId },
           data: {
             trialEndsAt: newTrialEndsAt,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            reviewBonusCount: { increment: 1 } as any,
+            reviewBonusCount: { increment: 1 },
           },
         }),
       ]);
