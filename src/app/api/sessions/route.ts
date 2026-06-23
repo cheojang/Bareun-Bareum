@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getKSTDateString } from "@/lib/kst-utils";
+import {
+  getAccessInfo,
+  countMonthlyPracticeUsage,
+  FREE_PRACTICE_MONTHLY_LIMIT,
+} from "@/lib/usage-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -105,6 +110,14 @@ export async function POST(req: NextRequest) {
         ps = existing;
         await tx.practiceSession.update({ where: { id: ps.id }, data: { endedAt: now } });
       } else {
+        // 새 세션 생성 전 무료 회원 월 상한 확인
+        const access = await getAccessInfo(session.user.id);
+        if (access.level === "free") {
+          const used = await countMonthlyPracticeUsage(session.user.id);
+          if (used >= FREE_PRACTICE_MONTHLY_LIMIT) {
+            throw new Error("PRACTICE_LIMIT_EXCEEDED");
+          }
+        }
         ps = await tx.practiceSession.create({
           data: {
             userId: session.user.id,
@@ -145,6 +158,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(practiceSession, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "PRACTICE_LIMIT_EXCEEDED") {
+      return NextResponse.json({ error: "이번 달 발음연습 횟수를 모두 사용했어요." }, { status: 403 });
+    }
     console.error("[PracticeSession POST Error]:", error);
     return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
   }
