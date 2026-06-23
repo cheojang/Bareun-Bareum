@@ -26,6 +26,8 @@ model User {
   sentMessages     Message[]         @relation("MessageParent")
   consent          UserConsent?
   pushSubscriptions PushSubscription[]
+  reviewBonusCount Int           @default(0)
+  reviewBonuses    ReviewBonus[]
 }
 
 // PushSubscription: Web Push 구독 정보 (브라우저·기기당 1개)
@@ -463,4 +465,21 @@ model Message {
 
   @@index([therapistId, parentId, sentAt])
   @@index([parentId])
+}
+
+// ReviewBonus: 후기 인증 → 1주일 무료 연장 기록
+model ReviewBonus {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url          String
+  urlHash      String    @unique
+  channel      String    // "blog" | "sns" | "community" | "playstore"
+  status       String    @default("approved") // "approved" | "rejected"
+  charCount    Int?
+  rejectReason String?
+  createdAt    DateTime  @default(now())
+  approvedAt   DateTime?
+
+  @@index([userId])
 }
