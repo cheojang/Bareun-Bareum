@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
-  .map((e) => e.trim())
+  .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
 /**
@@ -16,7 +16,7 @@ export async function GET() {
     const session = await auth();
     if (
       !session?.user?.email ||
-      !ADMIN_EMAILS.includes(session.user.email)
+      !ADMIN_EMAILS.includes(session.user.email.toLowerCase())
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

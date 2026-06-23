@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
-  .map((e) => e.trim())
+  .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
 type Params = { params: Promise<{ id: string }> };
@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const session = await auth();
     if (
       !session?.user?.email ||
-      !ADMIN_EMAILS.includes(session.user.email)
+      !ADMIN_EMAILS.includes(session.user.email.toLowerCase())
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -30,8 +30,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const updated = await prisma.announcement.update({
       where: { id },
       data: {
-        ...(title !== undefined && { title: String(title).trim() }),
-        ...(content !== undefined && { content: String(content).trim() }),
+        ...(title !== undefined && { title: String(title).trim().slice(0, 200) }),
+        ...(content !== undefined && { content: String(content).trim().slice(0, 5000) }),
         ...(type !== undefined && validTypes.includes(type) && { type }),
         ...(isPublished !== undefined && { isPublished: Boolean(isPublished) }),
       },
@@ -54,7 +54,7 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     const session = await auth();
     if (
       !session?.user?.email ||
-      !ADMIN_EMAILS.includes(session.user.email)
+      !ADMIN_EMAILS.includes(session.user.email.toLowerCase())
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

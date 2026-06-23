@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
   await prisma.therapyNote.update({
     where: { id: noteId },
     data: {
-      ...(memo !== undefined && { memo }),
+      ...(memo !== undefined && { memo: typeof memo === "string" ? memo.slice(0, 2000) : "" }),
       ...(performance !== undefined && {
         performance: Math.min(100, Math.max(0, Number(performance))),
       }),
