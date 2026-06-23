@@ -27,6 +27,10 @@ const devProvider = [
             let userRole: "parent" | "therapist" = "parent";
             let therapistRole: "owner" | "staff" | null = null;
             let name = "개발자(부모)";
+            let skipPremium = false;
+            if (email === "free@test.com") {
+              name = "개발자(무료)"; skipPremium = true;
+            }
             if (email === "center@test.com") {
               userRole = "therapist"; therapistRole = "owner"; name = "개발자(센터장)";
             }
@@ -72,12 +76,15 @@ const devProvider = [
               }
 
               const now = new Date();
-              await Promise.allSettled([
+              const subscriptionOps = skipPremium ? [] : [
                 prisma.subscription.upsert({
                   where: { userId: user.id },
                   create: { userId: user.id, plan: "premium", status: "active" },
                   update: { plan: "premium", status: "active" },
                 }),
+              ];
+              await Promise.allSettled([
+                ...subscriptionOps,
                 prisma.userConsent.upsert({
                   where: { userId: user.id },
                   create: { userId: user.id, termsAgreedAt: now, privacyAgreedAt: now },
