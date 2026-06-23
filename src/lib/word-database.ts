@@ -2467,6 +2467,13 @@ export function getSimilarPatternWords(
     const strict = getImagedWordsByPhoneme(phoneme, position);
     words = strict.length > 0 ? strict : getImagedWordsByPhoneme(phoneme, "any");
   }
+  // 음소 매칭 결과가 없으면(예: phoneme="전체", 분류불가) 이미지 있는 전체 단어 중 easy 우선 폴백
+  if (words.length === 0) {
+    words = WORD_DATABASE.filter((w) => !!WORD_IMAGE_SLUGS[w.word]).map((w) => ({
+      ...w,
+      imageSlug: WORD_IMAGE_SLUGS[w.word],
+    }));
+  }
   if (preferredDifficulty) {
     // 안정 정렬 — 같은 거리끼리는 기존 순서 유지
     words = [...words].sort(
