@@ -167,6 +167,22 @@ function RecordRow({
         {/* AI 완료 여부 */}
         <span className="text-xs flex-shrink-0">{gemini ? "✅" : "⏳"}</span>
 
+        {/* PDF 내보내기 버튼 (AI 분석 완료 기록만) */}
+        {gemini && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`/dashboard/answer-note/print/${record.id}`, "_blank");
+            }}
+            className="text-[#D9CFC9] hover:text-[#A8D8CF] transition-colors p-1 flex-shrink-0"
+            title="PDF로 내보내기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+            </svg>
+          </button>
+        )}
+
         {/* 삭제 버튼 */}
         <button
           onClick={(e) => onDelete(record.id, e)}
