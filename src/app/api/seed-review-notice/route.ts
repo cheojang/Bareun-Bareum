@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
-const SEED_SECRET = process.env.MIGRATE_SECRET;
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  if (!SEED_SECRET || searchParams.get("secret") !== SEED_SECRET) {
+export async function GET() {
+  const session = await auth();
+  if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
