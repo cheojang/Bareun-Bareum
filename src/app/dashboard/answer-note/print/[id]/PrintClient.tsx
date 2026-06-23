@@ -44,11 +44,8 @@ export function PrintClient({ data }: { data: PrintData }) {
       : [];
   } catch {}
 
-  // 이미지 있는 단어 우선, 최대 10개
-  const wordCards = [
-    ...recWords.filter((w) => WORD_IMAGE_SLUGS[w]),
-    ...recWords.filter((w) => !WORD_IMAGE_SLUGS[w]),
-  ].slice(0, 10);
+  // 이미지 있는 단어만, 최대 10개
+  const wordCards = recWords.filter((w) => WORD_IMAGE_SLUGS[w]).slice(0, 10);
 
   const steps = data.geminiFeedback
     ? [
@@ -241,31 +238,6 @@ export function PrintClient({ data }: { data: PrintData }) {
             </section>
           )}
 
-          {/* 훈련 체크리스트 */}
-          <section>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#8B7E74", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "4px", height: "16px", background: "#FFD4B8", borderRadius: "2px", display: "inline-block" }} />
-              ✅ 훈련 진도 체크리스트
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-              {["1회차 훈련 완료", "2회차 훈련 완료", "3회차 훈련 완료", "4회차 훈련 완료", "5회차 훈련 완료", "마스터 완료! 🎉"].map((label) => (
-                <div
-                  key={label}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    background: "#FAFAF8", borderRadius: "8px", padding: "8px 12px",
-                    border: "1px solid #F0E8E0",
-                  }}
-                >
-                  <div style={{
-                    width: "16px", height: "16px", border: "1.5px solid #C4B5A8",
-                    borderRadius: "4px", flexShrink: 0,
-                  }} />
-                  <span style={{ fontSize: "11px", color: "#3D3530" }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
         {/* 푸터 */}
