@@ -178,7 +178,13 @@ const accountLinkingAdapter = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: accountLinkingAdapter,
-  session: { strategy: "jwt" },
+  // 로그인 유지: JWT 세션을 90일간 보존(기본 30일에서 연장). updateAge로 활동 시
+  // 만료를 슬라이딩 갱신 → 자주 쓰면 사실상 로그아웃 안 됨.
+  session: {
+    strategy: "jwt",
+    maxAge: 90 * 24 * 60 * 60, // 90일
+    updateAge: 24 * 60 * 60, // 하루 1회 만료 갱신
+  },
   providers: [
     ...devProvider,
     guestProvider,
