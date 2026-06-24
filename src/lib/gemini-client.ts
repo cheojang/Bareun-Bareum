@@ -1,11 +1,23 @@
 /**
- * Gemini Flash API 클라이언트 (서버 전용 라이브러리)
- * 공식 @google/generative-ai SDK 사용
+ * Gemini 통합 클라이언트 (서버 전용 라이브러리)
+ * 공식 @google/genai SDK 사용 — Vertex AI / AI Studio 양쪽 지원.
+ *
+ * ▶ 인증 우선순위 (getGenAI):
+ *   1) Vertex AI  — GCP 서비스계정 자격증명이 있으면 사용 (비용이 GCP 결제계정/크레딧에서 차감)
+ *      · GCP_SERVICE_ACCOUNT_KEY  = 서비스계정 JSON "문자열" (Vercel 환경변수용)
+ *      · GOOGLE_APPLICATION_CREDENTIALS = 서비스계정 JSON "파일 경로" (로컬 ADC)
+ *      · GOOGLE_CLOUD_PROJECT     = 프로젝트 ID (키에 있으면 생략 가능)
+ *      · GOOGLE_CLOUD_LOCATION    = 리전 (기본 global)
+ *   2) AI Studio — 위가 없고 GEMINI_API_KEY가 있으면 사용 (기존 과금, 크레딧 미적용)
+ *
+ *   → Vertex 환경변수만 추가하면 코드 변경 없이 크레딧 모드로 자동 전환된다.
+ *
  * 주의: 이 파일은 서버 사이드에서만 import해야 합니다
  * ('use server' 지시어 미사용 - API Route에서 import 시 충돌 발생)
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
+import { existsSync, readFileSync } from 'node:fs';
 
 /**
  * 프롬프트 인젝션 방어 — 사용자 입력에서 개행/특수문자 제거 및 길이 제한.
@@ -14,7 +26,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export function sanitizePromptInput(value: unknown, maxLen = 50): string {
   if (typeof value !== "string") return "";
   return value
-    .replace(/[\r\n\u2028\u2029]/g, " ")
+    .replace(/[\r\n  ]/g, " ")
     .replace(/[`"\\<>{}[\]]/g, "")
     .slice(0, maxLen)
     .trim();
@@ -22,16 +34,73 @@ export function sanitizePromptInput(value: unknown, maxLen = 50): string {
 
 // 503 과부하 시 3단계 폴백 (2.0/1.5 계열 모두 폐기됨 — 2.5 계열만 사용)
 // 1순위: 2.5-flash (저렴·빠름) → 2순위: 2.5-flash-lite (초경량) → 3순위: 2.5-pro (고품질)
+// Vertex/AI Studio 모두 동일한 모델 ID를 사용한다.
 const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 
-// Gemini AI 인스턴스 (싱글톤)
-let genai: GoogleGenerativeAI | null = null;
-
-function getGenAI() {
-  if (!genai && process.env.GEMINI_API_KEY) {
-    genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// ── 자격증명 해석 ────────────────────────────────────────────────────────────
+// GCP_SERVICE_ACCOUNT_KEY(JSON 문자열) 또는 GOOGLE_APPLICATION_CREDENTIALS(파일 경로)에서
+// 서비스계정 자격증명과 project_id를 추출한다. 없으면 빈 객체.
+function resolveServiceAccount(): { credentials?: Record<string, unknown>; projectId?: string } {
+  const raw = process.env.GCP_SERVICE_ACCOUNT_KEY;
+  if (raw && raw.trim().startsWith('{')) {
+    try {
+      const key = JSON.parse(raw);
+      return { credentials: key, projectId: key.project_id };
+    } catch (e) {
+      console.error('[gemini] GCP_SERVICE_ACCOUNT_KEY JSON 파싱 실패:', e instanceof Error ? e.message : e);
+    }
   }
+  const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (keyPath && existsSync(keyPath)) {
+    try {
+      const key = JSON.parse(readFileSync(keyPath, 'utf8'));
+      return { credentials: key, projectId: key.project_id };
+    } catch (e) {
+      console.error('[gemini] 서비스계정 키 파일 읽기 실패:', e instanceof Error ? e.message : e);
+    }
+  }
+  return {};
+}
+
+// Gemini AI 인스턴스 (싱글톤) — Vertex 우선, 없으면 AI Studio 폴백
+let genai: GoogleGenAI | null = null;
+let initTried = false;
+
+export function getGenAI(): GoogleGenAI | null {
+  if (genai || initTried) return genai;
+  initTried = true;
+
+  const { credentials, projectId } = resolveServiceAccount();
+  const project = process.env.GOOGLE_CLOUD_PROJECT || projectId;
+
+  // 1순위: Vertex AI (GCP 크레딧 차감)
+  if (project && (credentials || process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+    try {
+      genai = new GoogleGenAI({
+        vertexai: true,
+        project,
+        location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
+        // credentials가 있으면 명시 전달(Vercel), 없으면 ADC 파일 경로로 자동 인증(로컬)
+        ...(credentials ? { googleAuthOptions: { credentials, projectId: project } } : {}),
+      });
+      return genai;
+    } catch (e) {
+      console.error('[gemini] Vertex 초기화 실패 → AI Studio 폴백 시도:', e instanceof Error ? e.message : e);
+    }
+  }
+
+  // 2순위: AI Studio (기존 GEMINI_API_KEY)
+  if (process.env.GEMINI_API_KEY) {
+    genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    return genai;
+  }
+
   return genai;
+}
+
+/** Gemini 호출 가능 여부 (Vertex 또는 AI Studio 어느 한쪽이라도 설정됨) */
+export function isGeminiConfigured(): boolean {
+  return getGenAI() !== null;
 }
 
 function is503(e: any) {
@@ -39,11 +108,11 @@ function is503(e: any) {
 }
 
 /**
- * generationConfig에 thinking 비활성화 옵션을 추가한다.
+ * @google/genai 호출용 config 객체를 만든다(thinking 비활성화 포함).
  * gemini-2.5-flash/flash-lite는 thinkingBudget:0으로 "생각 단계"를 꺼서
  * 응답 속도를 크게 높인다(구조화 JSON 출력엔 thinking 불필요).
  * 단, 2.5-pro는 thinking을 완전히 끌 수 없으므로 그대로 둔다.
- * SDK 0.24.1 타입엔 thinkingConfig가 없지만, 설정 객체는 그대로 REST API로 전달된다.
+ * 반환값은 ai.models.generateContent({ config }) 에 그대로 전달한다.
  */
 export function withFastConfig(modelName: string, base: Record<string, unknown>) {
   // 출력 토큰 상한 — 호출당 최대 길이 생성으로 인한 비용/DoS 증폭 방어.
@@ -164,13 +233,25 @@ export async function getGeminiFeedbackStream(
   const childAge = calcChildAge(child);
   const userPrompt = buildUserPrompt(targetWord, childPronunciation, errorType, errorCategory, childAge);
 
-  return callWithFallback('Gemini Stream', (modelName) =>
-    ai.getGenerativeModel({ model: modelName, systemInstruction: buildSystemInstruction() })
-      .generateContentStream({
-        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        generationConfig: withFastConfig(modelName, { responseMimeType: 'application/json' }),
-      })
+  const rawStream = await callWithFallback('Gemini Stream', (modelName) =>
+    ai.models.generateContentStream({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      config: withFastConfig(modelName, {
+        responseMimeType: 'application/json',
+        systemInstruction: buildSystemInstruction(),
+      }),
+    })
   );
+
+  // 라우트(gemini-feedback)는 `streamResult.stream`을 순회하며 `chunk.text()`(메서드)를
+  // 호출한다. 새 SDK 청크는 `chunk.text`(getter)이므로 호환 래퍼로 감싼다.
+  async function* toCompatChunks() {
+    for await (const chunk of rawStream) {
+      yield { text: () => chunk.text ?? '' };
+    }
+  }
+  return { stream: toCompatChunks() };
 }
 
 /**
@@ -196,11 +277,12 @@ export async function generateWeakPhonemeReport(
 
   try {
     return await callWithFallback('Gemini Report', async (modelName) => {
-      const result = await ai.getGenerativeModel({ model: modelName }).generateContent({
+      const result = await ai.models.generateContent({
+        model: modelName,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: withFastConfig(modelName, {}),
+        config: withFastConfig(modelName, {}),
       });
-      return result.response.text();
+      return result.text ?? '';
     });
   } catch (error) {
     console.error('[Gemini Report Error]', error);
