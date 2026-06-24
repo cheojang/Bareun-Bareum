@@ -135,8 +135,22 @@ const credentialsProvider = Credentials({
   },
 });
 
+// allowDangerousEmailAccountLinking이 beta에서 불안정해서 어댑터 레벨에서 직접 처리.
+// getUserByEmail을 null로 만들어 NextAuth가 항상 "신규 사용자"로 진행하게 하고,
+// createUser에서 기존 유저를 찾아 반환 → linkAccount로 새 OAuth 계정 연결.
+const baseAdapter = PrismaAdapter(prisma);
+const accountLinkingAdapter = {
+  ...baseAdapter,
+  getUserByEmail: async (_email: string) => null,
+  createUser: async (data: { email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) return existing;
+    return prisma.user.create({ data });
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: accountLinkingAdapter,
   session: { strategy: "jwt" },
   providers: [
     ...devProvider,
