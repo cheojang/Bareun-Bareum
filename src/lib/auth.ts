@@ -136,13 +136,20 @@ const credentialsProvider = Credentials({
 });
 
 // 표준 PrismaAdapter를 쓰되, 과거 실패한 OAuth 로그인이 남긴 "잘못된 Account 행"
-// 때문에 OAuthAccountNotLinked가 발생하던 문제만 어댑터 레벨에서 자동 치유한다.
+// 때문에 OAuthAccountNotLinked가 발생하던 문제를 어댑터 레벨에서 자동 치유한다.
 // (getUserByAccount/getUserByEmail은 표준 동작 유지 — 그래야 이미 연결된 사용자가
 //  매번 신규가입(isNewUser) 취급되지 않고 바로 로그인된다.)
 // 이메일 매칭 자동연결은 각 provider의 allowDangerousEmailAccountLinking으로 처리.
 const baseAdapter = PrismaAdapter(prisma);
 const accountLinkingAdapter = {
   ...baseAdapter,
+  // ⭐ 로그인 페이지에서 구글/카카오 클릭은 "기존 세션에 계정 연결"이 아니라
+  //   "그 OAuth 신원으로 로그인"이어야 한다. JWT 모드에서 adapter.getUser는 오직
+  //   sign-in 시 기존 sessionToken의 유저를 채우는 데만 쓰이므로, null로 만들면
+  //   handle-login이 OAuth 로그인을 항상 "비로그인 상태의 새 로그인"으로 처리해
+  //   'The account is already associated with another user' 충돌이 사라진다.
+  //   (개발용 로그인 등으로 남아 있던 세션 쿠키가 있어도 안전하게 OAuth 로그인 가능)
+  getUser: async (_id: string) => null,
   // 같은 이메일 유저가 이미 있으면 재사용(중복 생성 방지). id는 DB가 생성하도록 제거.
   createUser: async ({ id: _id, ...data }: { id?: string; email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
