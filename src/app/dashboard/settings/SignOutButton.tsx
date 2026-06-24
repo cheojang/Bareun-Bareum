@@ -1,16 +1,14 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { BubbleButton } from "@/components/ui/BubbleButton";
 
 export function SignOutButton() {
   return (
-    <BubbleButton
-      variant="ghost"
-      className="flex-1 text-red-400 hover:bg-red-50"
+    <button
+      className="flex-1 py-3 rounded-2xl text-sm font-bold text-[#8B7E74] border border-[#E8DDD5] hover:bg-[#F5F0EA] transition-colors"
       onClick={() => signOut({ callbackUrl: "/" })}
     >
       로그아웃
-    </BubbleButton>
+    </button>
   );
 }
