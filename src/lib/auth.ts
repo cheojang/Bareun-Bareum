@@ -136,16 +136,37 @@ const credentialsProvider = Credentials({
 });
 
 // allowDangerousEmailAccountLinking이 beta에서 불안정해서 어댑터 레벨에서 직접 처리.
-// getUserByEmail을 null로 만들어 NextAuth가 항상 "신규 사용자"로 진행하게 하고,
-// createUser에서 기존 유저를 찾아 반환 → linkAccount로 새 OAuth 계정 연결.
+// 세 가지 경로를 모두 재정의해 "항상 기존 유저를 찾아 연결" 흐름으로 강제:
+// 1) getUserByAccount → null : handle-login.js:188 "already associated" 오류 우회
+// 2) getUserByEmail   → null : handle-login.js:250 "same e-mail address" 오류 우회
+// 3) createUser       : 이미 있으면 기존 유저 반환
+// 4) linkAccount      : upsert — 기존 Account row(잘못된 userId) 덮어쓰기
 const baseAdapter = PrismaAdapter(prisma);
 const accountLinkingAdapter = {
   ...baseAdapter,
+  getUserByAccount: async (_providerAccount: { providerAccountId: string; provider: string }) => null,
   getUserByEmail: async (_email: string) => null,
   createUser: async (data: { email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return existing;
     return prisma.user.create({ data });
+  },
+  linkAccount: async (account: {
+    userId: string;
+    type: string;
+    provider: string;
+    providerAccountId: string;
+    [key: string]: unknown;
+  }) => {
+    const { provider, providerAccountId, userId, type, ...rest } = account;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await prisma.account.upsert({
+      where: { provider_providerAccountId: { provider, providerAccountId } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      create: { provider, providerAccountId, userId, type, ...(rest as any) },
+      update: { userId, ...(rest as any) },
+    });
+    return account;
   },
 };
 

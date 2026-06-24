@@ -11,7 +11,7 @@ const PRESETS = [
   { path: "/avatars/cat.svg", label: "고양이" },
   { path: "/avatars/dog.svg", label: "강아지" },
   { path: "/avatars/frog.svg", label: "개구리" },
-  { path: "/avatars/penguin.svg", label: "펭귄" },
+  { path: "/avatars/penguin.svg", label: "펜귤" },
   { path: "/avatars/fox.svg", label: "여우" },
   { path: "/avatars/panda.svg", label: "판다" },
   { path: "/avatars/chick.svg", label: "병아리" },
@@ -50,7 +50,7 @@ export default function OnboardingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState<"남아" | "여아" | "">("")
+  const [gender, setGender] = useState<"남아" | "여아" | "">(" ");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
