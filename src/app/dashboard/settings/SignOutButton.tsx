@@ -7,7 +7,7 @@ export function SignOutButton() {
   return (
     <BubbleButton
       variant="ghost"
-      className="w-full text-red-400 hover:bg-red-50"
+      className="flex-1 text-red-400 hover:bg-red-50"
       onClick={() => signOut({ callbackUrl: "/" })}
     >
       로그아웃
