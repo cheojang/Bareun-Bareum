@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin, STORAGE_BUCKET, CHILD_IMAGES_PATH } from "@/lib/supabase-admin";
 
 export async function GET() {
   const session = await auth();
@@ -58,7 +59,25 @@ export async function POST(req: NextRequest) {
     "/avatars/fox.svg", "/avatars/panda.svg", "/avatars/chick.svg",
     "/avatars/hamster.svg", "/avatars/lion.svg", "/avatars/koala.svg",
   ];
-  const imageUrl = typeof image === "string" && ALLOWED_PRESETS.includes(image) ? image : null;
+  const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
+
+  let imageUrl: string | null = null;
+  if (typeof image === "string") {
+    if (ALLOWED_PRESETS.includes(image)) {
+      imageUrl = image;
+    } else if (image.startsWith("data:")) {
+      const mime = image.match(/^data:([^;,]+)[;,]/)?.[1] ?? "";
+      if (!ALLOWED_MIMES.includes(mime)) {
+        return NextResponse.json({ error: "JPEG/PNG/WebP 이미지만 업로드할 수 있어요." }, { status: 400 });
+      }
+      if (image.length > 700_000) {
+        return NextResponse.json({ error: "이미지가 너무 커요." }, { status: 400 });
+      }
+    }
+  }
+
+  // base64 이미지는 child 생성 후 childId로 업로드
+  const isBase64 = typeof image === "string" && image.startsWith("data:");
 
   const child = await prisma.child.create({
     data: {
@@ -66,9 +85,29 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       birthDate: birthDate ? new Date(birthDate) : null,
       gender: gender === "남아" || gender === "여아" ? gender : null,
-      image: imageUrl,
+      image: isBase64 ? null : imageUrl,
     },
   });
+
+  if (isBase64 && supabaseAdmin) {
+    try {
+      const base64 = (image as string).split(",")[1];
+      const buffer = Buffer.from(base64, "base64");
+      const storagePath = `${CHILD_IMAGES_PATH}/${child.id}.jpg`;
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from(STORAGE_BUCKET)
+        .upload(storagePath, buffer, { contentType: "image/jpeg", upsert: true });
+
+      if (!uploadError) {
+        const { data: urlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+        const finalUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+        await prisma.child.update({ where: { id: child.id }, data: { image: finalUrl } });
+        return NextResponse.json({ ...child, image: finalUrl }, { status: 201 });
+      }
+    } catch {
+      // 이미지 업로드 실패해도 아이 등록 자체는 성공으로 처리
+    }
+  }
 
   return NextResponse.json(child, { status: 201 });
 }

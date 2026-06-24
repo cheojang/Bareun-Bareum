@@ -28,7 +28,6 @@ export default async function SettingsPage() {
   ]);
 
   const isPremium = subscription?.status === "active" && subscription?.plan === "premium";
-  // 체험 활성: 유료 아님 + 체험 종료일 미도래
   const trialActive = !isPremium && !!user?.trialEndsAt && user.trialEndsAt.getTime() > Date.now();
   const trialDaysLeft = trialActive
     ? Math.max(1, Math.ceil((user!.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
@@ -72,7 +71,7 @@ export default async function SettingsPage() {
         </div>
       </BubbleCard>
 
-      {/* Subscription — 등급별 미니 카드 비교 + 내 등급 표시 */}
+      {/* Subscription */}
       <BubbleCard color={isPremium || trialActive ? "mint" : "peach"}>
         <div className="mb-3">
           <p className="text-xs text-[#8B7E74] mb-0.5">현재 이용 중인 플랜</p>
@@ -92,19 +91,10 @@ export default async function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 mb-3">
-          {/* 무료 등급 */}
-          <div
-            className={`rounded-2xl p-3.5 ${
-              !isPremium && !trialActive
-                ? "bg-white border-2 border-[#FFB38A]"
-                : "bg-white/50 border-2 border-transparent"
-            }`}
-          >
+          <div className={`rounded-2xl p-3.5 ${!isPremium && !trialActive ? "bg-white border-2 border-[#FFB38A]" : "bg-white/50 border-2 border-transparent"}`}>
             <div className="flex items-center justify-between mb-1.5">
               <p className="font-bold text-[#3D3530] text-sm">무료</p>
-              {!isPremium && !trialActive && (
-                <span className="text-[10px] font-bold text-[#FF9B6A]">내 등급 ✓</span>
-              )}
+              {!isPremium && !trialActive && <span className="text-[10px] font-bold text-[#FF9B6A]">내 등급 ✓</span>}
             </div>
             <ul className="space-y-0.5 text-[11px] text-[#8B7E74] leading-relaxed">
               <li>AI 조음 분석 월 10회</li>
@@ -114,22 +104,11 @@ export default async function SettingsPage() {
             <p className="text-xs font-bold text-[#8B7E74] mt-2">0원</p>
           </div>
 
-          {/* 프리미엄 등급 */}
-          <div
-            className={`rounded-2xl p-3.5 ${
-              isPremium || trialActive
-                ? "bg-white border-2 border-[#5EC9B8]"
-                : "bg-white/50 border-2 border-transparent"
-            }`}
-          >
+          <div className={`rounded-2xl p-3.5 ${isPremium || trialActive ? "bg-white border-2 border-[#5EC9B8]" : "bg-white/50 border-2 border-transparent"}`}>
             <div className="flex items-center justify-between mb-1.5">
               <p className="font-bold text-[#3D3530] text-sm">프리미엄</p>
-              {isPremium && (
-                <span className="text-[10px] font-bold text-[#0D9488]">내 등급 ✓</span>
-              )}
-              {trialActive && (
-                <span className="text-[10px] font-bold text-[#0D9488]">체험 중 ✓</span>
-              )}
+              {isPremium && <span className="text-[10px] font-bold text-[#0D9488]">내 등급 ✓</span>}
+              {trialActive && <span className="text-[10px] font-bold text-[#0D9488]">체험 중 ✓</span>}
             </div>
             <ul className="space-y-0.5 text-[11px] text-[#8B7E74] leading-relaxed">
               <li className="font-semibold text-[#3D3530]">AI 조음 분석 무제한</li>
@@ -149,7 +128,7 @@ export default async function SettingsPage() {
         )}
       </BubbleCard>
 
-      {/* 후기 인증 — 홍보글 1개당 1주 연장 */}
+      {/* 후기 인증 */}
       <BubbleCard color="mint">
         <div className="flex items-center gap-3">
           <span className="text-3xl flex-shrink-0">🎁</span>
@@ -169,7 +148,6 @@ export default async function SettingsPage() {
       <BubbleCard>
         <div className="flex items-center justify-between mb-3">
           <p className="font-bold text-[#3D3530]">아이 프로필</p>
-          <DeleteAccountButton compact />
         </div>
         <div className="space-y-3">
           {children.map((child: { id: string; name: string; mascotLevel: number; totalWords: number; image?: string | null }) => (
@@ -188,16 +166,12 @@ export default async function SettingsPage() {
             </BubbleButton>
           </Link>
         </div>
-
       </BubbleCard>
 
-      {/* 앱 설치 (홈 화면 추가 — 알림 수신의 선행 단계) */}
       <AppInstallCard />
 
-      {/* 푸시 알림 (게스트 제외 — 구독에 User 계정 필요) */}
       {!session?.user?.isGuest && <PushNotificationCard />}
 
-      {/* Admin (관리자만 노출) */}
       {userIsAdmin && (
         <BubbleCard>
           <div className="flex items-center justify-between gap-3">
@@ -219,6 +193,17 @@ export default async function SettingsPage() {
       <BubbleCard>
         <SignOutButton />
       </BubbleCard>
+
+      {/* 회원 탈퇴 */}
+      {!session?.user?.isGuest && (
+        <BubbleCard>
+          <div className="mb-3">
+            <p className="font-bold text-[#3D3530]">계정 삭제</p>
+            <p className="text-xs text-[#8B7E74] mt-0.5">계정과 모든 데이터를 영구 삭제해요</p>
+          </div>
+          <DeleteAccountButton />
+        </BubbleCard>
+      )}
     </div>
   );
 }
