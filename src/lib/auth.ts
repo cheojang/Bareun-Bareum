@@ -135,22 +135,22 @@ const credentialsProvider = Credentials({
   },
 });
 
-// allowDangerousEmailAccountLinking이 beta에서 불안정해서 어댑터 레벨에서 직접 처리.
-// 세 가지 경로를 모두 재정의해 "항상 기존 유저를 찾아 연결" 흐름으로 강제:
-// 1) getUserByAccount → null : handle-login.js:188 "already associated" 오류 우회
-// 2) getUserByEmail   → null : handle-login.js:250 "same e-mail address" 오류 우회
-// 3) createUser       : 이미 있으면 기존 유저 반환
-// 4) linkAccount      : upsert — 기존 Account row(잘못된 userId) 덮어쓰기
+// 표준 PrismaAdapter를 쓰되, 과거 실패한 OAuth 로그인이 남긴 "잘못된 Account 행"
+// 때문에 OAuthAccountNotLinked가 발생하던 문제만 어댑터 레벨에서 자동 치유한다.
+// (getUserByAccount/getUserByEmail은 표준 동작 유지 — 그래야 이미 연결된 사용자가
+//  매번 신규가입(isNewUser) 취급되지 않고 바로 로그인된다.)
+// 이메일 매칭 자동연결은 각 provider의 allowDangerousEmailAccountLinking으로 처리.
 const baseAdapter = PrismaAdapter(prisma);
 const accountLinkingAdapter = {
   ...baseAdapter,
-  getUserByAccount: async (_providerAccount: { providerAccountId: string; provider: string }) => null,
-  getUserByEmail: async (_email: string) => null,
-  createUser: async (data: { email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
+  // 같은 이메일 유저가 이미 있으면 재사용(중복 생성 방지). id는 DB가 생성하도록 제거.
+  createUser: async ({ id: _id, ...data }: { id?: string; email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return existing;
     return prisma.user.create({ data });
   },
+  // create 대신 upsert → 기존에 다른 userId로 박혀 있던 Account 행을 올바르게 덮어써
+  // PK 충돌(=OAuthAccountNotLinked의 원인)를 자동 해소한다.
   linkAccount: async (account: {
     userId: string;
     type: string;
@@ -158,13 +158,13 @@ const accountLinkingAdapter = {
     providerAccountId: string;
     [key: string]: unknown;
   }) => {
-    const { provider, providerAccountId, userId, type, ...rest } = account;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { provider, providerAccountId, userId, ...rest } = account;
     await prisma.account.upsert({
       where: { provider_providerAccountId: { provider, providerAccountId } },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      create: { provider, providerAccountId, userId, type, ...(rest as any) },
-      update: { userId, ...(rest as any) },
+      create: account as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      update: { userId, ...rest } as any,
     });
   },
 };
