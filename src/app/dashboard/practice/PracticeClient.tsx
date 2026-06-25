@@ -1196,11 +1196,11 @@ export function PracticeClient({
       )}
 
       {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 가운데 정렬 */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-4">
-        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-2.5 px-6">
+      <div className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1">
+        <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-1.5 px-6">
 
           {/* 연습 카드 + 카드 밖 버튼들을 감싸는 래퍼 */}
-          <div className="relative w-full mt-12">
+          <div className="relative w-full mt-10">
 
             {/* 카드 밖 상단 — 혀(좌) / 녹음+저장(우) */}
             <div className="absolute -top-11 left-0 right-0 flex items-center justify-between px-1 z-10">
@@ -1307,7 +1307,7 @@ export function PracticeClient({
             )}
 
             {/* 단어 표시 영역 — 화살표를 콘텐츠와 같은 행에 배치(겹침 방지) */}
-            <div className="flex items-center justify-center gap-1 px-2 py-6">
+            <div className="flex items-center justify-center gap-1 px-2 py-4">
 
               {/* ← 이전 */}
               <button
@@ -1391,7 +1391,7 @@ export function PracticeClient({
 
             {/* 훈련 팁 */}
             {currentItem?.trainingTip && !stage3Loading && currentItem?.kind !== "sentence" && (
-              <p className="text-xs text-[#C4B5A8] px-6 pb-5 leading-relaxed">
+              <p className="text-xs text-[#C4B5A8] px-6 pb-3 leading-relaxed">
                 💡 {currentItem.trainingTip}
               </p>
             )}
@@ -1441,7 +1441,7 @@ export function PracticeClient({
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
-                className="flex-1 py-4 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
+                className="flex-1 py-3 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
                 style={{ backgroundColor: "#FDF2F8", border: "2px solid #F9A8D4", color: "#EC4899" }}
               >
                 아직 어려워요 🔄
@@ -1453,7 +1453,7 @@ export function PracticeClient({
                     playWord(currentItem.text).catch(() => {});
                   }
                 }}
-                className="flex-1 py-4 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
+                className="flex-1 py-3 rounded-2xl font-black text-sm whitespace-nowrap transition-all active:scale-95"
                 style={{ backgroundColor: "#F0FAF8", border: "2px solid #7EDFD0", color: "#0D9488" }}
               >
                 잘 됐어요 ✓
