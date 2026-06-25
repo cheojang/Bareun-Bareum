@@ -402,7 +402,7 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
         return (
           <div
             key={i}
-            className="transition-all duration-300"
+            className="transition-all duration-300 flex items-center justify-center"
             style={{
               width: 22,
               height: 22,
@@ -416,7 +416,19 @@ function ResultDots({ slots }: { slots: DotResult[] }) {
                 : "none",
               border: isEmpty ? "2px solid #E8DDD5" : "none",
             }}
-          />
+          >
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                lineHeight: 1,
+                color: isEmpty ? "#C4B5A8" : "#FFFFFF",
+                opacity: isEmpty ? 0.55 : 0.7,
+              }}
+            >
+              {i + 1}
+            </span>
+          </div>
         );
       })}
     </div>
@@ -1196,14 +1208,14 @@ export function PracticeClient({
       )}
 
       {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 상단 정렬(스크롤 최소화) */}
-      <div className="flex-1 flex flex-col items-center justify-start gap-1.5 pt-12 pb-1">
+      <div className="flex-1 flex flex-col items-center justify-start gap-1.5 pt-3 pb-1">
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-1.5 px-6">
 
           {/* 연습 카드 + 카드 밖 버튼들을 감싸는 래퍼 */}
-          <div className="relative w-full">
+          <div className="w-full">
 
             {/* 카드 밖 상단 — 혀(좌) / 녹음+저장(우) */}
-            <div className="absolute -top-11 left-0 right-0 flex items-center justify-between px-1 z-10">
+            <div className="flex items-center justify-between px-1 mb-2 z-10">
               {/* 왼쪽: 혀 위치 버튼 */}
               <div>
                 {hasTongueDiagram && !stage3Loading ? (
@@ -1425,9 +1437,7 @@ export function PracticeClient({
           {!isSlotsFull && (
             <div className="text-center space-y-1">
               <p className="text-xs text-[#C4B5A8]">소리내어 읽으면 부모님이 판단해주세요</p>
-              <p className="text-xs text-[#C4B5A8]">
-                아이 발음을 듣고 버튼을 눌러주세요 ({filledCount}/{MAX_DOTS})
-              </p>
+              <p className="text-xs text-[#C4B5A8]">아이 발음을 듣고 버튼을 눌러주세요</p>
             </div>
           )}
 
