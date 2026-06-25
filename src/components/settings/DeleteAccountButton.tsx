@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 
 export function DeleteAccountButton({ compact = false }: { compact?: boolean }) {
@@ -8,6 +9,18 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 포털은 클라이언트 마운트 후에만 (SSR에서 document 없음)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // 모달 열린 동안 배경 스크롤 잠금
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
 
   function openModal() {
     setConfirmed(false);
@@ -60,9 +73,9 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
         </button>
       )}
 
-      {isOpen && (
+      {isOpen && mounted && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          className="fixed inset-0 z-[100] flex items-center justify-center px-5"
           style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
@@ -139,7 +152,8 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
