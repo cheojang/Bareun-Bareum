@@ -821,11 +821,11 @@ export function AnswerNoteClient({ childId, childName, pastRecords, isGuest, gue
             {remaining > 0 ? (
               <p className="text-sm font-bold text-[#3D3530]">
                 무료 AI 분석 <span className="text-[#0D9488]">{remaining}회</span> 남았어요
-                <span className="font-normal text-[#8B7E74]"> · 회원가입하면 매달 10회</span>
+                <span className="font-normal text-[#8B7E74]"> · 가입하면 10회, 프리미엄은 무제한</span>
               </p>
             ) : (
               <p className="text-sm font-bold text-[#3D3530]">
-                이번 달 무료 분석을 다 썼어요 · <span className="text-[#FFB38A]">회원가입하면 매달 10회</span>
+                이번 달 무료 분석을 다 썼어요 · <span className="text-[#FFB38A]">가입하면 10회, 프리미엄은 무제한</span>
               </p>
             )}
           </div>
