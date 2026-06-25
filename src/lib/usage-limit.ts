@@ -58,13 +58,30 @@ export async function countDailyGeminiUsage(userId: string): Promise<number> {
   });
 }
 
-/** 유료 구독(프리미엄) 여부 — 결제 활성 사용자만 true (체험 제외) */
+/** 구독 레코드 기준 프리미엄 접근 가능 여부 (active 또는 cancelled-but-not-expired) */
+function subHasActivePremium(sub: {
+  status: string;
+  plan: string;
+  currentPeriodEnd?: Date | null;
+} | null): boolean {
+  if (!sub || sub.plan !== "premium") return false;
+  if (sub.status === "active") return true;
+  if (
+    sub.status === "cancelled" &&
+    sub.currentPeriodEnd &&
+    sub.currentPeriodEnd.getTime() > Date.now()
+  )
+    return true;
+  return false;
+}
+
+/** 유료 구독(프리미엄) 여부 — 취소 후 기간 만료 전까지도 true (체험 제외) */
 export async function isUserPremium(userId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({
     where: { userId },
-    select: { status: true, plan: true },
+    select: { status: true, plan: true, currentPeriodEnd: true },
   });
-  return sub?.status === "active" && sub?.plan === "premium";
+  return subHasActivePremium(sub);
 }
 
 export type AccessLevel = "premium" | "trial" | "free";
@@ -88,14 +105,14 @@ export async function getAccessInfo(userId: string): Promise<AccessInfo> {
   const [sub, user] = await Promise.all([
     prisma.subscription.findUnique({
       where: { userId },
-      select: { status: true, plan: true },
+      select: { status: true, plan: true, currentPeriodEnd: true },
     }),
     prisma.user
       .findUnique({ where: { id: userId }, select: { trialEndsAt: true } })
       .catch(() => null),
   ]);
 
-  if (sub?.status === "active" && sub?.plan === "premium") {
+  if (subHasActivePremium(sub)) {
     return { level: "premium", trialEndsAt: null, trialDaysLeft: null };
   }
 
