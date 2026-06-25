@@ -139,9 +139,6 @@ export default async function SubscribePage({ searchParams }: Props) {
             </div>
             <PastelBadge color="peach">⭐ 추천</PastelBadge>
           </div>
-          <div className="rounded-xl px-3 py-2 mb-3 text-sm font-semibold text-[#0D9488]" style={{ backgroundColor: "#F0FAF8" }}>
-            🎁 일주일 무료로 사용하기 — 7일 체험 후 결제
-          </div>
           <ul className="space-y-1 text-sm text-[#3D3530] mb-4">
             <li>✅ AI 조음 분석 무제한</li>
             <li>✅ 단계별 반복 연습</li>
