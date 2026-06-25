@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { BubbleButton } from "@/components/ui/BubbleButton";
@@ -30,6 +30,22 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
+
+  // OAuth(카카오/구글) 로그인
+  // ⚠️ 최초 로그인이 실패하던 버그 수정:
+  //   이 앱은 비회원(게스트) 모드를 적극 권장 → 사용자가 카카오 로그인을 누를 때
+  //   거의 항상 게스트 세션 쿠키가 남아 있다. 그 상태로 OAuth 콜백이 돌아오면
+  //   "기존(게스트) 세션에 계정 연결" 경로로 처리돼 최초 1회가 실패하고,
+  //   두 번째 시도에서야 (이미 만들어진 계정으로) 로그인되는 증상이 있었다.
+  //   → OAuth 시작 전에 기존 세션을 정리해 항상 "새 로그인"으로 시작하게 한다.
+  async function socialLogin(provider: "kakao" | "google") {
+    try {
+      await signOut({ redirect: false });
+    } catch {
+      // 세션이 없거나 정리 실패해도 로그인 시도는 계속
+    }
+    await signIn(provider, { callbackUrl: "/dashboard" });
+  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -86,7 +102,7 @@ function LoginContent() {
         <div className="flex flex-col gap-3">
           {/* 카카오 */}
           <button
-            onClick={() => signIn("kakao", { callbackUrl: "/dashboard" })}
+            onClick={() => socialLogin("kakao")}
             className="w-full flex items-center justify-center gap-3 rounded-full px-6 py-4 font-bold text-base bubble-btn transition-all border-2 bg-[#FEE500] hover:bg-[#F5DC00] text-[#191919] border-[#FEE500]"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -97,7 +113,7 @@ function LoginContent() {
 
           {/* 구글 */}
           <button
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => socialLogin("google")}
             className="w-full flex items-center justify-center gap-3 rounded-full px-6 py-4 font-bold text-base bubble-btn transition-all border-2 bg-white hover:bg-gray-50 text-[#3D3530] border-[#F0E8E0]"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

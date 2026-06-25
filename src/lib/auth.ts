@@ -210,11 +210,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (userId.startsWith("guest:")) {
           token.role = "parent";
         } else {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { role: true },
-          });
-          token.role = dbUser?.role ?? "parent";
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { role: true },
+            });
+            token.role = dbUser?.role ?? "parent";
+          } catch (e) {
+            // 콜드스타트/일시적 DB 오류가 jwt 콜백을 throw시켜 로그인 전체를 실패시키지
+            // 않도록 격리. role은 설정하지 않아 다음 요청에서 자동 재조회된다.
+            console.warn(
+              "[auth] jwt role 조회 실패(다음 요청에서 재시도):",
+              e instanceof Error ? e.message : e,
+            );
+          }
         }
       }
       return token;
