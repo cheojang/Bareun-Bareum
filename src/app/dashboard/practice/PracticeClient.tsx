@@ -1107,7 +1107,7 @@ export function PracticeClient({
 
   return (
     <div
-      className="min-h-dvh flex flex-col"
+      className="flex-1 flex flex-col"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       {tongueModal}
