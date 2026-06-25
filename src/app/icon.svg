@@ -1,0 +1,35 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="hg" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#E4F4FD"/>
+      <stop offset="100%" stop-color="#9BCCE8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Crown feathers -->
+  <ellipse cx="10" cy="6" rx="2" ry="5" fill="#8DC8EC" transform="rotate(-25 10 6)"/>
+  <ellipse cx="13.5" cy="4" rx="2.2" ry="5.5" fill="#A2D3F0" transform="rotate(-10 13.5 4)"/>
+  <ellipse cx="16" cy="3" rx="2.2" ry="6" fill="#B8E0F7"/>
+  <ellipse cx="18.5" cy="4" rx="2.2" ry="5.5" fill="#A2D3F0" transform="rotate(10 18.5 4)"/>
+  <ellipse cx="22" cy="6" rx="2" ry="5" fill="#8DC8EC" transform="rotate(25 22 6)"/>
+
+  <!-- Head -->
+  <circle cx="16" cy="20" r="11" fill="url(#hg)"/>
+
+  <!-- Left eye -->
+  <circle cx="10.5" cy="18" r="3.8" fill="white"/>
+  <circle cx="11.3" cy="18.5" r="2.8" fill="#2A5FA8"/>
+  <circle cx="10" cy="16.8" r="1.2" fill="white"/>
+
+  <!-- Right eye -->
+  <circle cx="21.5" cy="18" r="3.8" fill="white"/>
+  <circle cx="22.3" cy="18.5" r="2.8" fill="#2A5FA8"/>
+  <circle cx="21" cy="16.8" r="1.2" fill="white"/>
+
+  <!-- Beak -->
+  <path d="M13.5,23 Q16,21.5 18.5,23 Q16,27 13.5,23Z" fill="#FFB38A"/>
+
+  <!-- Cheeks -->
+  <circle cx="5" cy="21" r="4" fill="#FFAAAA" opacity="0.3"/>
+  <circle cx="27" cy="21" r="4" fill="#FFAAAA" opacity="0.3"/>
+</svg>
