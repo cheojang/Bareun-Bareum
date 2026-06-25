@@ -52,3 +52,4 @@ gcp-key.json
 *-sa-key.json
 service-account*.json
 .claude/worktrees/
+.claude/settings.local.json
