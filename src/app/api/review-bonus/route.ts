@@ -129,16 +129,16 @@ export async function GET() {
       );
     }
 
-    // canSubmit: 10회 미만 AND (제출 이력 없거나 7일 이상 경과 또는 마지막이 거절)
-    const canSubmitByCount = bonusCount < 10;
+    // canSubmit: 3회 미만 AND (제출 이력 없거나 30일 이상 경과 또는 마지막이 거절)
+    const canSubmitByCount = bonusCount < 3;
     const lastApproved = submissions.find(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => s.status === "approved",
     );
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const canSubmitByTime =
       !lastApproved ||
-      new Date(lastApproved.createdAt).getTime() < sevenDaysAgo.getTime();
+      new Date(lastApproved.createdAt).getTime() < thirtyDaysAgo.getTime();
     const canSubmit = canSubmitByCount && canSubmitByTime;
 
     return NextResponse.json({ submissions, bonusCount, canSubmit });
@@ -214,10 +214,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 최대 횟수 체크
-    if ((user?.reviewBonusCount ?? 0) >= 10) {
+    // 최대 횟수 체크 (3회 = 최대 3개월)
+    if ((user?.reviewBonusCount ?? 0) >= 3) {
       return NextResponse.json(
-        { error: "최대 10회 혜택을 모두 사용하셨어요" },
+        { error: "최대 3회(3개월) 혜택을 모두 사용하셨어요" },
         { status: 400 },
       );
     }
@@ -230,16 +230,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7일 간격 체크 (마지막 승인 기준)
+    // 30일 간격 체크 (마지막 승인 기준)
     if (lastApprovedSubmission) {
       const lastAt = new Date(lastApprovedSubmission.createdAt).getTime();
-      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
       const diff = Date.now() - lastAt;
-      if (diff < sevenDaysMs) {
-        const daysLeft = Math.ceil((sevenDaysMs - diff) / (24 * 60 * 60 * 1000));
+      if (diff < thirtyDaysMs) {
+        const daysLeft = Math.ceil((thirtyDaysMs - diff) / (24 * 60 * 60 * 1000));
         return NextResponse.json(
           {
-            error: `마지막 승인 후 7일이 지나야 새로 신청할 수 있어요 (${daysLeft}일 후 가능)`,
+            error: `마지막 승인 후 30일이 지나야 새로 신청할 수 있어요 (${daysLeft}일 후 가능)`,
           },
           { status: 400 },
         );
@@ -254,15 +254,14 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (result.status === "approved") {
-      // trialEndsAt 연장
+      // trialEndsAt 연장 — 1개월(calendar month) 연장
       const currentTrial = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
       const base =
         currentTrial && currentTrial.getTime() > now.getTime()
           ? currentTrial
           : now;
-      const newTrialEndsAt = new Date(
-        base.getTime() + 7 * 24 * 60 * 60 * 1000,
-      );
+      const newTrialEndsAt = new Date(base);
+      newTrialEndsAt.setMonth(newTrialEndsAt.getMonth() + 1);
 
       await (prisma as any).$transaction([
         (prisma as any).reviewBonus.create({
@@ -290,7 +289,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         status: "approved",
         newTrialEndsAt,
-        message: "후기가 확인되었어요! 무료 이용 기간이 1주일 연장되었어요 🎉",
+        message: "후기가 확인되었어요! 무료 이용 기간이 1개월 연장되었어요 🎉",
       });
     } else {
       // 거절 — 기록만 저장 (trialEndsAt 변경 없음)
