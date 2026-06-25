@@ -201,7 +201,7 @@ export function ReviewBonusClient({
       <div>
         <h2 className="text-2xl font-black text-[#3D3530]">후기 인증 혜택 ✍️</h2>
         <p className="text-sm text-[#8B7E74] mt-1">
-          앱 후기를 작성하고 URL을 제출하면 무료 이용 기간이 1개월 연장돼요 (최대 3회)
+          앱 후기를 작성하고 URL을 제출하면 최대 3개월 무료 이용 기간이 연장돼요 (최대 4회)
         </p>
       </div>
 
@@ -213,7 +213,7 @@ export function ReviewBonusClient({
         <div className="flex items-center justify-between">
           <span className="font-bold text-[#3D3530]">사용 현황</span>
           <span className="text-sm font-semibold text-[#FFB38A]">
-            {bonusCount} / 3회
+            {bonusCount} / 4회
           </span>
         </div>
 
@@ -222,16 +222,16 @@ export function ReviewBonusClient({
           <div
             className="h-3 rounded-full transition-all duration-500"
             style={{
-              width: `${(bonusCount / 3) * 100}%`,
-              backgroundColor: bonusCount >= 3 ? "#A8D8CF" : "#FFB38A",
+              width: `${(bonusCount / 4) * 100}%`,
+              backgroundColor: bonusCount >= 4 ? "#A8D8CF" : "#FFB38A",
             }}
           />
         </div>
 
         <p className="text-xs text-[#8B7E74]">
-          {bonusCount >= 3
+          {bonusCount >= 4
             ? "최대 혜택(3개월)을 모두 사용하셨어요"
-            : `${3 - bonusCount}회 더 신청할 수 있어요`}
+            : `${4 - bonusCount}회 더 신청할 수 있어요`}
         </p>
 
         {/* 남은 무료 기간 */}
@@ -261,7 +261,7 @@ export function ReviewBonusClient({
           <li>블로그, SNS(인스타그램 등), 커뮤니티, 구글 플레이스토어에 후기 작성</li>
           <li>후기 내용은 200자 이상이어야 해요</li>
           <li>승인 후 30일이 지나야 다음 신청이 가능해요</li>
-          <li>최대 3회 (총 3개월) 연장 가능해요</li>
+          <li>2번 승인 시 1개월 · 3번 시 2개월 · 4번 시 3개월(최대) 연장</li>
           <li>구글 플레이스토어 후기는 자동 승인돼요</li>
         </ul>
       </div>
@@ -384,7 +384,7 @@ export function ReviewBonusClient({
             </BubbleButton>
           </div>
         </form>
-      ) : bonusCount >= 3 ? (
+      ) : bonusCount >= 4 ? (
         <div
           className="rounded-2xl p-5 text-center"
           style={{ backgroundColor: "#F0FAF8", border: "1.5px solid #A8D8CF" }}

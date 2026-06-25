@@ -129,8 +129,8 @@ export async function GET() {
       );
     }
 
-    // canSubmit: 3회 미만 AND (제출 이력 없거나 30일 이상 경과 또는 마지막이 거절)
-    const canSubmitByCount = bonusCount < 3;
+    // canSubmit: 4회 미만 AND (제출 이력 없거나 30일 이상 경과 또는 마지막이 거절)
+    const canSubmitByCount = bonusCount < 4;
     const lastApproved = submissions.find(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => s.status === "approved",
@@ -214,10 +214,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 최대 횟수 체크 (3회 = 최대 3개월)
-    if ((user?.reviewBonusCount ?? 0) >= 3) {
+    // 최대 횟수 체크 (4회 = 최대 3개월)
+    if ((user?.reviewBonusCount ?? 0) >= 4) {
       return NextResponse.json(
-        { error: "최대 3회(3개월) 혜택을 모두 사용하셨어요" },
+        { error: "최대 4회 혜택을 모두 사용하셨어요" },
         { status: 400 },
       );
     }
@@ -254,14 +254,26 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (result.status === "approved") {
-      // trialEndsAt 연장 — 1개월(calendar month) 연장
-      const currentTrial = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-      const base =
-        currentTrial && currentTrial.getTime() > now.getTime()
-          ? currentTrial
-          : now;
-      const newTrialEndsAt = new Date(base);
-      newTrialEndsAt.setMonth(newTrialEndsAt.getMonth() + 1);
+      // 누적 횟수별 이번 회차 연장 개월 수: 1회→+1, 2회→+0, 3회→+1, 4회→+1
+      const currentCount = user?.reviewBonusCount ?? 0;
+      const newCount = currentCount + 1;
+      const MONTHLY_EXTENSION: Record<number, number> = { 1: 1, 2: 0, 3: 1, 4: 1 };
+      const extensionMonths = MONTHLY_EXTENSION[newCount] ?? 0;
+
+      let newTrialEndsAt: Date | null = null;
+      if (extensionMonths > 0) {
+        const currentTrial = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+        const base =
+          currentTrial && currentTrial.getTime() > now.getTime()
+            ? currentTrial
+            : now;
+        newTrialEndsAt = new Date(base);
+        newTrialEndsAt.setMonth(newTrialEndsAt.getMonth() + extensionMonths);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = { reviewBonusCount: { increment: 1 } };
+      if (newTrialEndsAt) updateData.trialEndsAt = newTrialEndsAt;
 
       await (prisma as any).$transaction([
         (prisma as any).reviewBonus.create({
@@ -279,18 +291,26 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (prisma.user as any).update({
           where: { id: userId },
-          data: {
-            trialEndsAt: newTrialEndsAt,
-            reviewBonusCount: { increment: 1 },
-          },
+          data: updateData,
         }),
       ]);
 
-      return NextResponse.json({
-        status: "approved",
-        newTrialEndsAt,
-        message: "후기가 확인되었어요! 무료 이용 기간이 1개월 연장되었어요 🎉",
-      });
+      // 누적 횟수별 총 연장 개월: 1→1개월, 2→1개월(변화없음), 3→2개월, 4→3개월
+      const TOTAL_MONTHS: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 3 };
+      const totalMonths = TOTAL_MONTHS[newCount] ?? 0;
+
+      if (extensionMonths > 0) {
+        return NextResponse.json({
+          status: "approved",
+          newTrialEndsAt,
+          message: `후기가 확인되었어요! 무료 이용 기간이 1개월 연장되었어요 🎉 (총 ${totalMonths}개월)`,
+        });
+      } else {
+        return NextResponse.json({
+          status: "approved",
+          message: "후기가 기록되었어요! 한 번 더 작성하면 총 2개월 연장돼요 📝",
+        });
+      }
     } else {
       // 거절 — 기록만 저장 (trialEndsAt 변경 없음)
       await (prisma as any).reviewBonus.create({
