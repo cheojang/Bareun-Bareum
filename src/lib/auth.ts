@@ -166,7 +166,6 @@ const accountLinkingAdapter = {
       create: { provider, providerAccountId, userId, type, ...(rest as any) },
       update: { userId, ...(rest as any) },
     });
-    return account;
   },
 };
 
