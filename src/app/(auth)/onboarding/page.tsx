@@ -50,7 +50,7 @@ export default function OnboardingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState<"남아" | "여아" | "">("" );
+  const [gender, setGender] = useState<"남아" | "여아" | "">("");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);

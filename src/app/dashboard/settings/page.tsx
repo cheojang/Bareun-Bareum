@@ -196,6 +196,19 @@ export default async function SettingsPage() {
           {!session?.user?.isGuest && <DeleteAccountButton side />}
         </div>
       </BubbleCard>
+
+      {/* 회원 탈퇴 */}
+      {!session?.user?.isGuest && (
+        <BubbleCard>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="font-bold text-[#3D3530]">계정 삭제</p>
+              <p className="text-xs text-[#8B7E74] mt-0.5">계정과 모든 데이터를 영구 삭제해요</p>
+            </div>
+          </div>
+          <DeleteAccountButton />
+        </BubbleCard>
+      )}
     </div>
   );
 }

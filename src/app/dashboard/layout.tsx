@@ -146,7 +146,7 @@ export default async function DashboardLayout({
           )}
 
           {/* 페이지 콘텐츠 */}
-          <main className="flex-1 pb-28 md:pb-10">{children}</main>
+          <main className="flex-1 flex flex-col pb-28 md:pb-10">{children}</main>
         </div>
       </div>
 

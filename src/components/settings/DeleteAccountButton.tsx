@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 
 export function DeleteAccountButton({ compact = false, side = false }: { compact?: boolean; side?: boolean }) {
@@ -8,6 +9,18 @@ export function DeleteAccountButton({ compact = false, side = false }: { compact
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 포털은 클라이언트 마운트 후에만 (SSR에서 document 없음)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // 모달 열린 동안 배경 스크롤 잠금
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
 
   function openModal() {
     setConfirmed(false);
@@ -66,30 +79,30 @@ export function DeleteAccountButton({ compact = false, side = false }: { compact
         </button>
       )}
 
-      {isOpen && (
+      {isOpen && mounted && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-5 py-6 overflow-y-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center px-5"
           style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <div
-            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl my-auto"
+            className="w-full max-w-sm rounded-3xl p-5 shadow-2xl overflow-y-auto max-h-[90dvh]"
             style={{ backgroundColor: "#FFFAF7", border: "1.5px solid #F0E8E0" }}
           >
-            <div className="text-5xl text-center mb-4">😢</div>
+            <div className="text-4xl text-center mb-2">😢</div>
 
-            <h3 className="text-lg font-black text-[#3D3530] text-center mb-2">
+            <h3 className="text-lg font-black text-[#3D3530] text-center mb-1">
               정말 탈퇴하시겠어요?
             </h3>
-            <p className="text-sm text-center text-[#8B7E74] mb-4">
+            <p className="text-sm text-center text-[#8B7E74] mb-3">
               바른발음을 이용해 주셔서 감사했어요.
             </p>
 
             <div
-              className="rounded-2xl px-4 py-4 mb-5 space-y-2"
+              className="rounded-2xl px-4 py-3 mb-3 space-y-1.5"
               style={{ backgroundColor: "#FEF2F2", border: "1px solid #FCA5A5" }}
             >
-              <p className="text-xs font-black text-[#EF4444] mb-2">탈퇴 시 삭제되는 정보</p>
+              <p className="text-xs font-black text-[#EF4444] mb-1.5">탈퇴 시 삭제되는 정보</p>
               {[
                 "계정 정보 (이름, 이메일)",
                 "아이 프로필 전체",
@@ -103,12 +116,13 @@ export function DeleteAccountButton({ compact = false, side = false }: { compact
                   <span className="text-xs text-[#EF4444]">{item}</span>
                 </div>
               ))}
-              <p className="text-[11px] text-[#EF4444] font-bold mt-3">
+              <p className="text-[11px] text-[#EF4444] font-bold mt-2">
                 삭제된 데이터는 복구할 수 없습니다.
               </p>
             </div>
 
-            <label className="flex items-start gap-3 cursor-pointer mb-5 px-1">
+            {/* 동의 체크박스 */}
+            <label className="flex items-start gap-3 cursor-pointer mb-3 px-1">
               <input
                 type="checkbox"
                 checked={confirmed}
@@ -143,7 +157,8 @@ export function DeleteAccountButton({ compact = false, side = false }: { compact
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
