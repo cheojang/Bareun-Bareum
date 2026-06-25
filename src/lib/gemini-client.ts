@@ -26,7 +26,7 @@ import { existsSync, readFileSync } from 'node:fs';
 export function sanitizePromptInput(value: unknown, maxLen = 50): string {
   if (typeof value !== "string") return "";
   return value
-    .replace(/[\r\n  ]/g, " ")
+    .replace(/[\r\n\u2028\u2029]/g, " ")
     .replace(/[`"\\<>{}[\]]/g, "")
     .slice(0, maxLen)
     .trim();
