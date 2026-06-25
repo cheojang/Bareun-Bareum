@@ -158,6 +158,9 @@ const accountLinkingAdapter = {
   },
   // create 대신 upsert → 기존에 다른 userId로 박혀 있던 Account 행을 올바르게 덮어써
   // PK 충돌(=OAuthAccountNotLinked의 원인)를 자동 해소한다.
+  // Kakao 등 OAuth 제공자가 refresh_token_expires_in 같은 비표준 필드를 추가로 보낼 수 있는데,
+  // Prisma 스키마에 없는 필드를 그대로 넘기면 "Unknown field" 에러 → Configuration 에러 발생.
+  // 따라서 Prisma Account 스키마에 존재하는 칼럼만 명시적으로 추출한다.
   linkAccount: async (account: {
     userId: string;
     type: string;
@@ -165,13 +168,36 @@ const accountLinkingAdapter = {
     providerAccountId: string;
     [key: string]: unknown;
   }) => {
-    const { provider, providerAccountId, userId, ...rest } = account;
+    const { provider, providerAccountId, userId, type } = account;
+
+    // Prisma Account 스키마 칼럼만 추출 (비표준 OAuth 필드 제거)
+    const knownData = {
+      userId,
+      provider,
+      providerAccountId,
+      type,
+      access_token: (account.access_token as string | null | undefined) ?? null,
+      refresh_token: (account.refresh_token as string | null | undefined) ?? null,
+      expires_at: (account.expires_at as number | null | undefined) ?? null,
+      token_type: (account.token_type as string | null | undefined) ?? null,
+      scope: (account.scope as string | null | undefined) ?? null,
+      id_token: (account.id_token as string | null | undefined) ?? null,
+      session_state: (account.session_state as string | null | undefined) ?? null,
+    };
+
     await prisma.account.upsert({
       where: { provider_providerAccountId: { provider, providerAccountId } },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      create: account as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      update: { userId, ...rest } as any,
+      create: knownData,
+      update: {
+        userId,
+        access_token: knownData.access_token,
+        refresh_token: knownData.refresh_token,
+        expires_at: knownData.expires_at,
+        token_type: knownData.token_type,
+        scope: knownData.scope,
+        id_token: knownData.id_token,
+        session_state: knownData.session_state,
+      },
     });
   },
 };
