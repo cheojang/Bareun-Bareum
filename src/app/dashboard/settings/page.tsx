@@ -151,7 +151,7 @@ export default async function SettingsPage() {
           <div className="flex-1 min-w-0">
             <p className="font-bold text-[#3D3530]">후기 쓰면 최대 3개월 무료 연장!</p>
             <p className="text-xs text-[#8B7E74] mt-0.5 leading-relaxed">
-              블로그·SNS·커뮤니티에 후기 남기고 링크 제출 → 2번 승인 시 1개월, 3번 시 2개월, 4번 시 3개월
+              블로그·SNS·커뮤니티에 후기 남기고 링크 제출 → 2번 홍보 시 1개월, 3번 시 2개월, 4번 시 3개월
             </p>
           </div>
           <Link href="/dashboard/review-bonus" className="flex-shrink-0">

@@ -149,11 +149,197 @@ export async function GET() {
 
 // ── POST /api/review-bonus ─────────────────────────────────────────────────────
 
+// ── 일괄 제출 핸들러 ────────────────────────────────────────────────────────
+// 30일 냉각 없음 — 여러 후기를 한꺼번에 제출해 누적 혜택 즉시 적용
+async function handleBulkPost(
+  userId: string,
+  rawItems: unknown[],
+): Promise<NextResponse> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const TOTAL_MONTHS: Record<number, number> = { 0: 0, 1: 1, 2: 1, 3: 2, 4: 3 };
+
+  // 유효 항목 추출
+  const validated: {
+    url: string | null;
+    screenshotUrl: string | null;
+    channel: Channel;
+  }[] = [];
+  for (const item of rawItems) {
+    if (!item || typeof item !== "object") continue;
+    const { url, screenshotUrl, channel } = item as Record<string, unknown>;
+    const hasUrl = typeof url === "string" && url.startsWith("http");
+    const hasScreenshot =
+      typeof screenshotUrl === "string" && screenshotUrl.startsWith("http");
+    if (!hasUrl && !hasScreenshot) continue;
+    if (!ALLOWED_CHANNELS.includes(channel as Channel)) continue;
+    validated.push({
+      url: hasUrl ? (url as string) : null,
+      screenshotUrl: hasScreenshot ? (screenshotUrl as string) : null,
+      channel: channel as Channel,
+    });
+  }
+
+  if (validated.length === 0) {
+    return NextResponse.json({ error: "유효한 후기가 없어요" }, { status: 400 });
+  }
+
+  // 사용자 현재 상태
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let user: any;
+  try {
+    user = await (prisma.user as any).findUnique({
+      where: { id: userId },
+      select: { trialEndsAt: true, reviewBonusCount: true },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "DB 마이그레이션이 필요해요. /api/migrate-review-bonus를 먼저 실행해주세요." },
+      { status: 503 },
+    );
+  }
+
+  const currentCount = (user?.reviewBonusCount ?? 0) as number;
+  if (currentCount >= 4) {
+    return NextResponse.json({ error: "최대 4회 혜택을 모두 사용하셨어요" }, { status: 400 });
+  }
+
+  const remaining = 4 - currentCount;
+  const toProcess = validated.slice(0, remaining);
+  const now = new Date();
+
+  // 각 항목 검증 (URL 중복 + 내용 길이)
+  const approvedItems: {
+    url: string | null;
+    urlHash: string | null;
+    screenshotUrl: string | null;
+    channel: string;
+    charCount: number | null;
+    approvedAt: Date;
+  }[] = [];
+  const rejectedItems: {
+    url: string | null;
+    urlHash: string | null;
+    screenshotUrl: string | null;
+    channel: string;
+    charCount: number | null;
+    rejectReason: string | null;
+  }[] = [];
+
+  for (const item of toProcess) {
+    const urlHash = item.url
+      ? createHash("sha256").update(item.url.toLowerCase().trim()).digest("hex")
+      : null;
+
+    if (urlHash) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = await (prisma as any).reviewBonus.findUnique({ where: { urlHash } });
+      if (existing) {
+        rejectedItems.push({
+          ...item,
+          urlHash,
+          charCount: null,
+          rejectReason: "이미 제출한 URL이에요",
+        });
+        continue;
+      }
+    }
+
+    const result = item.screenshotUrl
+      ? { status: "approved" as const, approvedAt: now }
+      : await verifyUrl(item.url!, item.channel);
+
+    if (result.status === "approved") {
+      approvedItems.push({
+        url: item.url,
+        urlHash,
+        screenshotUrl: item.screenshotUrl,
+        channel: item.channel,
+        charCount: result.charCount ?? null,
+        approvedAt: result.approvedAt ?? now,
+      });
+    } else {
+      rejectedItems.push({
+        url: item.url,
+        urlHash,
+        screenshotUrl: item.screenshotUrl,
+        channel: item.channel,
+        charCount: result.charCount ?? null,
+        rejectReason: result.rejectReason ?? null,
+      });
+    }
+  }
+
+  // 거절 항목 저장 (트랜잭션 밖)
+  for (const r of rejectedItems) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma as any).reviewBonus.create({
+        data: { userId, ...r, status: "rejected" },
+      });
+    } catch { /* 비핵심, 무시 */ }
+  }
+
+  if (approvedItems.length === 0) {
+    return NextResponse.json(
+      { status: "allRejected", approved: 0, rejected: rejectedItems.length, message: "제출한 후기가 기준을 충족하지 못했어요" },
+      { status: 422 },
+    );
+  }
+
+  // 누적 연장 개월 계산
+  const finalCount = Math.min(currentCount + approvedItems.length, 4);
+  const extensionMonths = (TOTAL_MONTHS[finalCount] ?? 3) - (TOTAL_MONTHS[currentCount] ?? 0);
+
+  let newTrialEndsAt: Date | null = null;
+  if (extensionMonths > 0) {
+    const currentTrial = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+    const base =
+      currentTrial && currentTrial.getTime() > now.getTime() ? currentTrial : now;
+    newTrialEndsAt = new Date(base);
+    newTrialEndsAt.setMonth(newTrialEndsAt.getMonth() + extensionMonths);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: Record<string, any> = { reviewBonusCount: { increment: approvedItems.length } };
+  if (newTrialEndsAt) updateData.trialEndsAt = newTrialEndsAt;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (prisma as any).$transaction([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...approvedItems.map((a) =>
+      (prisma as any).reviewBonus.create({ data: { userId, ...a, status: "approved" } })
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (prisma.user as any).update({ where: { id: userId }, data: updateData }),
+  ]);
+
+  const totalMonths = TOTAL_MONTHS[finalCount] ?? 3;
+
+  return NextResponse.json({
+    status: "approved",
+    approved: approvedItems.length,
+    rejected: rejectedItems.length,
+    newTrialEndsAt,
+    extensionMonths,
+    totalMonths,
+    message:
+      extensionMonths > 0
+        ? `${approvedItems.length}개 후기가 확인되었어요! 무료 이용 기간이 ${extensionMonths}개월 연장되었어요 🎉 (총 ${totalMonths}개월)`
+        : `${approvedItems.length}개 후기가 기록되었어요 📝`,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireMemberSession();
 
     const body = await request.json().catch(() => ({}));
+
+    // 일괄 제출 분기
+    if (Array.isArray(body?.items)) {
+      return handleBulkPost(userId, body.items);
+    }
+
     const url: unknown = body?.url;
     const screenshotUrl: unknown = body?.screenshotUrl;
     const channel: unknown = body?.channel;
