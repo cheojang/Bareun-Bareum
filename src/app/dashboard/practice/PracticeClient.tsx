@@ -1195,12 +1195,12 @@ export function PracticeClient({
         </div>
       )}
 
-      {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 가운데 정렬 */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1">
+      {/* 메인 영역 — 카드~버튼을 하나의 묶음으로 상단 정렬(스크롤 최소화) */}
+      <div className="flex-1 flex flex-col items-center justify-start gap-1.5 pt-12 pb-1">
         <div className="max-w-lg mx-auto w-full flex flex-col items-center gap-1.5 px-6">
 
           {/* 연습 카드 + 카드 밖 버튼들을 감싸는 래퍼 */}
-          <div className="relative w-full mt-10">
+          <div className="relative w-full">
 
             {/* 카드 밖 상단 — 혀(좌) / 녹음+저장(우) */}
             <div className="absolute -top-11 left-0 right-0 flex items-center justify-between px-1 z-10">
