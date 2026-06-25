@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 
-export function DeleteAccountButton({ compact = false }: { compact?: boolean }) {
+export function DeleteAccountButton({ compact = false, side = false }: { compact?: boolean; side?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,7 +46,6 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
         setIsDeleting(false);
         return;
       }
-      // 계정 삭제 성공 → 로그아웃 후 홈으로
       await signOut({ callbackUrl: "/" });
     } catch {
       setError("네트워크 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
@@ -63,6 +62,13 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
           className="flex items-center gap-1 text-xs font-semibold text-[#C4B5A8] hover:text-[#EF4444] transition-colors leading-none"
         >
           🗑 회원탈퇴
+        </button>
+      ) : side ? (
+        <button
+          onClick={openModal}
+          className="flex-1 py-3 rounded-2xl text-sm font-bold text-[#EF4444] border border-[#FCA5A5] hover:bg-[#FEE2E2] transition-colors"
+        >
+          회원 탈퇴
         </button>
       ) : (
         <button
@@ -92,7 +98,6 @@ export function DeleteAccountButton({ compact = false }: { compact?: boolean }) 
               바른발음을 이용해 주셔서 감사했어요.
             </p>
 
-            {/* 삭제 항목 안내 */}
             <div
               className="rounded-2xl px-4 py-3 mb-3 space-y-1.5"
               style={{ backgroundColor: "#FEF2F2", border: "1px solid #FCA5A5" }}

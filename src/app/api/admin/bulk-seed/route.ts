@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import { adminSeedLimiter } from "@/lib/rate-limit";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGenAI as getSharedGenAI } from "@/lib/gemini-client";
 import { PHONEME_COMBINATIONS, type TemplateCombination } from "@/data/phoneme-combinations";
 
 const MODEL_FALLBACK = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
@@ -12,22 +12,21 @@ const PAIRS_PER_PATTERN = 100;
 // Vercel 60s 타임아웃 감안 — 한 번 호출당 최대 처리 패턴 수
 const MAX_PATTERNS_PER_CALL = 3;
 
-// ─── Gemini 헬퍼 ─────────────────────────────────────────────────
+// ─── Gemini 헬퍼 ────────────────────────────────────
 
 function getGenAI() {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("GEMINI_API_KEY 없음");
-  return new GoogleGenerativeAI(key);
+  const ai = getSharedGenAI();
+  if (!ai) throw new Error("Gemini 미설정 (Vertex 자격증명 또는 GEMINI_API_KEY 필요)");
+  return ai;
 }
 
-async function generateWithFallback(genai: GoogleGenerativeAI, prompt: string): Promise<string> {
+async function generateWithFallback(genai: ReturnType<typeof getGenAI>, prompt: string): Promise<string> {
   for (let i = 0; i < MODEL_FALLBACK.length; i++) {
     const modelName = MODEL_FALLBACK[i];
     try {
       if (i > 0) console.log(`[BulkSeed] 폴백 모델: ${modelName}`);
-      const model = genai.getGenerativeModel({ model: modelName });
-      const raw = await model.generateContent(prompt);
-      return raw.response.text();
+      const raw = await genai.models.generateContent({ model: modelName, contents: prompt });
+      return raw.text ?? "";
     } catch (e: any) {
       const is503 = e?.message?.includes("503") || e?.message?.includes("Service Unavailable");
       if (is503 && i < MODEL_FALLBACK.length - 1) {
@@ -56,7 +55,7 @@ function buildPrompt(combo: TemplateCombination): string {
 [훈련법 규칙]
 - rootCause: 조음 발달 원인 + 혀·입술·공기 흐름 메커니즘 설명 (200~300자)
 - parentHint: 부모가 아이에게 바로 말할 수 있는 한 줄 힌트 (30자 이내, 예: "혀를 숨기고 스- 소리부터 내요")
-- trainingStep1(조음 감각 깨우기): 거울·종이·손바닥·촛불·비눗방울 등 소품 또는 뱀 소리·가글 같은 놀이 활용. 해당 음소의 신체 감각을 처음 느끼게 유도. 단계 제목 없이 2~4문장
+- trainingStep1(조음 감각 깨우기): 거울·종이·손바닥·촛불·비눠방울 등 소품 또는 뱀 소리·가글 같은 놀이 활용. 해당 음소의 신체 감각을 처음 느끼게 유도. 단계 제목 없이 2~4문장
 - trainingStep2(소리 느끼기): 시각·청각·촉각 멀티센서리 피드백 필수. "종이가 흔들리는지", "손바닥에 바람이 닿는지", "목에 진동 느끼기" 등 구체적 체험. 단계 제목 없이 2~4문장
 - trainingStep3(음절/단어로 연결하기): 연장발음법("스---아")·선행음법·참았다 터뜨리기 등 구체적 음성학적 기법 사용. 소리→음절→단어 단계적 확장. 단계 제목 없이 2~4문장
 - trainingStep4(일상에서 적용하기): 부모의 구체적 수신호(검지를 입술 앞에 대기, 목 가리키기 등)·언어 힌트 포함. 아이 오류 시 부모 행동 지침. 단계 제목 없이 2~4문장
@@ -89,7 +88,7 @@ function buildPrompt(combo: TemplateCombination): string {
 }`;
 }
 
-// ─── GET — 진행 상황 조회 ─────────────────────────────────────────
+// ─── GET — 진행 상황 조회 ────────────────────────────
 
 export async function GET(_: NextRequest) {
   const session = await auth();
@@ -129,7 +128,7 @@ export async function GET(_: NextRequest) {
   });
 }
 
-// ─── POST — 배치 처리 ────────────────────────────────────────────
+// ─── POST — 배치 처리 ────────────────────────────────
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -138,7 +137,7 @@ export async function POST(request: NextRequest) {
   }
   // Gemini 대량 호출 보호 — 관리자 계정 탈취 시 API 크레딧 고갈 방지
   if (!adminSeedLimiter.allow(session!.user!.email!)) {
-    return NextResponse.json({ error: "요청이 너무 잦아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
+    return NextResponse.json({ error: "요청이 너무 잘아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -179,7 +178,7 @@ export async function POST(request: NextRequest) {
   for (const combo of pending) {
     const patternKey = `${combo.phoneme}/${combo.position}/${combo.errorType}`;
     try {
-      // ── Gemini 호출 ──────────────────────────────────────────
+      // ── Gemini 호출 ─────────────────────────
       const raw = (await generateWithFallback(genai, buildPrompt(combo)))
         .replace(/^```(?:json)?\s*/i, "")
         .replace(/\s*```$/, "")
@@ -201,7 +200,7 @@ export async function POST(request: NextRequest) {
       const t = parsed.training;
       const pairs = Array.isArray(parsed.wordPairs) ? parsed.wordPairs : [];
 
-      // ── PhonemeTemplate upsert ────────────────────────────────
+      // ── PhonemeTemplate upsert ─────────────────────
       await prisma.phonemeTemplate.upsert({
         where: {
           phoneme_position_errorType: {
@@ -230,7 +229,7 @@ export async function POST(request: NextRequest) {
         update: {},
       });
 
-      // ── WordPairCache bulk upsert ────────────────────────────
+      // ── WordPairCache bulk upsert ────────────────────
       let pairsCreated = 0;
       for (const pair of pairs) {
         if (!pair.targetWord || !pair.childPronunciation) continue;

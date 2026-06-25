@@ -1,9 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { LRUCache } from "@/lib/lru-cache";
-import { sanitizePromptInput, withFastConfig } from "@/lib/gemini-client";
+import { sanitizePromptInput, withFastConfig, getGenAI } from "@/lib/gemini-client";
 import { auth } from "@/lib/auth";
 import { geminiLimiter } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/usage-limit";
@@ -20,7 +19,7 @@ const coachingLRU = new LRUCache<string, CoachingCardsResult>(500);
 // 응답: { cards: { context: string; emoji: string; phrases: string[] }[] }
 export async function POST(req: NextRequest) {
   try {
-    // 인증 필수 — 익명의 유료 Gemini 호출(비용 어뷰징) 차단
+    // 인증 필수 — 익명의 유료 Gemini 호출(비용 어륕징) 차단
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,11 +38,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "요청이 많아요. 잠시 후 다시 시도해주세요." }, { status: 429 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return NextResponse.json({ cards: [] });
-
-    const genai = new GoogleGenerativeAI(apiKey);
-    const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const ai = getGenAI();
+    if (!ai) return NextResponse.json({ cards: [] });
 
     // 프롬프트 인젝션 방어 — 사용자 입력 sanitize
     const safeChildName = sanitizePromptInput(childName, 20) || "아이";
@@ -76,8 +72,8 @@ JSON으로만 응답:
       "phrases": ["밥 먹을 때 '사과 주스 마실까?'라고 말해봐요", "..."]
     },
     {
-      "context": "🛁 씻는 시간",
-      "phrases": ["목욕할 때 '비누로 손 씻어봐'라고 해봐요", "..."]
+      "context": "🛁 씯는 시간",
+      "phrases": ["목욕할 때 '비누로 손 씯어봐'라고 해봐요", "..."]
     },
     {
       "context": "🚗 이동 중",
@@ -86,11 +82,12 @@ JSON으로만 응답:
   ]
 }`;
 
-    const result = await model.generateContent({
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: withFastConfig("gemini-2.5-flash", {}),
+      config: withFastConfig("gemini-2.5-flash", {}),
     });
-    const text = result.response.text().replace(/```json|```/g, "").trim();
+    const text = (result.text ?? "").replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(text) as CoachingCardsResult;
     if (parsed?.cards?.length) coachingLRU.set(cacheKey, parsed);
     return NextResponse.json(parsed);
