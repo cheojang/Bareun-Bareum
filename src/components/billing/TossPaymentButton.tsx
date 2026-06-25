@@ -52,7 +52,7 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
 
   return (
     <BubbleButton variant="peach" size="lg" className="w-full" onClick={handlePayment}>
-      🎉 첫 달 무료로 시작하기
+      🎉 프리미엄 가입하기
     </BubbleButton>
   );
 }
