@@ -2,9 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.bareunbareum.app",
-    "sha256_cert_fingerprints": [
-      "TODO: PWABuilder에서 AAB 생성 후 여기에 SHA-256 지문을 붙여넣으세요"
-    ]
+    "package_name": "com.sori_care.twa",
+    "sha256_cert_fingerprints": ["A1:67:A3:6F:CA:D7:09:90:97:85:3B:AC:23:E5:40:9E:7F:5F:39:DD:2D:EC:BA:C8:5B:4F:42:10:85:0D:24:70"]
   }
 }]
