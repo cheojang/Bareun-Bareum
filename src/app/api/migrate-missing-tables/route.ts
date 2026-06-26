@@ -68,14 +68,15 @@ export async function GET(request: NextRequest) {
     CREATE INDEX IF NOT EXISTS "AnnouncementRead_userId_idx"
       ON "AnnouncementRead"("userId");
   `);
-  await run("AnnouncementRead fk", async () => {
-    try {
-      await prisma.$executeRawUnsafe(`
-        ALTER TABLE "AnnouncementRead" ADD CONSTRAINT "AnnouncementRead_announcementId_fkey"
-          FOREIGN KEY ("announcementId") REFERENCES "Announcement"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      `);
-    } catch { /* 이미 존재 */ }
-  } as unknown as string);
+  try {
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "AnnouncementRead" ADD CONSTRAINT "AnnouncementRead_announcementId_fkey"
+        FOREIGN KEY ("announcementId") REFERENCES "Announcement"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    `);
+    results["AnnouncementRead fk"] = "ok";
+  } catch {
+    results["AnnouncementRead fk"] = "skipped (already exists)";
+  }
 
   // ── SavedWord 신규 컬럼 ──────────────────────────────────────────────────
   await run("SavedWord.targetPhoneme", `
