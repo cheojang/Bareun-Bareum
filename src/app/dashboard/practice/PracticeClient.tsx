@@ -110,9 +110,11 @@ function CompletionScreen({
 // ─── 청각 폭격 컴포넌트 ────────────────────────────────────────────────────────
 function AuditoryBombardment({
   words,
+  wordInfos,
   onDone,
 }: {
   words: string[];
+  wordInfos: Record<string, { imageSlug?: string }>;
   onDone: () => void;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
@@ -164,6 +166,9 @@ function AuditoryBombardment({
     };
   }, [stop]);
 
+  const activeWord = activeIdx !== null ? words[activeIdx] : null;
+  const activeSlug = activeWord ? (wordInfos[activeWord]?.imageSlug ?? null) : null;
+
   return (
     <div
       className="min-h-dvh flex flex-col items-center justify-center px-6 text-center gap-6"
@@ -173,6 +178,26 @@ function AuditoryBombardment({
       <div>
         <h2 className="text-2xl font-black text-[#3D3530] mb-1">먼저 들어볼게요!</h2>
         <p className="text-sm text-[#8B7E74]">단어들을 귀 기울여 들어보세요</p>
+      </div>
+
+      {/* 단어 이미지 표시 영역 */}
+      <div className="flex items-center justify-center" style={{ width: 180, height: 180 }}>
+        {activeSlug ? (
+          <WordImage
+            key={activeWord}
+            word={activeWord!}
+            imageSlug={activeSlug}
+            size="2xl"
+            className="word-img-swap"
+          />
+        ) : (
+          <div
+            className="w-full h-full rounded-3xl flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.55)", border: "2px dashed #F0E8E0" }}
+          >
+            <span className="text-5xl opacity-40">🎵</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap justify-center gap-2 max-w-xs">
@@ -1083,6 +1108,7 @@ export function PracticeClient({
     return (
       <AuditoryBombardment
         words={bombardmentWords}
+        wordInfos={wordInfos}
         onDone={() => setPhase("practice")}
       />
     );
