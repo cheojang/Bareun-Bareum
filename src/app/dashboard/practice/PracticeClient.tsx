@@ -392,7 +392,7 @@ function toQuality(goodCount: number): number {
 
 function ResultDots({ slots }: { slots: DotResult[] }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 mt-2.5">
       {slots.map((result, i) => {
         const isGood = result === "good";
         const isBad = result === "bad";

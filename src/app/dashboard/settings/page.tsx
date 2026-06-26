@@ -11,6 +11,7 @@ import { ChildImageUpload } from "@/components/settings/ChildImageUpload";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 import { PushNotificationCard } from "@/components/settings/PushNotificationCard";
 import { AppInstallCard } from "@/components/settings/AppInstallCard";
+import { CancelSubscriptionButton } from "@/components/billing/CancelSubscriptionButton";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -27,7 +28,13 @@ export default async function SettingsPage() {
       .catch(() => null),
   ]);
 
-  const isPremium = subscription?.status === "active" && subscription?.plan === "premium";
+  const isPremium =
+    subscription?.plan === "premium" &&
+    (subscription?.status === "active" ||
+      (subscription?.status === "cancelled" &&
+        !!subscription?.currentPeriodEnd &&
+        new Date(subscription.currentPeriodEnd).getTime() > Date.now()));
+  const isCancelled = subscription?.status === "cancelled" && isPremium;
   const trialActive = !isPremium && !!user?.trialEndsAt && user.trialEndsAt.getTime() > Date.now();
   const trialDaysLeft = trialActive
     ? Math.max(1, Math.ceil((user!.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
@@ -80,7 +87,9 @@ export default async function SettingsPage() {
           </p>
           {isPremium && subscription?.currentPeriodEnd && (
             <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
-              다음 결제일 · {new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}
+              {isCancelled
+                ? `${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}까지 이용 가능 (취소됨)`
+                : `다음 결제일 · ${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}`}
             </p>
           )}
           {trialActive && (
@@ -126,6 +135,13 @@ export default async function SettingsPage() {
             </BubbleButton>
           </Link>
         )}
+        {isPremium && !isCancelled && subscription?.currentPeriodEnd && (
+          <div className="flex justify-end mt-1">
+            <CancelSubscriptionButton
+              periodEnd={subscription.currentPeriodEnd.toISOString()}
+            />
+          </div>
+        )}
       </BubbleCard>
 
       {/* 후기 인증 */}
@@ -133,9 +149,9 @@ export default async function SettingsPage() {
         <div className="flex items-center gap-3">
           <span className="text-3xl flex-shrink-0">🎁</span>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-[#3D3530]">홍보글 쓰면 1주일 무료 연장!</p>
+            <p className="font-bold text-[#3D3530]">후기 쓰면 최대 3개월 무료 연장!</p>
             <p className="text-xs text-[#8B7E74] mt-0.5 leading-relaxed">
-              블로그·SNS·커뮤니티에 후기 남기고 링크 제출 → 인증 1건당 프리미엄 1주 연장 (최대 10주)
+              블로그·SNS·커뮤니티에 후기 남기고 링크 제출 → 2번 홍보 시 1개월, 3번 시 2개월, 4번 시 3개월
             </p>
           </div>
           <Link href="/dashboard/review-bonus" className="flex-shrink-0">
@@ -197,18 +213,7 @@ export default async function SettingsPage() {
         </div>
       </BubbleCard>
 
-      {/* 회원 탈퇴 */}
-      {!session?.user?.isGuest && (
-        <BubbleCard>
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <p className="font-bold text-[#3D3530]">계정 삭제</p>
-              <p className="text-xs text-[#8B7E74] mt-0.5">계정과 모든 데이터를 영구 삭제해요</p>
-            </div>
-          </div>
-          <DeleteAccountButton />
-        </BubbleCard>
-      )}
+
     </div>
   );
 }
