@@ -87,15 +87,38 @@ export function SavedWordsList({
         <p className="font-bold text-[#3D3530]">
           저장한 단어
           <span className="ml-2 text-sm font-normal text-[#8B7E74]">{words.length}개</span>
+          {selected.size > 0 && (
+            <span className="ml-2 text-sm font-semibold text-[#FFB38A]">{selected.size}개 선택</span>
+          )}
         </p>
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleAll}
-            className="text-xs font-semibold text-[#FFB38A] leading-none"
-          >
-            {allChecked ? "전체 해제" : "전체 선택"}
-          </button>
-          <ResetSavedWordsButton childId={childId} />
+          {selected.size > 0 ? (
+            <>
+              <button
+                onClick={deleteSelected}
+                disabled={deleting}
+                className="text-xs font-semibold text-[#E05050] leading-none disabled:opacity-40"
+              >
+                {deleting ? "삭제 중..." : "🗑 선택 삭제"}
+              </button>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="text-xs font-semibold text-[#8B7E74] leading-none"
+              >
+                취소
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={toggleAll}
+                className="text-xs font-semibold text-[#FFB38A] leading-none"
+              >
+                {allChecked ? "전체 해제" : "전체 선택"}
+              </button>
+              <ResetSavedWordsButton childId={childId} />
+            </>
+          )}
         </div>
       </div>
 
@@ -136,16 +159,7 @@ export function SavedWordsList({
       </BubbleCard>
 
       {/* 하단 버튼 영역 */}
-      <div className="mt-3 space-y-2">
-        {selected.size > 0 && (
-          <button
-            onClick={deleteSelected}
-            disabled={deleting}
-            className="w-full py-3 rounded-2xl text-sm font-black transition-all active:scale-[0.98] disabled:opacity-40 bg-[#FFE4E4] text-[#E05050]"
-          >
-            {deleting ? "삭제 중..." : `🗑 선택한 ${selected.size}개 삭제`}
-          </button>
-        )}
+      <div className="mt-3">
         <button
           onClick={practiceSelected}
           disabled={selected.size === 0}
