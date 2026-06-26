@@ -37,7 +37,7 @@ export default async function DashboardLayout({
             isPublished: true,
             reads: { none: { userId: session.user.id! } },
           },
-        }),
+        }).catch(() => 0), // 테이블 미생성 시 0으로 폴백
     hasConsent(session.user.id!),
   ]);
 
