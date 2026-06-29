@@ -35,7 +35,7 @@ try {
 } catch { /* 글로스 파일 없으면 한글 폴백 */ }
 
 // ── 설정 ─────────────────────────────────────────────────────────────────────
-const IMAGE_MODEL = process.env.IMAGE_MODEL || "imagen-4.0-generate-001";
+export const IMAGE_MODEL = process.env.IMAGE_MODEL || "imagen-4.0-generate-001";
 const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
 const OUT_DIR = join(process.cwd(), "public", "images", "words");
 const STORE_SIZE = 1024;    // 저장 해상도(정사각) — 화질 우선
@@ -65,12 +65,12 @@ if (!PROJECT) {
   process.exit(1);
 }
 
-const ai = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION });
+export const ai = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION });
 
 // ── 단어 종류별 시각적 맥락 (Imagen이 올바른 장면을 생성하도록) ──────────────
 // 추상적일 수 있는 단어는 "무엇을 그려야 하는지" 영어 힌트를 명시.
 // ⚠️ 사람(특히 아동) 생성은 Imagen 안전필터에 막힐 수 있어 동물 마스코트로 표현.
-const WORD_CONTEXT: Record<string, string> = {
+export const WORD_CONTEXT: Record<string, string> = {
   // 색깔 → 대표 오브젝트
   "빨강": "a cute red apple",
   "파랑": "a cute blue water drop",
@@ -149,7 +149,7 @@ const WORD_CONTEXT: Record<string, string> = {
 };
 
 // ── 일관된 귀여운 스타일 프롬프트 ───────────────────────────────────────────
-const STYLE = [
+export const STYLE = [
   "Style: flat vector illustration, thick rounded outlines, soft pastel colors (peach, mint, cream),",
   "friendly and simple, one single centered subject only, plain solid white background.",
   "ABSOLUTELY NO text, no letters, no words, no numbers, no labels, no captions, no writing on any surface;",
@@ -158,7 +158,7 @@ const STYLE = [
 ].join(" ");
 
 // 프롬프트 주제 우선순위: 손튜닝 맥락(WORD_CONTEXT) > 영어 글로스 > 한글 폴백
-function buildPrompt(word: string): string {
+export function buildPrompt(word: string): string {
   const subject =
     WORD_CONTEXT[word] ??
     (WORD_GLOSS[word] ? `${WORD_GLOSS[word]}` : `a cute illustration representing "${word}"`);
@@ -175,7 +175,7 @@ function sanitizePrompt(prompt: string): string {
 }
 
 // ── Imagen 이미지 1장 생성 → Buffer(webp) ───────────────────────────────────
-async function generateImage(prompt: string): Promise<Buffer | null> {
+export async function generateImage(prompt: string): Promise<Buffer | null> {
   const res = await ai.models.generateImages({
     model: IMAGE_MODEL,
     prompt,
@@ -308,4 +308,17 @@ async function main() {
   console.log(`\n완료 — 생성 ${done} · 건너뜀 ${skipped} · 실패 ${failed}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// 직접 실행(npx tsx scripts/generate-word-images.ts)일 때만 생성을 시작.
+// verify-word-images.ts 등에서 import 시엔 main()이 자동 실행되지 않음.
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+const isDirectRun = (() => {
+  try {
+    return !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+})();
+if (isDirectRun) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}
