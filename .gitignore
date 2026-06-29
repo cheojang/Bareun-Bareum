@@ -53,3 +53,6 @@ gcp-key.json
 service-account*.json
 .claude/worktrees/
 .claude/settings.local.json
+
+# 단어 이미지 검증 캐시(작업용, 대용량)
+public/images/.word-images-verdicts.json
