@@ -52,7 +52,11 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((s) => s
 const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠"]);
 
 // 텍스트가 의미의 핵심인 단어 — hasText 검사 전체 면제
-const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터"]);
+const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터", "이름표", "달력", "책"]);
+
+// 디자인적으로 얼굴이 있어야 정상인 장난감/물체 — 의인화 검사 면제
+// (오뚝이는 전통적으로 얼굴이 그려진 장난감, 목마는 말 얼굴이 있는 장난감)
+const FACE_ALLOWED_WORDS = new Set(["오뚝이", "목마", "인형", "봉제인형", "장난감로봇", "꼭두각시"]);
 
 // 색깔 단어(전 화면을 그 색으로 채워야 함)
 const COLOR_WORDS = new Set([
@@ -128,10 +132,16 @@ function buildJudgePrompt(word: string, category: Category): string {
     `   shorthand for sleeping and are acceptable — do NOT flag them as text (set hasText=false for zzz only).`,
     ] : []),
     ]),
+    ...(FACE_ALLOWED_WORDS.has(word) ? [
+    `3. badAnthropomorphism: This word is a TOY or OBJECT that is traditionally designed WITH a face/features by design.`,
+    `   A simple painted face on this toy is ACCEPTABLE and EXPECTED — set badAnthropomorphism=false.`,
+    `   Only set true if there are ADDITIONAL cartoon limbs/arms/legs that make it look like a separate cartoon character.`,
+    ] : [
     `3. badAnthropomorphism: Decide from the WORD's meaning:`,
     `   - If the word is an ANIMAL, PERSON, CHARACTER, an EMOTION, or an ACTION, a friendly face/limbs is natural → set false.`,
     `   - If the word is an INANIMATE OBJECT, FOOD, FRUIT, BODY PART, VEHICLE, or NATURE thing, it must NOT have`,
     `     cartoon eyes/face/mouth/arms/legs. If such a plain thing was given a face or limbs → set true.`,
+    ]),
     `4. colorDominant: ONLY for CATEGORY=color. Is the named color clearly the SINGLE dominant color filling most`,
     `   of the image? If the color appears only as a small part of some object, set false. For non-color category, set true.`,
     `5. extraIssues: note any other serious problem (multiple competing subjects, scary/inappropriate, cluttered, unclear). Else "".`,
