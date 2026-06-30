@@ -5850,9 +5850,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "동물들이 스카프를 착용하고 있으며, '먼저'의 의미가 명확하게 표현되지 않았습니다."
+      "이미지에 글자/숫자 포함"
     ],
-    "reason": "동물들이 스카프를 착용하고 있으며, '먼저'의 의미가 명확하게 표현되지 않았습니다."
+    "reason": "그림에 'FINISH'라는 글자가 있고, 동물에게 메달이 있으며, 토끼 귀를 가진 병아리 형태의 동물이어서 '먼저'의 의도된 의미와 일치하지 않습니다."
   },
   "cheoeum": {
     "word": "처음",
@@ -5934,12 +5934,9 @@
   },
   "sagakhyeong": {
     "word": "사각형",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "얼굴이 있고 모서리가 둥근 만화 사각형이며, 날카로운 모서리의 순수한 기하학적 사각형이 아닙니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 사각형 액자를 명확하게 묘사하며 다른 문제가 없습니다."
   },
   "maeunmat": {
     "word": "매운맛",
@@ -7401,12 +7398,9 @@
   },
   "toseuteu": {
     "word": "토스트",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image depicts bread with a spread, not plain toast. The browning does not look like clear toasting marks."
-    ],
-    "reason": "이 이미지는 토스트가 아닌 스프레드가 발린 빵을 보여줍니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '토스트'를 명확하게 나타내고 있습니다."
   },
   "gamjachip": {
     "word": "감자칩",
@@ -7581,9 +7575,10 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The milk is not filled to the very rim of the glass. The glass itself has a light blue tint, making it appear blue rather than clear/transparent as requested."
+      "무생물에 부적절한 얼굴·팔·다리(의인화)",
+      "The cup is not pure white, it has a light blue/green tint. The cup has an apple design with a cow face on it, which is not a plain white cup as requested."
     ],
-    "reason": "우유가 잔 가장자리까지 채워져 있지 않고, 잔이 투명하지 않고 푸른색입니다."
+    "reason": "컵에 사과와 소 얼굴 그림이 있고, 컵 색깔이 흰색이 아닙니다."
   },
   "teombeulreo": {
     "word": "텀블러",
@@ -8955,14 +8950,9 @@
   },
   "chuk": {
     "word": "축",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image contains text ('AXLE') and the spinning top is anthropomorphized with a face, which is not allowed for an inanimate object. The instructions explicitly state 'NO text' and 'NO face, NOT anthropomorphized'."
-    ],
-    "reason": "이미지에 글자가 있고 팽이에 얼굴이 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 의도된 의미를 명확하게 나타냅니다."
   },
   "takgugong": {
     "word": "탁구공",
@@ -9521,9 +9511,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The image includes an apple and a lily pad, which were explicitly forbidden or not requested, making the depiction not solely of cattails in swamp water."
+      "Image contains lily pads and fruit, which are explicitly forbidden by the intended meaning for '늪'."
     ],
-    "reason": "사과와 연잎이 있어서 늪의 의미를 정확히 나타내지 못합니다."
+    "reason": "이미지에 연잎과 과일이 포함되어 있어 '늪'의 의도된 의미와 일치하지 않습니다."
   },
   "geomijul": {
     "word": "거미줄",
@@ -9803,13 +9793,9 @@
   },
   "muneoppang": {
     "word": "문어빵",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image depicts a cartoon character/toy instead of a food item."
-    ],
-    "reason": "이 이미지는 문어빵이 아닌 캐릭터처럼 보이며, 얼굴이 있어 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 문어빵을 명확하게 보여주며, 텍스트나 의인화된 요소가 없습니다."
   },
   "tibaek": {
     "word": "티백",
@@ -10365,11 +10351,9 @@
   },
   "jandi": {
     "word": "잔디",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지에 풀잎이 너무 많고, 요청된 대로 단색이 아닙니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "잔디를 명확하게 보여주며, 다른 문제점이 없습니다."
   },
   "dalbit": {
     "word": "달빛",
