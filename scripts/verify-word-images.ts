@@ -52,11 +52,12 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((s) => s
 const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠"]);
 
 // 텍스트가 의미의 핵심인 단어 — hasText 검사 전체 면제
-const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터", "이름표", "달력", "책"]);
+const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터", "이름표", "달력", "책", "바코드", "돈", "신문", "잡지",
+  "건전지", "나침반", "쨍그랑", "양념병", "오일병", "비료", "소독기", "캐러멜", "홀"]);
 
 // 디자인적으로 얼굴이 있어야 정상인 장난감/물체 — 의인화 검사 면제
 // (오뚝이는 전통적으로 얼굴이 그려진 장난감, 목마는 말 얼굴이 있는 장난감)
-const FACE_ALLOWED_WORDS = new Set(["오뚝이", "목마", "인형", "봉제인형", "장난감로봇", "꼭두각시"]);
+const FACE_ALLOWED_WORDS = new Set(["오뚝이", "목마", "인형", "봉제인형", "장난감로봇", "꼭두각시", "가면"]);
 
 // 색깔 단어(전 화면을 그 색으로 채워야 함)
 const COLOR_WORDS = new Set([
