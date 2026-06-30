@@ -5547,12 +5547,9 @@
   },
   "tumyeongmangto": {
     "word": "투명망토",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The cloak is not transparent as required by the word '투명망토'. It appears to be a solid light blue/mint green color."
-    ],
-    "reason": "망토가 투명하게 보이지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '투명망토'의 의도된 의미를 명확하게 잘 표현하고 있습니다."
   },
   "yunikon": {
     "word": "유니콘",
@@ -5784,21 +5781,17 @@
   },
   "julgi": {
     "word": "줄기",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image includes a flower blossom and roots, which were explicitly excluded from the intended depiction of '줄기'."
-    ],
-    "reason": "꽃봉오리와 뿌리가 포함되어 있어 '줄기'만 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "줄기를 명확하게 보여줍니다."
   },
   "jangma": {
     "word": "장마",
     "verdict": "regenerate",
     "reasons": [
-      "단어와 그림 의미 불일치",
-      "비가 너무 가늘고 듬성듬성하여 장마의 의미를 명확하게 전달하지 못합니다."
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "비가 너무 가늘고 듬성듬성하여 장마의 의미를 명확하게 전달하지 못합니다."
+    "reason": "비 선이 요청된 '매우 빽빽한' 수준으로 밀집되어 있지 않아 장마의 폭우를 충분히 표현하지 못합니다."
   },
   "ondo": {
     "word": "온도",
@@ -5859,9 +5852,10 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함"
+      "이미지에 글자/숫자 포함",
+      "Image depicts the Korean word '분래' instead of '먼저'. It also contains text, a medal, and the number '1', all explicitly forbidden."
     ],
-    "reason": "그림에 숫자가 있어서 재생성해야 합니다."
+    "reason": "이미지는 '먼저'가 아닌 '분래'를 묘사하고 있으며, 텍스트와 메달, 숫자 '1'이 포함되어 있습니다."
   },
   "cheoeum": {
     "word": "처음",
@@ -5895,12 +5889,9 @@
   },
   "won": {
     "word": "원",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image shows a 3D cylinder instead of a 2D circle/disc."
-    ],
-    "reason": "원(circle)은 평평한 원형을 의미하지만, 이미지는 입체적인 원기둥을 보여줍니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '원'을 명확하게 나타내고 있으며, 다른 문제점은 없습니다."
   },
   "daneo": {
     "word": "단어",
@@ -5949,10 +5940,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The square has rounded corners instead of perfect right-angle corners, and there is an additional decoration on its top right corner."
+      "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "이 이미지는 얼굴과 장식이 있고 모서리가 둥글어서 '사각형'의 의도된 의미와 일치하지 않습니다."
+    "reason": "이미지는 둥근 모서리와 얼굴을 가지고 있어 사각형의 정의에 맞지 않습니다."
   },
   "maeunmat": {
     "word": "매운맛",
@@ -6262,12 +6252,9 @@
   },
   "nyuseu": {
     "word": "뉴스",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image depicts an old CRT television, not a modern flat-screen television as specified in the intended meaning. The representation of 'news' is also weak, appearing more as a generic TV with a blue screen."
-    ],
-    "reason": "이미지가 구형 TV를 보여주며, '뉴스'를 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 뉴스 카메라를 명확하게 나타냅니다."
   },
   "yeongeuk": {
     "word": "연극",
@@ -6811,12 +6798,9 @@
   },
   "sup": {
     "word": "숲",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The trees do not fill the whole image; there is too much white space around the subject."
-    ],
-    "reason": "나무들이 이미지 전체를 채우지 않고 여백이 너무 많아 플래시카드에 적합하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 숲을 명확하게 잘 나타냅니다."
   },
   "kkeopjil": {
     "word": "껍질",
@@ -6832,14 +6816,9 @@
   },
   "gogi": {
     "word": "고기",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image includes an apple, which is not part of the intended meaning for '고기'."
-    ],
-    "reason": "고기라는 단어와 관련 없는 글자와 사과가 있고, 고기에 얼굴이 그려져 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "고기를 명확하게 나타내며 다른 문제가 없습니다."
   },
   "saekki": {
     "word": "새끼",
@@ -6855,21 +6834,15 @@
   },
   "ttang": {
     "word": "땅",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 자동차가 포함되어 있고 텍스트가 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '땅'을 명확하게 나타내며 다른 문제가 없습니다."
   },
   "yukji": {
     "word": "육지",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 텍스트가 포함되어 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '육지'의 의미를 명확하고 단순하게 잘 표현하고 있습니다."
   },
   "kkeopdegi": {
     "word": "껍데기",
@@ -7433,10 +7406,9 @@
     "word": "토스트",
     "verdict": "regenerate",
     "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "토스트에 얼굴이 있어서 의도한 바와 다릅니다."
+    "reason": "토스트는 구운 빵을 의미하지만, 이미지는 구워지지 않은 일반 식빵을 보여줍니다."
   },
   "gamjachip": {
     "word": "감자칩",
@@ -7530,12 +7502,9 @@
   },
   "jjaenggeurang": {
     "word": "쨍그랑",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "일본어 문자가 포함되어 있어 한국어 학습에 혼란을 줄 수 있습니다."
-    ],
-    "reason": "이미지에 일본어 문자가 포함되어 있어 한국어 학습에 적합하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "컵이 깨지는 소리를 잘 표현했습니다."
   },
   "wandukong": {
     "word": "완두콩",
@@ -7614,9 +7583,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The milk carton is not pure plain white; it has a light beige/off-white color with reddish-brown and light green/blue outlines."
+      "The milk carton has an apple drawing on it, and is not completely blank white as required."
     ],
-    "reason": "우유팩이 순수한 흰색이 아니고, 연한 베이지색과 갈색, 연두색 테두리가 있습니다."
+    "reason": "우유팩에 사과 그림이 있어서 '완전히 비어있는 흰색 우유팩'이라는 의도된 의미와 다릅니다."
   },
   "teombeulreo": {
     "word": "텀블러",
@@ -7842,9 +7811,10 @@
     "word": "건전지",
     "verdict": "regenerate",
     "reasons": [
+      "단어와 그림 의미 불일치",
       "이미지에 글자/숫자 포함"
     ],
-    "reason": "이미지에 '+' 기호가 있습니다."
+    "reason": "배터리에 \"AA\"라는 글자가 있지만, 글자 없는 평범한 배터리가 필요합니다."
   },
   "mun": {
     "word": "문",
@@ -8055,9 +8025,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함"
+      "The yellow section on the glue stick, even without text, appears to be a label area, which contradicts the requirement for a completely blank and smooth cylinder with no labels of any kind."
     ],
-    "reason": "이미지에 글자(UHU)가 있고, 요구사항과 달리 몸통이 비어있지 않습니다."
+    "reason": "이미지에 라벨처럼 보이는 노란색 부분이 있어 완전히 비어 있고 매끄러운 원통형이어야 한다는 요구 사항과 모순됩니다."
   },
   "danchu": {
     "word": "단추",
@@ -8325,11 +8295,9 @@
   },
   "ireumpyo": {
     "word": "이름표",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이름표에 'NAME'이라는 글자가 없습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 이름표를 명확하게 잘 나타냅니다."
   },
   "jigubon": {
     "word": "지구본",
@@ -8423,14 +8391,9 @@
   },
   "teokbati": {
     "word": "턱받이",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "multiple competing subjects; includes Korean word art"
-    ],
-    "reason": "이미지가 턱받이를 묘사하지 않고, 글자와 의인화된 사물이 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '턱받이'를 명확하게 보여주며, 텍스트나 부적절한 의인화가 없습니다."
   },
   "gyobok": {
     "word": "교복",
@@ -8640,12 +8603,9 @@
   },
   "juchajang": {
     "word": "주차장",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image is too abstract and does not clearly represent a parking lot. The small orange rectangles are confusing and make it look like lockers or a building facade rather than parking spaces."
-    ],
-    "reason": "그림이 주차장을 명확하게 보여주지 않고, 사물함이나 보관함처럼 보입니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 단어의 의미를 명확하게 잘 나타냅니다."
   },
   "ppangppangi": {
     "word": "빵빵이",
@@ -8895,12 +8855,9 @@
   },
   "gan": {
     "word": "간",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "간 외에 자동차와 사과가 함께 있어 혼란스럽습니다."
-    ],
-    "reason": "간 외에 자동차와 사과가 함께 있어 혼란스럽습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이 이미지는 '간'을 명확하게 보여주며, 다른 문제점이 없습니다."
   },
   "nundongja": {
     "word": "눈동자",
@@ -9008,9 +8965,9 @@
     "word": "축",
     "verdict": "regenerate",
     "reasons": [
-      "이미지에 글자/숫자 포함"
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "이미지에 텍스트가 포함되어 있습니다."
+    "reason": "이미지는 팽이 전체를 보여주며, 축(중심 막대)만을 명확하게 나타내지 않습니다."
   },
   "takgugong": {
     "word": "탁구공",
@@ -9026,11 +8983,9 @@
   },
   "hyeon": {
     "word": "현",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 글자가 포함되어 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '현'의 의미인 악기 줄을 명확하게 보여주며, 유아용 플래시카드에 적합합니다."
   },
   "neteu": {
     "word": "네트",
@@ -9058,12 +9013,9 @@
   },
   "gori": {
     "word": "고리",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "이미지가 숫자나 글자 'O'처럼 보여 아이들이 혼동할 수 있습니다."
-    ],
-    "reason": "이미지가 숫자나 글자 'O'처럼 보여 아이들이 혼동할 수 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '고리'를 명확하게 보여주며 다른 문제는 없습니다."
   },
   "aryeong": {
     "word": "아령",
@@ -9083,20 +9035,15 @@
   },
   "gwanyeok": {
     "word": "과녁",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image includes an anthropomorphized apple and car which are not essential for depicting a target, adding unnecessary elements."
-    ],
-    "reason": "무생물인 사과와 자동차에 얼굴이 있어서 유아에게 혼란을 줄 수 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "과녁의 색상이 지정된 고전적인 빨간색과 흰색이 아닙니다."
   },
   "hwasal": {
     "word": "화살",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "화살은 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '화살'을 명확하게 잘 나타냅니다."
   },
   "medal": {
     "word": "메달",
@@ -9106,27 +9053,23 @@
   },
   "suyeongmo": {
     "word": "수영모",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "수영모는 무생물이므로 눈이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 수영모를 명확하게 보여주며, 다른 문제가 없습니다."
   },
   "hol": {
     "word": "홀",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 글자가 포함되어 있어 유아용 플래시카드로 적합하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '홀'을 명확하게 나타냅니다."
   },
   "heoritti": {
     "word": "허리띠",
     "verdict": "regenerate",
     "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "허리띠는 무생물이므로 얼굴이 있으면 안 됩니다."
+    "reason": "이미지에 바느질선과 구멍이 상세하게 묘사되어 있어, '완전히 평평하고 구멍이 없는 매끄러운 가죽'이라는 설명과 일치하지 않습니다."
   },
   "jul": {
     "word": "줄",
@@ -9154,29 +9097,25 @@
   },
   "gitdae": {
     "word": "깃대",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "깃대 외에 깃발과 자동차가 함께 있어 혼란스러울 수 있으며, 무생물인 깃발과 자동차에 얼굴이 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '깃대'를 명확하게 나타냅니다."
   },
   "nachimban": {
     "word": "나침반",
     "verdict": "regenerate",
     "reasons": [
+      "단어와 그림 의미 불일치",
       "이미지에 글자/숫자 포함",
-      "The image contains an additional object (a car) that is not related to the word."
+      "The image contains text (N, W, E, S) which was explicitly forbidden."
     ],
-    "reason": "나침반에 글자가 있고, 나침반 외에 자동차가 함께 있어 아이들이 혼란스러워할 수 있습니다."
+    "reason": "이미지가 지침에 명시된 텍스트를 포함하고 있습니다."
   },
   "jugeok": {
     "word": "주걱",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "주걱은 무생물인데 얼굴이 그려져 있어서 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 주걱을 명확하게 잘 나타냅니다."
   },
   "songgot": {
     "word": "송곳",
@@ -9233,10 +9172,10 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "Multiple competing subjects (phone, apple, car) and cluttered."
+      "이미지에 글자/숫자 포함",
+      "multiple competing subjects"
     ],
-    "reason": "이미지에 휴대폰 외에 사과와 자동차가 함께 있어 단어가 명확하게 표현되지 않고, 무생물인 사물들에 얼굴이 그려져 있습니다."
+    "reason": "휴대폰 외에 자동차와 사과가 함께 있어서 단어 학습에 방해가 됩니다."
   },
   "raenteon": {
     "word": "랜턴",
@@ -9264,14 +9203,9 @@
   },
   "keibeul": {
     "word": "케이블",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "Multiple competing subjects; the cable is not the central focus."
-    ],
-    "reason": "이미지에 '쩌간'이라는 글자가 있고, 사과와 플러그에 얼굴이 있으며, 케이블이 명확한 주 대상이 아닙니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "USB 커넥터에 로고나 디자인 요소로 보이는 작은 표시가 있어 '완전히 평범하고 로고 없음' 규칙을 위반합니다."
   },
   "hoseu": {
     "word": "호스",
@@ -9281,11 +9215,9 @@
   },
   "dokki": {
     "word": "도끼",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "도끼는 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '도끼'를 명확하게 보여주며, 다른 문제점은 없습니다."
   },
   "goksik": {
     "word": "곡식",
@@ -9301,20 +9233,15 @@
   },
   "biryo": {
     "word": "비료",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이미지에 'fertilizer'라는 글자가 있고, 비료 용기와 과일에 얼굴이 있어서 유아용 플래시카드로 적합하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '비료'를 명확하게 나타냅니다."
   },
   "mulppurigae": {
     "word": "물뿌리개",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "물뿌리개는 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 단어의 의미를 명확하게 나타내고 있습니다."
   },
   "jido": {
     "word": "지도",
@@ -9324,14 +9251,9 @@
   },
   "bong": {
     "word": "봉",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image contains multiple anthropomorphized objects (character, apple, car), which could be confusing for a toddler."
-    ],
-    "reason": "아기가 글자를 읽을 수 없으므로, 그림이 글자 자체인 경우 단어를 인식할 수 없습니다. 또한, 무생물인 글자, 사과, 자동차에 얼굴이 있어 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '봉'의 의미를 명확하게 나타내고 있습니다."
   },
   "kaempinguija": {
     "word": "캠핑의자",
@@ -9371,21 +9293,15 @@
   },
   "kaenbeoseu": {
     "word": "캔버스",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 텍스트가 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 빈 캔버스를 이젤에 명확하게 보여주며, 다른 문제가 없습니다."
   },
   "don": {
     "word": "돈",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "이미지에 돈 외에 자동차와 딸기가 함께 있어 혼란스러울 수 있습니다. 또한 한글 텍스트와 달러 기호가 있습니다."
-    ],
-    "reason": "이미지에 '돈' 외에 다른 사물들이 함께 있어 혼란스러우며, 한글 텍스트가 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '돈'의 의미를 명확하게 잘 나타냅니다."
   },
   "deuril": {
     "word": "드릴",
@@ -9401,12 +9317,9 @@
   },
   "bakodeu": {
     "word": "바코드",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "바코드에 숫자가 있고, 의인화되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "바코드를 명확하게 잘 나타내고 있습니다."
   },
   "japji": {
     "word": "잡지",
@@ -9424,10 +9337,10 @@
     "word": "신문",
     "verdict": "regenerate",
     "reasons": [
-      "이미지에 글자/숫자 포함",
+      "단어와 그림 의미 불일치",
       "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "신문은 무생물이므로 눈, 입, 팔, 다리가 있으면 안 됩니다. 또한 신문 속 글자 모양도 없어야 합니다."
+    "reason": "신문에 얼굴이 있어서 적절하지 않습니다."
   },
   "nanro": {
     "word": "난로",
@@ -9461,30 +9374,23 @@
   },
   "deuraigi": {
     "word": "드라이기",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "드라이기는 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 드라이기를 명확하게 보여주고 다른 문제도 없습니다."
   },
   "heeopin": {
     "word": "헤어핀",
     "verdict": "regenerate",
     "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "무생물인 헤어핀에 얼굴이 그려져 있습니다."
+    "reason": "이미지에 리본 장식이 있는 헤어핀이 있어 의도된 의미와 다릅니다."
   },
   "seonkeurim": {
     "word": "선크림",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "이미지에 텍스트가 있고, 무생물에 의인화가 적용되었습니다."
-    ],
-    "reason": "이미지에 텍스트가 있고, 무생물에 의인화가 적용되었으며, 선크림을 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 선크림을 명확하게 잘 나타내고 있습니다."
   },
   "dangnagwi": {
     "word": "당나귀",
@@ -9524,11 +9430,9 @@
   },
   "okdom": {
     "word": "옥돔",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지가 옥돔을 명확하게 나타내지 않고 일반적인 물고기처럼 보입니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '옥돔'을 명확하게 잘 나타냅니다."
   },
   "emyu": {
     "word": "에뮤",
@@ -9538,14 +9442,9 @@
   },
   "yeongo": {
     "word": "연고",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "텍스트가 잘못되었고, 무생물에 의인화가 적용되었습니다."
-    ],
-    "reason": "이미지에 '연고'가 아닌 '유창'이라는 글자가 있으며, 무생물인 연고에 의인화가 적용되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 연고를 명확하게 묘사하며 다른 문제는 없습니다."
   },
   "mechuri": {
     "word": "메추리",
@@ -9597,12 +9496,9 @@
   },
   "deodeumi": {
     "word": "더듬이",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이미지에 텍스트가 있고, 더듬이가 의인화되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '더듬이'를 명확하게 잘 나타내고 있습니다."
   },
   "bineul": {
     "word": "비늘",
@@ -9612,13 +9508,9 @@
   },
   "aemaemi": {
     "word": "애매미",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "The image shows a cloud with text that is not the target word."
-    ],
-    "reason": "이미지에 글자가 포함되어 있으며, '애매미' 단어를 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 애매미를 명확하게 잘 나타냅니다."
   },
   "gaemijip": {
     "word": "개미집",
@@ -9628,14 +9520,9 @@
   },
   "yongam": {
     "word": "용암",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image is completely irrelevant to the word '용암'. It shows stylized Korean text with anthropomorphic fruit and a car."
-    ],
-    "reason": "이미지는 '용암'을 묘사하지 않으며, 글자가 포함되어 있고 무생물에 의인화된 특징이 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "용암을 명확하게 보여줍니다."
   },
   "haetsal": {
     "word": "햇살",
@@ -9654,10 +9541,9 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image does not clearly depict a swamp. The main subject is an anthropomorphic apple in a car, which is not relevant to the word \"늪\"."
+      "The image includes an apple, which was explicitly forbidden in the instructions for depicting '늪'."
     ],
-    "reason": "이 이미지는 늪을 명확하게 묘사하지 않으며, 사과에 얼굴이 있어 부적절합니다."
+    "reason": "이미지에 사과가 있어서 '늪'의 의미를 정확히 나타내지 못합니다."
   },
   "geomijul": {
     "word": "거미줄",
@@ -9673,11 +9559,9 @@
   },
   "eomi": {
     "word": "어미",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 텍스트가 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '어미'의 의미를 명확하게 잘 표현하고 있습니다."
   },
   "pulbat": {
     "word": "풀밭",
@@ -9687,13 +9571,9 @@
   },
   "ppyeomadi": {
     "word": "뼈마디",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "이미지에 뼈마디 외에 사과와 자동차가 함께 있어 혼란스럽습니다. 또한, 뼈마디가 명확하게 표현되지 않았습니다."
-    ],
-    "reason": "이미지가 '뼈마디'를 명확하게 나타내지 않으며, 관련 없는 사물들이 함께 있고, 뼈에 부적절한 의인화된 얼굴이 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 뼈마디를 명확하게 보여주며, 텍스트나 부적절한 의인화가 없습니다."
   },
   "geurimja": {
     "word": "그림자",
@@ -9705,9 +9585,9 @@
     "word": "주둥이",
     "verdict": "regenerate",
     "reasons": [
-      "이미지에 글자/숫자 포함"
+      "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "이미지에 텍스트가 포함되어 있어 유아용 플래시카드로 적합하지 않습니다."
+    "reason": "주둥이는 신체 부위이므로 눈이 있으면 의인화로 간주됩니다."
   },
   "agi": {
     "word": "아기",
@@ -9729,19 +9609,15 @@
   },
   "kkakdugi": {
     "word": "깍두기",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "깍두기에 얼굴이 있어서 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '깍두기'를 명확하게 잘 표현하고 있습니다."
   },
   "cheongyanggochu": {
     "word": "청양고추",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지는 빨간색 고추를 보여주지만, '청양고추'는 일반적으로 초록색 고추를 의미합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '청양고추'를 명확하게 나타내며 모든 요구 사항을 충족합니다."
   },
   "supgil": {
     "word": "숲길",
@@ -9751,11 +9627,9 @@
   },
   "jineureomi": {
     "word": "지느러미",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지는 '지느러미'가 아닌 전체 물고기를 보여주므로, 단어의 의미를 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '지느러미'를 명확하게 잘 나타냅니다."
   },
   "haebyeon": {
     "word": "해변",
@@ -9783,12 +9657,9 @@
   },
   "gatgimchi": {
     "word": "갓김치",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이 이미지는 '갓김치'를 명확하게 나타내지 않으며, 음식에 얼굴이 있어 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 갓김치를 명확하게 묘사하며, 텍스트나 의인화된 요소가 없습니다."
   },
   "deulgireum": {
     "word": "들기름",
@@ -9804,14 +9675,9 @@
   },
   "deungpan": {
     "word": "등판",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image does not depict the target word. The image contains irrelevant and anthropomorphized text."
-    ],
-    "reason": "이미지는 '등판'을 묘사하지 않으며, 관련 없는 텍스트가 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '등판'의 의미를 명확하게 잘 나타냅니다."
   },
   "huchu": {
     "word": "후추",
@@ -9821,11 +9687,9 @@
   },
   "seuteikeu": {
     "word": "스테이크",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "스테이크에 얼굴이 있어서 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '스테이크'를 명확하고 정확하게 묘사합니다."
   },
   "tareuteu": {
     "word": "타르트",
@@ -9843,9 +9707,10 @@
     "word": "베이컨",
     "verdict": "regenerate",
     "reasons": [
+      "단어와 그림 의미 불일치",
       "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "베이컨에 얼굴이 있어서 부적절합니다."
+    "reason": "베이컨에 얼굴이 있어 재생성해야 합니다."
   },
   "mechurial": {
     "word": "메추리알",
@@ -9855,13 +9720,9 @@
   },
   "kaereomel": {
     "word": "캐러멜",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "이미지에 캐러멜 외에 사과가 함께 있어 혼란을 줄 수 있습니다."
-    ],
-    "reason": "이미지에 글자가 포함되어 있고, 캐러멜과 사과에 부적절한 의인화가 적용되었습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 캐러멜을 명확하고 문제없이 잘 나타냅니다."
   },
   "paenkeikeu": {
     "word": "팬케이크",
@@ -9871,11 +9732,9 @@
   },
   "keurepe": {
     "word": "크레페",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "크레페에 얼굴과 팔이 있어서 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "크레페를 명확하게 잘 나타내고 있습니다."
   },
   "chapssaltteok": {
     "word": "찹쌀떡",
@@ -9891,12 +9750,9 @@
   },
   "sirieol": {
     "word": "시리얼",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "그림에 글자가 있고 그릇에 얼굴이 있어서 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '시리얼'을 명확하게 잘 나타냅니다."
   },
   "bingsu": {
     "word": "빙수",
@@ -9918,22 +9774,15 @@
   },
   "yeot": {
     "word": "엿",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이 이미지는 '엿'을 명확하게 나타내지 않으며, 글자가 있고 의인화되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '엿'을 명확하게 보여줍니다."
   },
   "yugwa": {
     "word": "유과",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "유과를 명확하게 나타내지 않고, 음식에 의인화가 있어 적절하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 유과를 명확하게 잘 나타내고 있습니다."
   },
   "saengkeurim": {
     "word": "생크림",
@@ -9949,31 +9798,24 @@
   },
   "nurungji": {
     "word": "누룽지",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image depicts regular rice with anthropomorphic features, not clearly 누룽지."
-    ],
-    "reason": "이 이미지는 누룽지가 아닌 일반 밥을 의인화하여 보여줍니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "누룽지를 명확하게 나타내며 다른 문제가 없습니다."
   },
   "maneulppang": {
     "word": "마늘빵",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image does not clearly show garlic bread, and the anthropomorphic features are inappropriate for a food item."
-    ],
-    "reason": "마늘빵이 명확하게 보이지 않고, 음식에 얼굴이 있는 것은 적절하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 마늘빵을 명확하게 보여줍니다."
   },
   "jjingamja": {
     "word": "찐감자",
     "verdict": "regenerate",
     "reasons": [
+      "단어와 그림 의미 불일치",
       "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "음식에 얼굴이 있어서 아이들이 혼란스러워할 수 있습니다."
+    "reason": "감자에 얼굴이 있어서 안 됩니다."
   },
   "subakjuseu": {
     "word": "수박주스",
@@ -9983,29 +9825,24 @@
   },
   "jan": {
     "word": "잔",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "사물에 얼굴이 있어 유아에게 혼란을 줄 수 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '잔'을 명확하고 적절하게 묘사합니다."
   },
   "muneoppang": {
     "word": "문어빵",
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image depicts apples and a car, not '문어빵'."
+      "The image looks more like a cartoon octopus character or a toy rather than a food item. It lacks the texture and appearance of a baked or fried snack, which is essential for \"문어빵\"."
     ],
-    "reason": "이미지가 '문어빵'을 나타내지 않고, 사물에 얼굴이 있습니다."
+    "reason": "이 이미지는 문어빵이 아닌 일반 문어 캐릭터처럼 보입니다. 빵의 질감이나 음식의 느낌이 부족합니다."
   },
   "tibaek": {
     "word": "티백",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "사물인 티백에 눈과 입이 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 티백을 명확하게 잘 표현하고 있습니다."
   },
   "hyeoptak": {
     "word": "협탁",
@@ -10021,11 +9858,9 @@
   },
   "geopum": {
     "word": "거품",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "거품에 얼굴이 있어서 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '거품'을 명확하게 잘 나타냅니다."
   },
   "balpan": {
     "word": "발판",
@@ -10041,31 +9876,21 @@
   },
   "chejunggye": {
     "word": "체중계",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이미지는 체중계가 아닌 주방 저울을 묘사하고 있으며, 무생물인 저울에 얼굴이 있어 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 체중계를 명확하게 보여주며, 텍스트나 의인화된 요소가 없습니다."
   },
   "naepkin": {
     "word": "냅킨",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지가 냅킨을 묘사하지 않습니다."
-    ],
-    "reason": "이미지가 냅킨을 묘사하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 의도한 대로 접힌 흰색 냅킨을 명확하게 보여줍니다."
   },
   "kichintawol": {
     "word": "키친타월",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "이미지에 키친타월 외에 사과가 함께 있어서 단어 학습에 혼란을 줄 수 있습니다."
-    ],
-    "reason": "키친타월 외에 사과가 함께 있고, 키친타월과 사과 모두 의인화되어 있어서 단어 학습에 적합하지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '키친타월'을 명확하게 나타내며, 다른 문제점이 없습니다."
   },
   "wainjan": {
     "word": "와인잔",
@@ -10107,11 +9932,9 @@
   },
   "binilraep": {
     "word": "비닐랩",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "사물에 얼굴이 그려져 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "비닐랩을 명확하게 묘사하고 있으며 다른 문제는 없습니다."
   },
   "twigimmang": {
     "word": "튀김망",
@@ -10121,12 +9944,9 @@
   },
   "oilbyeong": {
     "word": "오일병",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "이미지에 글자가 있고, 무생물인 오일병에 얼굴이 그려져 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 오일병을 명확하게 잘 나타냅니다."
   },
   "eunbakji": {
     "word": "은박지",
@@ -10142,11 +9962,9 @@
   },
   "yangnyeombyeong": {
     "word": "양념병",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 글자가 포함되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 양념병을 명확하게 묘사하며, 의도된 의미와 일치합니다."
   },
   "boonbyeong": {
     "word": "보온병",
@@ -10156,20 +9974,15 @@
   },
   "obeunpaen": {
     "word": "오븐팬",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "오븐팬 안에 있는 과일과 음식들이 의인화되어 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 오븐팬을 명확하게 보여줍니다."
   },
   "guktong": {
     "word": "국통",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image is abstract and does not clearly represent a soup container."
-    ],
-    "reason": "이 이미지는 '국통'을 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '국통'을 명확하게 묘사하며 모든 기준을 충족합니다."
   },
   "jebinggi": {
     "word": "제빙기",
@@ -10181,9 +9994,10 @@
     "word": "너겟",
     "verdict": "regenerate",
     "reasons": [
-      "단어와 그림 의미 불일치"
+      "단어와 그림 의미 불일치",
+      "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "이미지가 너겟이 아닌 감자를 묘사하고 있습니다."
+    "reason": "너겟에 얼굴이 그려져 있어 의도한 바와 다릅니다."
   },
   "mulbati": {
     "word": "물받이",
@@ -10205,11 +10019,9 @@
   },
   "gamyeon": {
     "word": "가면",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "가면은 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 가면을 명확하게 보여줍니다."
   },
   "baptong": {
     "word": "밥통",
@@ -10225,11 +10037,9 @@
   },
   "sodokgi": {
     "word": "소독기",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "아기 젖병에 눈금 표시와 전원 버튼 기호가 있어서 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 소독기를 명확하게 보여줍니다."
   },
   "bungbungka": {
     "word": "붕붕카",
@@ -10305,25 +10115,15 @@
   },
   "gonggi": {
     "word": "공기",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image shows a character with the word written on it, rather than depicting the actual game or game pieces of '공기'."
-    ],
-    "reason": "이미지에 글자가 있고, '공기' 놀이를 직접적으로 보여주지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 의도된 단어인 공기놀이 돌멩이 5개를 명확하게 잘 나타냅니다."
   },
   "pyeonjiji": {
     "word": "편지지",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "The image contains multiple competing subjects and anthropomorphic letters that distract from the intended word '편지지'."
-    ],
-    "reason": "이미지가 '편지지'를 명확하게 나타내지 않고, 의인화된 글자와 다른 요소들이 혼란을 줍니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '편지지'를 명확하게 나타냅니다."
   },
   "chilpanjiugae": {
     "word": "칠판지우개",
@@ -10333,12 +10133,9 @@
   },
   "sujeongteipeu": {
     "word": "수정테이프",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "수정테이프는 무생물이므로 얼굴이 있으면 안 됩니다. 또한 테이프에 'X' 표시가 있습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '수정테이프'를 명확하게 보여주며, 다른 문제점이 없습니다."
   },
   "chaekkkoti": {
     "word": "책꽂이",
@@ -10378,20 +10175,19 @@
   },
   "bondeu": {
     "word": "본드",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "Multiple anthropomorphized objects (glue, apple, car) are depicted, making the main subject unclear. The image should only depict '본드'."
-    ],
-    "reason": "본드는 무생물이므로 얼굴이나 팔이 있으면 안 됩니다. 또한, 본드 외에 사과와 자동차가 함께 그려져 있어 혼란스럽습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 본드를 명확하게 잘 나타냅니다."
   },
   "yeopseo": {
     "word": "엽서",
     "verdict": "regenerate",
     "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
+      "단어와 그림 의미 불일치",
+      "이미지에 글자/숫자 포함",
+      "The image shows two postcards instead of just one. The lines on the back of the postcard could be interpreted as writing."
     ],
-    "reason": "엽서에 얼굴이 있는 스티커가 있어서 재생성해야 합니다."
+    "reason": "엽서가 한 장이 아니라 두 장이며, 엽서 뒷면에 글씨로 오해할 수 있는 선들이 있어 재생성해야 합니다."
   },
   "gakdogi": {
     "word": "각도기",
@@ -10419,11 +10215,9 @@
   },
   "bokdae": {
     "word": "복대",
-    "verdict": "regenerate",
-    "reasons": [
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "이미지에 글자가 포함되어 있어 재생성해야 합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 복대를 명확하게 보여줍니다."
   },
   "kaep": {
     "word": "캡",
@@ -10608,18 +10402,16 @@
     "verdict": "regenerate",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)",
-      "자동차에 얼굴이 있어 의인화되었고, 잔디가 명확하게 표현되지 않았습니다."
+      "이미지에 글자/숫자 포함",
+      "The image contains an apple, which was explicitly forbidden. The stylized grass blades strongly resemble the letter 'M' and the number '3', which can be confusing for a toddler."
     ],
-    "reason": "자동차에 얼굴이 있어 의인화되었고, 잔디가 명확하게 표현되지 않았습니다."
+    "reason": "이미지에 사과가 있고, 잔디 모양이 글자처럼 보여서 유아에게 혼란을 줄 수 있습니다."
   },
   "dalbit": {
     "word": "달빛",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "달빛은 자연 현상이므로 의인화된 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 달빛을 명확하게 잘 표현하고 있습니다."
   },
   "bongsunga": {
     "word": "봉숭아",
@@ -10629,11 +10421,9 @@
   },
   "jeongwon": {
     "word": "정원",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "사과, 나무, 물뿌리개에 얼굴이 있어서 부적절합니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "정원을 명확하게 잘 나타냅니다."
   },
   "bamsongi": {
     "word": "밤송이",
@@ -10675,9 +10465,10 @@
     "word": "밤하늘",
     "verdict": "regenerate",
     "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
+      "단어와 그림 의미 불일치",
+      "The image contains a car and apples, which are not part of a simple night sky scene and were explicitly forbidden in the prompt."
     ],
-    "reason": "밤하늘은 자연물인데, 구름과 달에 얼굴이 있어서 아이들이 혼란스러울 수 있습니다."
+    "reason": "자동차와 사과가 있어서 밤하늘을 정확히 묘사하지 못합니다."
   },
   "mulbangul": {
     "word": "물방울",
@@ -10693,27 +10484,21 @@
   },
   "kkotsul": {
     "word": "꽃술",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "꽃술은 무생물이므로 얼굴이 있으면 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "꽃술을 명확하게 보여줍니다."
   },
   "madi": {
     "word": "마디",
-    "verdict": "regenerate",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "대나무에 얼굴이 있어서 안 됩니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "손가락 마디를 명확하게 보여줍니다."
   },
   "dwikkumchi": {
     "word": "뒤꿈치",
-    "verdict": "regenerate",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지는 신발 전체를 보여주며, '뒤꿈치'라는 단어를 명확하게 나타내지 않습니다."
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "발뒤꿈치를 명확하게 보여줍니다."
   },
   "tuttu": {
     "word": "튜튜",
