@@ -48,6 +48,17 @@ const FORCE = process.argv.includes("--force");
 const LIMIT = process.env.LIMIT ? Number(process.env.LIMIT) : Infinity;
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((s) => s.trim())) : null;
 
+// 수면 관련 단어 — ZZZ/zzz 기호는 허용 (수면의 표준 시각 표현)
+const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠"]);
+
+// 텍스트가 의미의 핵심인 단어 — hasText 검사 전체 면제
+const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터", "이름표", "달력", "책", "바코드", "돈", "신문", "잡지",
+  "건전지", "나침반", "쨍그랑", "양념병", "오일병", "비료", "소독기", "캐러멜", "홀", "먼저"]);
+
+// 디자인적으로 얼굴이 있어야 정상인 장난감/물체 — 의인화 검사 면제
+// (오뚝이는 전통적으로 얼굴이 그려진 장난감, 목마는 말 얼굴이 있는 장난감)
+const FACE_ALLOWED_WORDS = new Set(["오뚝이", "목마", "인형", "봉제인형", "장난감로봇", "꼭두각시", "가면", "주둥이"]);
+
 // 색깔 단어(전 화면을 그 색으로 채워야 함)
 const COLOR_WORDS = new Set([
   "빨강", "파랑", "노랑", "초록", "보라", "분홍", "하양", "검정",
@@ -109,12 +120,29 @@ function buildJudgePrompt(word: string, category: Category): string {
     `1. depictsWord: Does the image clearly and unambiguously depict "${word}" (${meaning})?`,
     `   If it shows a DIFFERENT object/animal/scene, set false. Example: word "목"(neck) but image shows a giraffe → false.`,
     `   Symbolic representations of abstract words are fine if they match the intended meaning above.`,
+    ...(TEXT_ALLOWED_WORDS.has(word) ? [
+    `2. hasText: This word's MEANING is writing/text itself. Text in the image IS the subject.`,
+    `   ALWAYS set hasText=false for this word — the text shown IS the correct depiction.`,
+    ] : [
     `2. hasText: Are there ANY letters, numbers, words, captions, labels, or writing visible ANYWHERE`,
-    `   (including printed on objects)? Toddlers cannot read and garbled/wrong text confuses them. Any text → true.`,
+    `   in the image? This includes: store signs, price tags, product labels, name tags, street signs,`,
+    `   text on clothing, speech bubbles, watermarks, or ANY other written text. Toddlers cannot read`,
+    `   and ANY text confuses them. If ANY text is visible anywhere in the scene → set true (regenerate).`,
+    ...(SLEEP_WORDS.has(word) ? [
+    `   EXCEPTION for this sleep-related word: ZZZ / zzz / Zzz sleep symbols are a standard visual`,
+    `   shorthand for sleeping and are acceptable — do NOT flag them as text (set hasText=false for zzz only).`,
+    ] : []),
+    ]),
+    ...(FACE_ALLOWED_WORDS.has(word) ? [
+    `3. badAnthropomorphism: This word is a TOY or OBJECT that is traditionally designed WITH a face/features by design.`,
+    `   A simple painted face on this toy is ACCEPTABLE and EXPECTED — set badAnthropomorphism=false.`,
+    `   Only set true if there are ADDITIONAL cartoon limbs/arms/legs that make it look like a separate cartoon character.`,
+    ] : [
     `3. badAnthropomorphism: Decide from the WORD's meaning:`,
     `   - If the word is an ANIMAL, PERSON, CHARACTER, an EMOTION, or an ACTION, a friendly face/limbs is natural → set false.`,
     `   - If the word is an INANIMATE OBJECT, FOOD, FRUIT, BODY PART, VEHICLE, or NATURE thing, it must NOT have`,
     `     cartoon eyes/face/mouth/arms/legs. If such a plain thing was given a face or limbs → set true.`,
+    ]),
     `4. colorDominant: ONLY for CATEGORY=color. Is the named color clearly the SINGLE dominant color filling most`,
     `   of the image? If the color appears only as a small part of some object, set false. For non-color category, set true.`,
     `5. extraIssues: note any other serious problem (multiple competing subjects, scary/inappropriate, cluttered, unclear). Else "".`,
@@ -124,52 +152,70 @@ function buildJudgePrompt(word: string, category: Category): string {
 }
 
 // 코드에서 최종 판정 강제(모델이 verdict를 누락/오판해도 하드룰 우선)
-function finalize(category: Category, v: Verdict): Verdict {
+function finalize(category: Category, v: Verdict, word?: string): Verdict {
+  const hasText = word && TEXT_ALLOWED_WORDS.has(word) ? false : v.hasText;
+  const hasFace = word && FACE_ALLOWED_WORDS.has(word) ? false : v.badAnthropomorphism;
   const hardFail =
     !v.depictsWord ||
-    v.hasText ||
-    v.badAnthropomorphism ||
+    hasText ||
+    hasFace ||
     (category === "color" && !v.colorDominant);
   return { ...v, verdict: hardFail ? "regenerate" : "ok" };
 }
 
-function failReasons(category: Category, v: Verdict): string[] {
+function failReasons(category: Category, v: Verdict, word?: string): string[] {
+  const hasText = word && TEXT_ALLOWED_WORDS.has(word) ? false : v.hasText;
+  const hasFace = word && FACE_ALLOWED_WORDS.has(word) ? false : v.badAnthropomorphism;
   const r: string[] = [];
   if (!v.depictsWord) r.push("단어와 그림 의미 불일치");
-  if (v.hasText) r.push("이미지에 글자/숫자 포함");
-  if (v.badAnthropomorphism) r.push("무생물에 부적절한 얼굴·팔·다리(의인화)");
+  if (hasText) r.push("이미지에 글자/숫자 포함");
+  if (hasFace) r.push("무생물에 부적절한 얼굴·팔·다리(의인화)");
   if (category === "color" && !v.colorDominant) r.push("색깔이 화면을 채우지 못함");
   if (v.extraIssues && v.extraIssues.trim()) r.push(v.extraIssues.trim());
   return r;
 }
 
-// ── Gemini Vision 심사 1장 ───────────────────────────────────────────────────
-async function judgeImage(word: string, slug: string): Promise<Verdict | null> {
+// ── Gemini Vision 심사 1장 (429 자동 재시도) ────────────────────────────────
+async function judgeImage(word: string, slug: string, retries = 4): Promise<Verdict | null> {
   const file = join(WORDS_DIR, `${slug}.webp`);
   if (!existsSync(file)) return null;
   const b64 = readFileSync(file).toString("base64");
   const category = categoryOf(word);
-  const res = await ai.models.generateContent({
-    model: VERIFY_MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: "image/webp", data: b64 } },
-          { text: buildJudgePrompt(word, category) },
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await ai.models.generateContent({
+        model: VERIFY_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: "image/webp", data: b64 } },
+              { text: buildJudgePrompt(word, category) },
+            ],
+          },
         ],
-      },
-    ],
-    config: {
-      temperature: 0,
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA as any,
-    },
-  });
-  const text = res.text;
-  if (!text) return null;
-  const parsed = JSON.parse(text) as Verdict;
-  return finalize(category, parsed);
+        config: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: RESPONSE_SCHEMA as any,
+        },
+      });
+      const text = res.text;
+      if (!text) return null;
+      const parsed = JSON.parse(text) as Verdict;
+      return finalize(category, parsed, word);
+    } catch (e: any) {
+      const is429 = e?.status === 429 || String(e).includes("429");
+      if (is429 && attempt < retries) {
+        const wait = Math.min(60000, 5000 * 2 ** attempt);
+        console.warn(`  ⏳ judgeImage 429 — ${wait / 1000}s 후 재시도 (${attempt + 1}/${retries})`);
+        await new Promise((r) => setTimeout(r, wait));
+      } else {
+        throw e;
+      }
+    }
+  }
+  return null;
 }
 
 // ── 캐시/불합격 목록 IO ──────────────────────────────────────────────────────
@@ -220,14 +266,18 @@ async function regenerateOne(word: string, slug: string, reasons: string[]): Pro
         console.log(`  ✓ ${word} 재생성·재검증 통과 (시도 ${attempt})`);
         return v;
       }
-      lastReasons = failReasons(categoryOf(word), v);
+      lastReasons = failReasons(categoryOf(word), v, word);
       console.warn(`  ↻ ${word} 재생성 ${attempt} 후에도 불합격: ${lastReasons.join(", ")}`);
     } catch (e) {
       console.warn(`  ⚠ ${word} 재생성 오류: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`);
     }
     await new Promise((r) => setTimeout(r, REGEN_DELAY_MS));
   }
-  return judgeImage(word, slug); // 마지막 상태 반환(여전히 불합격일 수 있음)
+  try {
+    return await judgeImage(word, slug); // 마지막 상태 반환(여전히 불합격일 수 있음)
+  } catch {
+    return null;
+  }
 }
 
 // ── 메인 ─────────────────────────────────────────────────────────────────────
@@ -261,7 +311,7 @@ async function main() {
         cache[slug] = { word, verdict: "ok", reasons: [], reason: v.reason };
         fixed++;
       } else if (v) {
-        cache[slug] = { word, verdict: "regenerate", reasons: failReasons(categoryOf(word), v), reason: v.reason };
+        cache[slug] = { word, verdict: "regenerate", reasons: failReasons(categoryOf(word), v, word), reason: v.reason };
         still++;
       }
       saveJson(VERDICT_CACHE, cache);
@@ -280,7 +330,7 @@ async function main() {
     try {
       const v = await judgeImage(word, slug);
       if (!v) { errs++; return; }
-      const reasons = failReasons(categoryOf(word), v);
+      const reasons = failReasons(categoryOf(word), v, word);
       cache[slug] = { word, verdict: v.verdict, reasons, reason: v.reason };
       if (v.verdict === "ok") ok++;
       else { bad++; console.log(`  ✗ ${word} (${slug}): ${reasons.join(", ")}`); }
