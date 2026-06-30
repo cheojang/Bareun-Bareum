@@ -5849,11 +5849,10 @@
     "word": "먼저",
     "verdict": "regenerate",
     "reasons": [
-      "단어와 그림 의미 불일치",
       "이미지에 글자/숫자 포함",
-      "The ducks are wearing crowns, sashes, and medals, which are explicitly forbidden by the requirements for a plain depiction."
+      "Image contains English text ('GOING FIRST', 'FIRST')."
     ],
-    "reason": "이미지에 숫자 '1'이 있고, 오리들이 왕관, 띠, 메달을 착용하여 '먼저'의 단순한 개념을 표현하기에 적합하지 않습니다."
+    "reason": "이미지에 영어 텍스트가 포함되어 있어 재생성해야 합니다."
   },
   "cheoeum": {
     "word": "처음",

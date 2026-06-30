@@ -152,20 +152,24 @@ function buildJudgePrompt(word: string, category: Category): string {
 }
 
 // 코드에서 최종 판정 강제(모델이 verdict를 누락/오판해도 하드룰 우선)
-function finalize(category: Category, v: Verdict): Verdict {
+function finalize(category: Category, v: Verdict, word?: string): Verdict {
+  const hasText = word && TEXT_ALLOWED_WORDS.has(word) ? false : v.hasText;
+  const hasFace = word && FACE_ALLOWED_WORDS.has(word) ? false : v.badAnthropomorphism;
   const hardFail =
     !v.depictsWord ||
-    v.hasText ||
-    v.badAnthropomorphism ||
+    hasText ||
+    hasFace ||
     (category === "color" && !v.colorDominant);
   return { ...v, verdict: hardFail ? "regenerate" : "ok" };
 }
 
-function failReasons(category: Category, v: Verdict): string[] {
+function failReasons(category: Category, v: Verdict, word?: string): string[] {
+  const hasText = word && TEXT_ALLOWED_WORDS.has(word) ? false : v.hasText;
+  const hasFace = word && FACE_ALLOWED_WORDS.has(word) ? false : v.badAnthropomorphism;
   const r: string[] = [];
   if (!v.depictsWord) r.push("단어와 그림 의미 불일치");
-  if (v.hasText) r.push("이미지에 글자/숫자 포함");
-  if (v.badAnthropomorphism) r.push("무생물에 부적절한 얼굴·팔·다리(의인화)");
+  if (hasText) r.push("이미지에 글자/숫자 포함");
+  if (hasFace) r.push("무생물에 부적절한 얼굴·팔·다리(의인화)");
   if (category === "color" && !v.colorDominant) r.push("색깔이 화면을 채우지 못함");
   if (v.extraIssues && v.extraIssues.trim()) r.push(v.extraIssues.trim());
   return r;
@@ -199,7 +203,7 @@ async function judgeImage(word: string, slug: string, retries = 4): Promise<Verd
       const text = res.text;
       if (!text) return null;
       const parsed = JSON.parse(text) as Verdict;
-      return finalize(category, parsed);
+      return finalize(category, parsed, word);
     } catch (e: any) {
       const is429 = e?.status === 429 || String(e).includes("429");
       if (is429 && attempt < retries) {
@@ -262,7 +266,7 @@ async function regenerateOne(word: string, slug: string, reasons: string[]): Pro
         console.log(`  ✓ ${word} 재생성·재검증 통과 (시도 ${attempt})`);
         return v;
       }
-      lastReasons = failReasons(categoryOf(word), v);
+      lastReasons = failReasons(categoryOf(word), v, word);
       console.warn(`  ↻ ${word} 재생성 ${attempt} 후에도 불합격: ${lastReasons.join(", ")}`);
     } catch (e) {
       console.warn(`  ⚠ ${word} 재생성 오류: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`);
@@ -307,7 +311,7 @@ async function main() {
         cache[slug] = { word, verdict: "ok", reasons: [], reason: v.reason };
         fixed++;
       } else if (v) {
-        cache[slug] = { word, verdict: "regenerate", reasons: failReasons(categoryOf(word), v), reason: v.reason };
+        cache[slug] = { word, verdict: "regenerate", reasons: failReasons(categoryOf(word), v, word), reason: v.reason };
         still++;
       }
       saveJson(VERDICT_CACHE, cache);
@@ -326,7 +330,7 @@ async function main() {
     try {
       const v = await judgeImage(word, slug);
       if (!v) { errs++; return; }
-      const reasons = failReasons(categoryOf(word), v);
+      const reasons = failReasons(categoryOf(word), v, word);
       cache[slug] = { word, verdict: v.verdict, reasons, reason: v.reason };
       if (v.verdict === "ok") ok++;
       else { bad++; console.log(`  ✗ ${word} (${slug}): ${reasons.join(", ")}`); }
