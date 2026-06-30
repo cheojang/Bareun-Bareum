@@ -1,19 +1,11 @@
 {
-  "jangma": {
-    "word": "장마",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "비 선이 요청된 '매우 빽빽한' 수준으로 밀집되어 있지 않아 장마의 폭우를 충분히 표현하지 못합니다."
-  },
   "meonjeo": {
     "word": "먼저",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "Image depicts the Korean word '분래' instead of '먼저'. It also contains text, a medal, and the number '1', all explicitly forbidden."
+      "동물들이 스카프를 착용하고 있으며, '먼저'의 의미가 명확하게 표현되지 않았습니다."
     ],
-    "reason": "이미지는 '먼저'가 아닌 '분래'를 묘사하고 있으며, 텍스트와 메달, 숫자 '1'이 포함되어 있습니다."
+    "reason": "동물들이 스카프를 착용하고 있으며, '먼저'의 의미가 명확하게 표현되지 않았습니다."
   },
   "sagakhyeong": {
     "word": "사각형",
@@ -21,157 +13,56 @@
       "단어와 그림 의미 불일치",
       "무생물에 부적절한 얼굴·팔·다리(의인화)"
     ],
-    "reason": "이미지는 둥근 모서리와 얼굴을 가지고 있어 사각형의 정의에 맞지 않습니다."
+    "reason": "얼굴이 있고 모서리가 둥근 만화 사각형이며, 날카로운 모서리의 순수한 기하학적 사각형이 아닙니다."
   },
   "toseuteu": {
     "word": "토스트",
     "reasons": [
-      "단어와 그림 의미 불일치"
+      "단어와 그림 의미 불일치",
+      "The image depicts bread with a spread, not plain toast. The browning does not look like clear toasting marks."
     ],
-    "reason": "토스트는 구운 빵을 의미하지만, 이미지는 구워지지 않은 일반 식빵을 보여줍니다."
+    "reason": "이 이미지는 토스트가 아닌 스프레드가 발린 빵을 보여줍니다."
   },
   "huinuyu": {
     "word": "흰우유",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The milk carton has an apple drawing on it, and is not completely blank white as required."
+      "The milk is not filled to the very rim of the glass. The glass itself has a light blue tint, making it appear blue rather than clear/transparent as requested."
     ],
-    "reason": "우유팩에 사과 그림이 있어서 '완전히 비어있는 흰색 우유팩'이라는 의도된 의미와 다릅니다."
-  },
-  "geonjeonji": {
-    "word": "건전지",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함"
-    ],
-    "reason": "배터리에 \"AA\"라는 글자가 있지만, 글자 없는 평범한 배터리가 필요합니다."
-  },
-  "ttakpul": {
-    "word": "딱풀",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The yellow section on the glue stick, even without text, appears to be a label area, which contradicts the requirement for a completely blank and smooth cylinder with no labels of any kind."
-    ],
-    "reason": "이미지에 라벨처럼 보이는 노란색 부분이 있어 완전히 비어 있고 매끄러운 원통형이어야 한다는 요구 사항과 모순됩니다."
+    "reason": "우유가 잔 가장자리까지 채워져 있지 않고, 잔이 투명하지 않고 푸른색입니다."
   },
   "chuk": {
     "word": "축",
     "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지는 팽이 전체를 보여주며, 축(중심 막대)만을 명확하게 나타내지 않습니다."
-  },
-  "heoritti": {
-    "word": "허리띠",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지에 바느질선과 구멍이 상세하게 묘사되어 있어, '완전히 평평하고 구멍이 없는 매끄러운 가죽'이라는 설명과 일치하지 않습니다."
-  },
-  "nachimban": {
-    "word": "나침반",
-    "reasons": [
       "단어와 그림 의미 불일치",
       "이미지에 글자/숫자 포함",
-      "The image contains text (N, W, E, S) which was explicitly forbidden."
+      "무생물에 부적절한 얼굴·팔·다리(의인화)",
+      "The image contains text ('AXLE') and the spinning top is anthropomorphized with a face, which is not allowed for an inanimate object. The instructions explicitly state 'NO text' and 'NO face, NOT anthropomorphized'."
     ],
-    "reason": "이미지가 지침에 명시된 텍스트를 포함하고 있습니다."
-  },
-  "hyudaepon": {
-    "word": "휴대폰",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "multiple competing subjects"
-    ],
-    "reason": "휴대폰 외에 자동차와 사과가 함께 있어서 단어 학습에 방해가 됩니다."
-  },
-  "sinmun": {
-    "word": "신문",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "신문에 얼굴이 있어서 적절하지 않습니다."
-  },
-  "heeopin": {
-    "word": "헤어핀",
-    "reasons": [
-      "단어와 그림 의미 불일치"
-    ],
-    "reason": "이미지에 리본 장식이 있는 헤어핀이 있어 의도된 의미와 다릅니다."
+    "reason": "이미지에 글자가 있고 팽이에 얼굴이 있어 재생성해야 합니다."
   },
   "neup": {
     "word": "늪",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The image includes an apple, which was explicitly forbidden in the instructions for depicting '늪'."
+      "The image includes an apple and a lily pad, which were explicitly forbidden or not requested, making the depiction not solely of cattails in swamp water."
     ],
-    "reason": "이미지에 사과가 있어서 '늪'의 의미를 정확히 나타내지 못합니다."
-  },
-  "judungi": {
-    "word": "주둥이",
-    "reasons": [
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "주둥이는 신체 부위이므로 눈이 있으면 의인화로 간주됩니다."
-  },
-  "beikeon": {
-    "word": "베이컨",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "베이컨에 얼굴이 있어 재생성해야 합니다."
-  },
-  "jjingamja": {
-    "word": "찐감자",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "감자에 얼굴이 있어서 안 됩니다."
+    "reason": "사과와 연잎이 있어서 늪의 의미를 정확히 나타내지 못합니다."
   },
   "muneoppang": {
     "word": "문어빵",
     "reasons": [
       "단어와 그림 의미 불일치",
-      "The image looks more like a cartoon octopus character or a toy rather than a food item. It lacks the texture and appearance of a baked or fried snack, which is essential for \"문어빵\"."
+      "무생물에 부적절한 얼굴·팔·다리(의인화)",
+      "The image depicts a cartoon character/toy instead of a food item."
     ],
-    "reason": "이 이미지는 문어빵이 아닌 일반 문어 캐릭터처럼 보입니다. 빵의 질감이나 음식의 느낌이 부족합니다."
-  },
-  "neoget": {
-    "word": "너겟",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "무생물에 부적절한 얼굴·팔·다리(의인화)"
-    ],
-    "reason": "너겟에 얼굴이 그려져 있어 의도한 바와 다릅니다."
-  },
-  "yeopseo": {
-    "word": "엽서",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "The image shows two postcards instead of just one. The lines on the back of the postcard could be interpreted as writing."
-    ],
-    "reason": "엽서가 한 장이 아니라 두 장이며, 엽서 뒷면에 글씨로 오해할 수 있는 선들이 있어 재생성해야 합니다."
+    "reason": "이 이미지는 문어빵이 아닌 캐릭터처럼 보이며, 얼굴이 있어 부적절합니다."
   },
   "jandi": {
     "word": "잔디",
     "reasons": [
-      "단어와 그림 의미 불일치",
-      "이미지에 글자/숫자 포함",
-      "The image contains an apple, which was explicitly forbidden. The stylized grass blades strongly resemble the letter 'M' and the number '3', which can be confusing for a toddler."
+      "단어와 그림 의미 불일치"
     ],
-    "reason": "이미지에 사과가 있고, 잔디 모양이 글자처럼 보여서 유아에게 혼란을 줄 수 있습니다."
-  },
-  "bamhaneul": {
-    "word": "밤하늘",
-    "reasons": [
-      "단어와 그림 의미 불일치",
-      "The image contains a car and apples, which are not part of a simple night sky scene and were explicitly forbidden in the prompt."
-    ],
-    "reason": "자동차와 사과가 있어서 밤하늘을 정확히 묘사하지 못합니다."
+    "reason": "이미지에 풀잎이 너무 많고, 요청된 대로 단색이 아닙니다."
   }
 }
