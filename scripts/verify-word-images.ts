@@ -52,7 +52,7 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((s) => s
 const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠"]);
 
 // 텍스트가 의미의 핵심인 단어 — hasText 검사 전체 면제
-const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어"]);
+const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터"]);
 
 // 색깔 단어(전 화면을 그 색으로 채워야 함)
 const COLOR_WORDS = new Set([

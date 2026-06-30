@@ -208,6 +208,11 @@ export const WORD_CONTEXT: Record<string, string> = {
   "목": "a cute cartoon giraffe with its signature long graceful neck as the most prominent feature, the long neck is the main centered subject, simple flat illustration",
   "손가락": "a single pointing index finger extended and isolated on a white background, simple clean flat cartoon illustration, no anthropomorphism",
   "엉덩이": "a cute cartoon baby animal (chick or bunny) sitting down viewed from behind, its round padded bottom clearly visible as the main centered feature",
+  // 반복 실패 단어 — 12차 추가
+  "고추": "two fresh bright red chili peppers lying on a white surface, natural vegetable shape, no face, no eyes, no smile, no limbs on the peppers",
+  "피망": "a plump shiny green bell pepper sitting on a white surface, natural vegetable shape, no face, no eyes, no smile on the pepper",
+  "모레": "two small crescent moon shapes followed by a bright sunrise sun icon, arranged left to right — representing sleeping through two nights to reach the day after tomorrow (모레), simple sequential symbols, no text, no numbers",
+  "그저께": "a simple timeline of three sun icons from left to right — the leftmost sun is faded and slightly darker (representing 그저께, two days ago), the middle is yesterday, the rightmost is today — no text, no numbers, just the three sun symbols with the leftmost one smaller or faded",
   // 반복 실패 단어 — 10차 추가
   "장구": "a traditional Korean janggu hourglass-shaped drum — the drum has two circular drumheads on both ends (one larger, one smaller), connected by a narrow waist laced with colorful cords, positioned horizontally, no face, no text",
   "칼국수": "a bowl of Korean knife-cut noodles (칼국수) — thick flat white wheat noodles in golden clear broth, seen from slightly above, with green onion garnish on top, no face on the bowl, no cartoon character, no person in the image, just the bowl of noodles",
