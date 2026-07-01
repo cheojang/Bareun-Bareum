@@ -427,12 +427,6 @@
     "reasons": [],
     "reason": "수건을 명확하게 보여줍니다."
   },
-  "sogeum": {
-    "word": "소금",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 소금 결정을 명확하게 보여줍니다."
-  },
   "saekyeonpil": {
     "word": "색연필",
     "verdict": "ok",
@@ -1299,12 +1293,6 @@
     "reasons": [],
     "reason": "이미지가 헬리콥터를 명확하게 잘 나타내고 있습니다."
   },
-  "maseukeu": {
-    "word": "마스크",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '귀여운 동물 얼굴 마스크'를 명확하게 보여줍니다."
-  },
   "hotteok": {
     "word": "호떡",
     "verdict": "ok",
@@ -1522,12 +1510,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 펭귄을 명확하게 보여줍니다."
-  },
-  "kkum": {
-    "word": "꿈",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '꿈'의 의미를 잘 나타내고 있습니다."
   },
   "gitbal": {
     "word": "깃발",
@@ -2569,12 +2551,6 @@
     "reasons": [],
     "reason": "이미지가 '흐림'을 명확하게 나타내고 다른 문제가 없습니다."
   },
-  "hayang": {
-    "word": "하양",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "하얀색 곰돌이가 하양을 잘 나타냅니다."
-  },
   "otobai": {
     "word": "오토바이",
     "verdict": "ok",
@@ -3277,12 +3253,6 @@
     "reasons": [],
     "reason": "이미지가 떡을 명확하게 나타내고 다른 문제가 없습니다."
   },
-  "kkwabaegi": {
-    "word": "꽈배기",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "꽈배기를 명확하게 보여주며 다른 문제가 없습니다."
-  },
   "ttong": {
     "word": "똥",
     "verdict": "ok",
@@ -3944,12 +3914,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 '분홍색'을 나타내는 분홍색 돼지를 명확하게 보여주며, 다른 문제점이 없습니다."
-  },
-  "haneulsaek": {
-    "word": "하늘색",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "하늘색을 명확하게 잘 나타냅니다."
   },
   "juhwangsaek": {
     "word": "주황색",
@@ -4805,18 +4769,6 @@
     "reasons": [],
     "reason": "이미지가 '손바닥'을 명확하게 나타내며 다른 문제가 없습니다."
   },
-  "hateu": {
-    "word": "하트",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 하트를 명확하게 나타내며 다른 문제가 없습니다."
-  },
-  "yakji": {
-    "word": "약지",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지는 약지(반지를 낀 손가락)를 명확하게 보여줍니다."
-  },
   "eomji": {
     "word": "엄지",
     "verdict": "ok",
@@ -4858,12 +4810,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "새벽의 의미를 잘 나타내고 있습니다."
-  },
-  "iljuil": {
-    "word": "일주일",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '일주일'을 명확하게 나타냅니다."
   },
   "handal": {
     "word": "한달",
@@ -6055,12 +6001,6 @@
     "reasons": [],
     "reason": "이미지가 '애니메이션'을 명확하게 나타내며 다른 문제가 없습니다."
   },
-  "rinseu": {
-    "word": "린스",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 의도된 단어를 명확하게 나타내며 모든 기준을 충족합니다."
-  },
   "yutyubeu": {
     "word": "유튜브",
     "verdict": "ok",
@@ -6571,12 +6511,6 @@
     "reasons": [],
     "reason": "이미지가 풀벌레를 명확하게 보여주며 다른 문제가 없습니다."
   },
-  "ppul": {
-    "word": "뿔",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 뿔을 명확하게 보여줍니다."
-  },
   "gasi": {
     "word": "가시",
     "verdict": "ok",
@@ -6666,12 +6600,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 '땅'을 명확하게 나타내며 다른 문제가 없습니다."
-  },
-  "yukji": {
-    "word": "육지",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지는 '육지'의 의미를 명확하고 단순하게 잘 표현하고 있습니다."
   },
   "kkeopdegi": {
     "word": "껍데기",
@@ -7056,12 +6984,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 '풋고추'를 명확하게 나타냅니다."
-  },
-  "honggochu": {
-    "word": "홍고추",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지는 홍고추를 명확하게 잘 보여줍니다."
   },
   "myeon": {
     "word": "면",
@@ -7907,12 +7829,6 @@
     "reasons": [],
     "reason": "이미지가 '타이머'를 명확하게 나타내고 있습니다."
   },
-  "inhyeongot": {
-    "word": "인형옷",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지는 '인형옷'을 명확하게 보여줍니다."
-  },
   "sebaljajeongeo": {
     "word": "세발자전거",
     "verdict": "ok",
@@ -8182,12 +8098,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 모루를 명확하게 잘 나타내고 있습니다."
-  },
-  "nunal": {
-    "word": "눈알",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "눈알을 명확하게 잘 나타내고 있습니다."
   },
   "teokbati": {
     "word": "턱받이",
@@ -8659,12 +8569,6 @@
     "reasons": [],
     "reason": "이 이미지는 '간'을 명확하게 보여주며, 다른 문제점이 없습니다."
   },
-  "nundongja": {
-    "word": "눈동자",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '눈동자'를 명확하게 나타내고 다른 문제가 없습니다."
-  },
   "simjang": {
     "word": "심장",
     "verdict": "ok",
@@ -8766,12 +8670,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 의도된 의미를 명확하게 나타냅니다."
-  },
-  "takgugong": {
-    "word": "탁구공",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 탁구공을 명확하게 나타내고 있습니다."
   },
   "goldae": {
     "word": "골대",
@@ -8921,12 +8819,6 @@
     "reasons": [],
     "reason": "이미지는 '버튼'을 명확하게 보여주며, 유아용 플래시카드에 적합합니다."
   },
-  "rebeo": {
-    "word": "레버",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '레버'를 명확하게 나타내고 다른 문제가 없습니다."
-  },
   "mongki": {
     "word": "몽키",
     "verdict": "ok",
@@ -8998,12 +8890,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지는 '곡식'을 명확하게 나타내며 다른 문제가 없습니다."
-  },
-  "homi": {
-    "word": "호미",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '호미'를 명확하게 잘 나타내고 있습니다."
   },
   "biryo": {
     "word": "비료",
@@ -9617,12 +9503,6 @@
     "reasons": [],
     "reason": "이미지는 체중계를 명확하게 보여주며, 텍스트나 의인화된 요소가 없습니다."
   },
-  "naepkin": {
-    "word": "냅킨",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지는 의도한 대로 접힌 흰색 냅킨을 명확하게 보여줍니다."
-  },
   "kichintawol": {
     "word": "키친타월",
     "verdict": "ok",
@@ -10139,12 +10019,6 @@
     "reasons": [],
     "reason": "이미지가 '들판'을 명확하게 나타내고 다른 문제도 없습니다."
   },
-  "noeul": {
-    "word": "노을",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 노을을 명확하게 묘사하고 있습니다."
-  },
   "pye": {
     "word": "폐",
     "verdict": "ok",
@@ -10168,12 +10042,6 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 '밤하늘'을 명확하게 나타내고 있으며, 의도된 의미와 모든 지침을 준수합니다."
-  },
-  "mulbangul": {
-    "word": "물방울",
-    "verdict": "ok",
-    "reasons": [],
-    "reason": "이미지가 '물방울'을 명확하게 나타내고 있습니다."
   },
   "damyo": {
     "word": "담요",
@@ -10432,5 +10300,140 @@
     "verdict": "ok",
     "reasons": [],
     "reason": "이미지가 '은색'을 명확하게 나타냅니다."
+  },
+  "maseukeu": {
+    "word": "마스크",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '마스크'를 명확하게 잘 나타냅니다."
+  },
+  "kkwabaegi": {
+    "word": "꽈배기",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 꽈배기를 명확하게 잘 나타냅니다."
+  },
+  "haneulsaek": {
+    "word": "하늘색",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '하늘색'을 명확하게 잘 나타냅니다."
+  },
+  "hateu": {
+    "word": "하트",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '하트'를 명확하게 잘 나타냅니다."
+  },
+  "yakji": {
+    "word": "약지",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '약지'의 의미를 명확하게 잘 표현하고 있습니다."
+  },
+  "rinseu": {
+    "word": "린스",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '린스'를 명확하게 잘 나타내고 있습니다."
+  },
+  "ppul": {
+    "word": "뿔",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '뿔'을 명확하게 나타냅니다."
+  },
+  "honggochu": {
+    "word": "홍고추",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '홍고추'를 명확하게 나타내고 있습니다."
+  },
+  "yukji": {
+    "word": "육지",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '육지'의 의도된 의미를 명확하게 나타냅니다."
+  },
+  "inhyeongot": {
+    "word": "인형옷",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지는 '인형옷'을 명확하게 보여주며, 다른 문제점이 없습니다."
+  },
+  "nundongja": {
+    "word": "눈동자",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '눈동자'를 명확하게 잘 표현하고 있습니다."
+  },
+  "takgugong": {
+    "word": "탁구공",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 탁구공을 명확하게 보여주며 다른 문제가 없습니다."
+  },
+  "rebeo": {
+    "word": "레버",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 단어의 의미를 명확하게 나타냅니다."
+  },
+  "homi": {
+    "word": "호미",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '호미'를 명확하게 보여주고 있으며, 다른 문제점은 없습니다."
+  },
+  "mulbangul": {
+    "word": "물방울",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 단어의 의미를 명확하게 나타냅니다."
+  },
+  "noeul": {
+    "word": "노을",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '노을'을 명확하게 잘 표현하고 있습니다."
+  },
+  "naepkin": {
+    "word": "냅킨",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 냅킨을 명확하게 보여줍니다."
+  },
+  "sogeum": {
+    "word": "소금",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "소금을 명확하게 묘사하고 있습니다."
+  },
+  "iljuil": {
+    "word": "일주일",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '일주일'의 의미를 명확하게 잘 표현하고 있습니다."
+  },
+  "kkum": {
+    "word": "꿈",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '꿈'의 의미를 명확하게 잘 표현하고 있습니다."
+  },
+  "hayang": {
+    "word": "하양",
+    "verdict": "ok",
+    "reasons": [],
+    "reason": "이미지가 '하양'이라는 단어의 의미를 정확하게 나타내고 있습니다."
+  },
+  "nunal": {
+    "word": "눈알",
+    "verdict": "regenerate",
+    "reasons": [
+      "단어와 그림 의미 불일치",
+      "The white circle has subtle shading, which contradicts the requirement for a solid pure white fill with no shading or gradient."
+    ],
+    "reason": "흰색 원에 그림자가 있어 순수한 흰색이 아닙니다."
   }
 }

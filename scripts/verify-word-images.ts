@@ -49,7 +49,7 @@ const LIMIT = process.env.LIMIT ? Number(process.env.LIMIT) : Infinity;
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((s) => s.trim())) : null;
 
 // 수면 관련 단어 — ZZZ/zzz 기호는 허용 (수면의 표준 시각 표현)
-const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠"]);
+const SLEEP_WORDS = new Set(["자다", "졸음", "졸리다", "잠", "낮잠", "꿈"]);
 
 // 텍스트가 의미의 핵심인 단어 — hasText 검사 전체 면제
 const TEXT_ALLOWED_WORDS = new Set(["글자", "숫자", "이름", "편지", "글씨", "단어", "키보드", "컴퓨터", "이름표", "달력", "책", "바코드", "돈", "신문", "잡지",
