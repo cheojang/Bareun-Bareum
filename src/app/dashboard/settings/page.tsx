@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { PREMIUM_MONTHLY_PRICE_LABEL } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import Link from "next/link";
@@ -28,9 +29,12 @@ export default async function SettingsPage() {
       .catch(() => null),
   ]);
 
+  // 단건(1개월) 결제 — active여도 만료일이 지나면 프리미엄 아님 (만료일 없는 active는 무기한)
   const isPremium =
     subscription?.plan === "premium" &&
-    (subscription?.status === "active" ||
+    ((subscription?.status === "active" &&
+      (!subscription?.currentPeriodEnd ||
+        new Date(subscription.currentPeriodEnd).getTime() > Date.now())) ||
       (subscription?.status === "cancelled" &&
         !!subscription?.currentPeriodEnd &&
         new Date(subscription.currentPeriodEnd).getTime() > Date.now()));
@@ -89,7 +93,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-[#0D9488] font-semibold mt-0.5">
               {isCancelled
                 ? `${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}까지 이용 가능 (취소됨)`
-                : `다음 결제일 · ${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}`}
+                : `${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}까지 이용 가능`}
             </p>
           )}
           {trialActive && (
@@ -124,7 +128,7 @@ export default async function SettingsPage() {
               <li>단계별 반복 연습</li>
               <li>종합 진단 보고서</li>
             </ul>
-            <p className="text-xs font-bold text-[#FF9B6A] mt-2">월 5,000원</p>
+            <p className="text-xs font-bold text-[#FF9B6A] mt-2">월 {PREMIUM_MONTHLY_PRICE_LABEL}</p>
           </div>
         </div>
 

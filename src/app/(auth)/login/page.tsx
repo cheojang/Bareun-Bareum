@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
@@ -31,6 +31,13 @@ function LoginContent() {
   const [emailError, setEmailError] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
 
+  // DB 워밍업: Supabase가 유휴 상태면 OAuth 콜백의 첫 DB 호출이 타임아웃돼
+  // "카카오 첫 로그인만 실패" 증상이 났다. 로그인 화면에 들어온 순간 미리 깨워두면
+  // 사용자가 카카오 인증을 마치고 돌아올 때쯤 DB가 준비되어 있다. (실패해도 무시)
+  useEffect(() => {
+    fetch("/api/health").catch(() => {});
+  }, []);
+
   // OAuth(카카오/구글) 로그인
   // ⚠️ 최초 로그인이 실패하던 버그 수정:
   //   이 앱은 비회원(게스트) 모드를 적극 권장 → 사용자가 카카오 로그인을 누를 때
@@ -39,6 +46,8 @@ function LoginContent() {
   //   두 번째 시도에서야 (이미 만들어진 계정으로) 로그인되는 증상이 있었다.
   //   → OAuth 시작 전에 기존 세션을 정리해 항상 "새 로그인"으로 시작하게 한다.
   async function socialLogin(provider: "kakao" | "google") {
+    // 화면에 오래 머물러 DB가 다시 잠들었을 수 있으니 클릭 시점에도 워밍업
+    fetch("/api/health").catch(() => {});
     try {
       await signOut({ redirect: false });
     } catch {

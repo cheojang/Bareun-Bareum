@@ -135,6 +135,29 @@ const credentialsProvider = Credentials({
   },
 });
 
+// ── DB 콜드스타트 재시도 ────────────────────────────────────────────────────────
+// 카카오/구글 OAuth 콜백은 어댑터 DB 호출(getUserByAccount → createUser → linkAccount)이
+// 연쇄로 일어나는데, Supabase가 유휴 상태면 첫 연결이 타임아웃돼 "첫 로그인만 실패,
+// 두 번째 성공" 증상이 났다. 연결 계열 오류에 한해 짧은 백오프로 재시도해 콜드스타트를
+// 실패가 아닌 지연으로 흡수한다.
+function isTransientDbError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  return /timeout|timed out|ECONNRESET|ECONNREFUSED|Connection terminated|Closed|too many clients|starting up/i.test(msg);
+}
+
+async function withDbRetry<T>(label: string, fn: () => Promise<T>, retries = 2): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (attempt >= retries || !isTransientDbError(e)) throw e;
+      const wait = 700 * (attempt + 1);
+      console.warn(`[auth] ${label} 일시적 DB 오류 — ${wait}ms 후 재시도 (${attempt + 1}/${retries}):`, e instanceof Error ? e.message : e);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+}
+
 // 표준 PrismaAdapter를 쓰되, 과거 실패한 OAuth 로그인이 남긴 "잘못된 Account 행"
 // 때문에 OAuthAccountNotLinked가 발생하던 문제를 어댑터 레벨에서 자동 치유한다.
 // (getUserByAccount/getUserByEmail은 표준 동작 유지 — 그래야 이미 연결된 사용자가
@@ -143,6 +166,12 @@ const credentialsProvider = Credentials({
 const baseAdapter = PrismaAdapter(prisma);
 const accountLinkingAdapter = {
   ...baseAdapter,
+  // OAuth 콜백의 핵심 조회 — 콜드스타트 시 재시도 (첫 로그인 실패의 주범)
+  // (Adapter 메서드는 Awaitable 반환이라 Promise.resolve로 감싸 재시도 헬퍼와 맞춘다)
+  getUserByAccount: async (providerAccountId: { provider: string; providerAccountId: string }) =>
+    withDbRetry("getUserByAccount", () => Promise.resolve(baseAdapter.getUserByAccount!(providerAccountId))),
+  getUserByEmail: async (email: string) =>
+    withDbRetry("getUserByEmail", () => Promise.resolve(baseAdapter.getUserByEmail!(email))),
   // ⭐ 로그인 페이지에서 구글/카카오 클릭은 "기존 세션에 계정 연결"이 아니라
   //   "그 OAuth 신원으로 로그인"이어야 한다. JWT 모드에서 adapter.getUser는 오직
   //   sign-in 시 기존 sessionToken의 유저를 채우는 데만 쓰이므로, null로 만들면
@@ -151,11 +180,12 @@ const accountLinkingAdapter = {
   //   (개발용 로그인 등으로 남아 있던 세션 쿠키가 있어도 안전하게 OAuth 로그인 가능)
   getUser: async (_id: string) => null,
   // 같은 이메일 유저가 이미 있으면 재사용(중복 생성 방지). id는 DB가 생성하도록 제거.
-  createUser: async ({ id: _id, ...data }: { id?: string; email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
-    if (existing) return existing;
-    return prisma.user.create({ data });
-  },
+  createUser: async ({ id: _id, ...data }: { id?: string; email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) =>
+    withDbRetry("createUser", async () => {
+      const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      if (existing) return existing;
+      return prisma.user.create({ data });
+    }),
   // create 대신 upsert → 기존에 다른 userId로 박혀 있던 Account 행을 올바르게 덮어써
   // PK 충돌(=OAuthAccountNotLinked의 원인)를 자동 해소한다.
   // Kakao 등 OAuth 제공자가 refresh_token_expires_in 같은 비표준 필드를 추가로 보낼 수 있는데,
@@ -185,20 +215,22 @@ const accountLinkingAdapter = {
       session_state: (account.session_state as string | null | undefined) ?? null,
     };
 
-    await prisma.account.upsert({
-      where: { provider_providerAccountId: { provider, providerAccountId } },
-      create: knownData,
-      update: {
-        userId,
-        access_token: knownData.access_token,
-        refresh_token: knownData.refresh_token,
-        expires_at: knownData.expires_at,
-        token_type: knownData.token_type,
-        scope: knownData.scope,
-        id_token: knownData.id_token,
-        session_state: knownData.session_state,
-      },
-    });
+    await withDbRetry("linkAccount", () =>
+      prisma.account.upsert({
+        where: { provider_providerAccountId: { provider, providerAccountId } },
+        create: knownData,
+        update: {
+          userId,
+          access_token: knownData.access_token,
+          refresh_token: knownData.refresh_token,
+          expires_at: knownData.expires_at,
+          token_type: knownData.token_type,
+          scope: knownData.scope,
+          id_token: knownData.id_token,
+          session_state: knownData.session_state,
+        },
+      }),
+    );
   },
 };
 

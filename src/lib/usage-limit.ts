@@ -58,14 +58,19 @@ export async function countDailyGeminiUsage(userId: string): Promise<number> {
   });
 }
 
-/** 구독 레코드 기준 프리미엄 접근 가능 여부 (active 또는 cancelled-but-not-expired) */
+/** 구독 레코드 기준 프리미엄 접근 가능 여부 (기간 내 active/cancelled) */
 function subHasActivePremium(sub: {
   status: string;
   plan: string;
   currentPeriodEnd?: Date | null;
 } | null): boolean {
   if (!sub || sub.plan !== "premium") return false;
-  if (sub.status === "active") return true;
+  // 현재 결제는 단건(1개월) 방식 — 자동 갱신이 없으므로 active여도 만료일이 지나면
+  // 프리미엄이 아니다. (만료일 없는 active는 개발/수동 부여 계정 → 무기한 유지)
+  if (sub.status === "active") {
+    if (!sub.currentPeriodEnd) return true;
+    return sub.currentPeriodEnd.getTime() > Date.now();
+  }
   if (
     sub.status === "cancelled" &&
     sub.currentPeriodEnd &&

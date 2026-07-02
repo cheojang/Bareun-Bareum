@@ -3,10 +3,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { confirmPayment } from "@/lib/toss-payments";
+import { PREMIUM_MONTHLY_PRICE, isAlreadyProcessedError } from "@/lib/billing";
 import Link from "next/link";
 import { BubbleButton } from "@/components/ui/BubbleButton";
-
-const PREMIUM_MONTHLY_PRICE = 5000;
 
 interface Props {
   searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string }>;
@@ -58,8 +57,14 @@ async function SuccessContent({ searchParams }: Props) {
         }
       }
     } catch (e) {
-      console.error("[subscribe/success] confirm error:", e);
-      errorMsg = "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요.";
+      if (isAlreadyProcessedError(e)) {
+        // 성공 페이지 새로고침/뒤로가기로 같은 결제를 재승인하려 한 경우 —
+        // 첫 승인이 이미 성공했다는 뜻이므로 성공 화면을 그대로 보여준다.
+        console.info("[subscribe/success] 이미 승인된 결제 재요청 — 성공 처리:", orderId);
+      } else {
+        console.error("[subscribe/success] confirm error:", e);
+        errorMsg = "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요.";
+      }
     }
   } else if (!paymentKey) {
     // 파라미터 없이 직접 접근
