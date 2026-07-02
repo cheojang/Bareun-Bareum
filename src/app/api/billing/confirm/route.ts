@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { confirmPayment } from "@/lib/toss-payments";
-
 // 서버에서만 신뢰하는 플랜 가격 — 클라이언트가 보낸 amount는 검증용으로만 사용
-const PREMIUM_MONTHLY_PRICE = 5000;
+import { PREMIUM_MONTHLY_PRICE } from "@/lib/billing";
 
 export async function POST(req: NextRequest) {
   const session = await auth();

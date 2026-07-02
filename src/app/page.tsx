@@ -197,11 +197,11 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-[#8B7E74] mb-2">바른발음 앱</p>
               <p className="text-3xl font-black text-[#FFB38A]">4,900원<span className="text-base">/월</span></p>
-              <p className="text-xs text-[#C4B5A8] mt-1">연간결제 시 · 연 58,800원</p>
+              <p className="text-xs text-[#C4B5A8] mt-1">1개월 이용권 · 자동결제 없음</p>
               <div className="h-[1px] bg-[#FFB38A]/20 my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="✅" text="매일 무제한 연습" />
-                <CompareItem icon="✅" text="연 58,800원 · 센터 1회 비용과 비슷한 수준" />
+                <CompareItem icon="✅" text="1년 내내 이용해도 센터 1회 비용 수준" />
                 <CompareItem icon="✅" text="언제 어디서나 즉시 분석" />
                 <CompareItem icon="✅" text="자주 틀리는 발음만 핀셋처럼 콕 집는 AI 맞춤 훈련" />
               </div>
