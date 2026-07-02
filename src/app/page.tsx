@@ -61,7 +61,7 @@ export default function LandingPage() {
           </p>
           <Link href="/login">
             <BubbleButton size="lg" variant="peach" className="shadow-lg shadow-[#FFB38A]/25">
-              무료로 시작하기
+              시작하기
             </BubbleButton>
           </Link>
           <p className="text-xs text-[#C4B5A8] mt-3">가입 30초 · 카카오/구글 로그인</p>
@@ -153,7 +153,7 @@ export default function LandingPage() {
               step={2}
               emoji="🤖"
               title="AI 즉시 분석"
-              desc="한국어 음운 분석 AI가 오류 원인을 파악하고 맞춤 교정법을 알려드려요."
+              desc="한국어 음운 분석 AI가 자주 틀리는 발음만 핀셋처럼 콕 집어 맞춤 교정법을 알려드려요."
             />
             <StepCard
               step={3}
@@ -196,14 +196,14 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-sm text-[#8B7E74] mb-2">바른발음 앱</p>
-              <p className="text-3xl font-black text-[#FFB38A]">5,000원<span className="text-base">/월</span></p>
-              <p className="text-xs text-[#C4B5A8] mt-1">연간결제 시 · 연 60,000원</p>
+              <p className="text-3xl font-black text-[#FFB38A]">4,900원<span className="text-base">/월</span></p>
+              <p className="text-xs text-[#C4B5A8] mt-1">연간결제 시 · 연 58,800원</p>
               <div className="h-[1px] bg-[#FFB38A]/20 my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="✅" text="매일 무제한 연습" />
-                <CompareItem icon="✅" text="연 60,000원 = 센터 1회 비용과 동등" />
+                <CompareItem icon="✅" text="연 58,800원 · 센터 1회 비용과 비슷한 수준" />
                 <CompareItem icon="✅" text="언제 어디서나 즉시 분석" />
-                <CompareItem icon="✅" text="AI 맞춤 훈련 처방전" />
+                <CompareItem icon="✅" text="자주 틀리는 발음만 핀셋처럼 콕 집는 AI 맞춤 훈련" />
               </div>
             </BubbleCard>
           </div>
@@ -262,7 +262,7 @@ export default function LandingPage() {
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <FeatureCard emoji="🔍" title="AI 오류 분석" desc="한국어 음운 규칙 기반 정확한 오류 유형 분석" />
-            <FeatureCard emoji="📋" title="맞춤 훈련법" desc="AI가 4단계 전문 훈련 처방전을 자동 생성" />
+            <FeatureCard emoji="📋" title="핀셋 맞춤 훈련법" desc="자주 틀리는 발음만 콕 집어 4단계 맞춤 훈련 처방전을 자동 생성" />
             <FeatureCard emoji="📊" title="종합 리포트" desc="발음 발달 현황을 한눈에 파악" />
             <FeatureCard emoji="🔄" title="복습 스케줄" desc="과학적 간격 반복으로 효과적 기억" />
             {/* 센터 연계 서비스 — 현재 미운영. 추후 재개 시 주석 해제
