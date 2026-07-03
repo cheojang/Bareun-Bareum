@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { getSelectedChildId } from "@/lib/child-cookie";
+import { getPhonemePracticeStats } from "@/lib/practice-stats";
 
 // ─── 오류 유형 메타 (부모 친화) ────────────────────────────────────────────────
 // 실제 언어재활에서 정의하는 오류 유형을 부모가 바로 이해할 수 있는 표현으로
@@ -165,7 +166,7 @@ export default async function ComprehensivePage({
   if (!child || child.userId !== session.user.id) redirect("/dashboard/answer-note");
 
   // ── 병렬 DB 조회 ──────────────────────────────────────────────────────────────
-  const [weakPhonemes, totalCount, daechi, tallak, donghwa, cheomga] = await Promise.all([
+  const [weakPhonemes, totalCount, daechi, tallak, donghwa, cheomga, practiceStats] = await Promise.all([
     prisma.weakPhoneme.findMany({
       where: { childId },
       orderBy: { errorRate: "desc" },
@@ -176,6 +177,7 @@ export default async function ComprehensivePage({
     prisma.errorRecord.count({ where: { childId, errorCategory: "탈락" } }),
     prisma.errorRecord.count({ where: { childId, errorCategory: "동화" } }),
     prisma.errorRecord.count({ where: { childId, errorCategory: "첨가" } }),
+    getPhonemePracticeStats(childId), // §6-2: 진짜 성공률(성공÷전체시도)
   ]);
 
   // ── 데이터 부족 처리 ──────────────────────────────────────────────────────────
@@ -350,12 +352,20 @@ export default async function ComprehensivePage({
                   <div className="grid grid-cols-2 gap-2.5">
                     {group.map((w) => {
                       const isTrainable = level === "집중교정필요" || level === "꾸준한연습필요";
+                      const acc = practiceStats[w.phoneme];
                       const card = (
                         <div className="bg-white rounded-2xl px-3.5 py-3 shadow-sm border border-[#EFE7DE] h-full">
                           <p className="text-xl font-black text-[#3D3530] leading-none mb-1.5">{w.phoneme}</p>
                           {PHONEME_AGE[w.phoneme] && (
                             <p className="text-[10px] text-[#8B7E74] font-bold leading-none mb-1">
                               습득 {PHONEME_AGE[w.phoneme]}
+                            </p>
+                          )}
+                          {/* §6-2: 연습 정확도 — 진짜 성공률(성공÷전체시도). 오답 분포와 달리 왜곡 없음 */}
+                          {acc && acc.attempts >= 3 && (
+                            <p className="text-[10px] font-bold leading-none mb-1"
+                              style={{ color: acc.accuracyPct >= 70 ? "#0D9488" : acc.accuracyPct >= 40 ? "#D97706" : "#EC4899" }}>
+                              연습 정확도 {acc.accuracyPct}% <span className="font-normal text-[#B4A79C]">({acc.attempts}번 중 {acc.correct}번)</span>
                             </p>
                           )}
                           {PHONEME_HOW[w.phoneme] && (

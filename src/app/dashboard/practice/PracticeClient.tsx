@@ -611,6 +611,26 @@ export function PracticeClient({
     if (text) playWord(text).catch(() => {});
   }, [currentItem?.text, playWord]);
 
+  // 음절 단위 연습(§4-2): 소리→음절→단어 위계. 단어를 음절로 나눠 천천히 들려준 뒤 이어 말하기.
+  const [syllablePlaying, setSyllablePlaying] = useState(false);
+  const playSyllables = useCallback(async (word: string) => {
+    const sylls = Array.from(word).filter((ch) => {
+      const c = ch.charCodeAt(0);
+      return c >= 0xac00 && c <= 0xd7a3; // 완성형 한글 음절만
+    });
+    if (sylls.length <= 1) { playWord(word).catch(() => {}); return; }
+    setSyllablePlaying(true);
+    try {
+      for (const s of sylls) {
+        await playWord(s);
+        await new Promise((r) => setTimeout(r, 450));
+      }
+      await new Promise((r) => setTimeout(r, 250));
+      await playWord(word); // 마지막에 전체 단어로 이어 말하기
+    } catch { /* TTS 실패 무시 */ }
+    setSyllablePlaying(false);
+  }, [playWord]);
+
   const { recState, startRec, stopRec, playRec, resetRec } = useRecorder();
 
   useEffect(() => { resetRec(); }, [currentIndex, resetRec]);
@@ -1079,6 +1099,9 @@ export function PracticeClient({
                       );
                     }
                     const slug = currentItem?.kind === "sentence" ? undefined : wordInfos[text]?.imageSlug;
+                    const syllables = currentItem?.kind === "sentence"
+                      ? []
+                      : Array.from(text).filter((ch) => { const c = ch.charCodeAt(0); return c >= 0xac00 && c <= 0xd7a3; });
                     return (
                       <div className="flex flex-col items-center gap-2">
                         {slug && <WordImage word={text} imageSlug={slug} size="2xl" />}
@@ -1086,6 +1109,33 @@ export function PracticeClient({
                           style={{ fontSize: currentItem?.kind === "sentence" ? "1.75rem" : singleSize }}>
                           {text}
                         </p>
+                        {/* 음절 나눠 연습(§4-2): 2음절 이상 단어에서 소리→음절→단어 위계 지원 */}
+                        {syllables.length >= 2 && !stage3Loading && (
+                          <div className="flex flex-col items-center gap-1.5 mt-1">
+                            <div className="flex items-center gap-1.5">
+                              {syllables.map((syl, si) => (
+                                <span key={si} className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => playWord(syl).catch(() => {})}
+                                    className="px-3 py-1.5 rounded-xl bg-[#FFF5EE] border border-[#FFD9B8] text-[#B8600A] font-black text-lg transition-all active:scale-90 hover:bg-[#FFEAD9]"
+                                  >
+                                    {syl}
+                                  </button>
+                                  {si < syllables.length - 1 && <span className="text-[#C4B5A8] text-xs">·</span>}
+                                </span>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => playSyllables(text)}
+                              disabled={syllablePlaying}
+                              className="flex items-center gap-1 text-[11px] font-bold text-[#0D9488] disabled:opacity-50"
+                            >
+                              🐢 {syllablePlaying ? "천천히 듣는 중…" : "한 글자씩 천천히 듣기"}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
