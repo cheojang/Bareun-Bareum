@@ -11,10 +11,19 @@ import { getArticulationSlug, phonemeFromPattern } from "@/lib/articulation-mapp
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
 
+interface DevelopmentalInfo {
+  status: "developing" | "emerging" | "expected" | "unknown";
+  expectedAge: string | null;
+  badge: string | null;
+  message: string | null;
+  tone: "calm" | "gentle" | "none";
+}
+
 interface LocalResult {
   errorRecordId: string;
   errorCategory: string;
   errorPattern: string;
+  developmental?: DevelopmentalInfo;
   localAnalysis: {
     detectedPattern: string;
     confidence: number;
@@ -299,6 +308,40 @@ function CurrentAnalysisCard({
         </div>
 
       </BubbleCard>
+
+      {/* 🌱 발달 규준 안내 — 아직 습득 시기가 안 된 소리면 부모 안심시키는 맥락 제공 */}
+      {localResult.developmental?.message && localResult.developmental.tone !== "none" && (
+        <div
+          className="rounded-2xl px-5 py-4"
+          style={
+            localResult.developmental.tone === "calm"
+              ? { backgroundColor: "#F0FAF8", border: "1.5px solid #A8D8CF" }
+              : { backgroundColor: "#F5F3FF", border: "1.5px solid #C4B5FD" }
+          }
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-lg">🌱</span>
+            <span
+              className="text-xs font-black px-2.5 py-0.5 rounded-full"
+              style={
+                localResult.developmental.tone === "calm"
+                  ? { backgroundColor: "#D5F0EB", color: "#0D9488" }
+                  : { backgroundColor: "#E9E3FB", color: "#7C3AED" }
+              }
+            >
+              {localResult.developmental.badge}
+            </span>
+            {localResult.developmental.expectedAge && (
+              <span className="text-[11px] text-[#8B7E74]">
+                보통 {localResult.developmental.expectedAge}에 완성돼요
+              </span>
+            )}
+          </div>
+          <p className="text-[13px] leading-relaxed text-[#5B4E63]">
+            {localResult.developmental.message}
+          </p>
+        </div>
+      )}
 
       {/* 글로벌 캐시 HIT 배지 */}
       {fromGlobalCache && geminiResult?.rootCause && (
