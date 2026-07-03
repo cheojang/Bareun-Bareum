@@ -311,6 +311,8 @@ interface PracticeItem {
   similarTo?: string;
   childPron?: string;
   scheduleId?: string;
+  /** 세션 첫머리 성공경험용 워밍업 카드 (쉬운 같은-음소 단어) */
+  isWarmup?: boolean;
 }
 
 interface CycleItem extends PracticeItem {
@@ -318,10 +320,32 @@ interface CycleItem extends PracticeItem {
   cycleEnd: boolean;
 }
 
-function buildCycleItems(cycles: PracticeCycle[]): CycleItem[] {
+function buildCycleItems(
+  cycles: PracticeCycle[],
+  wordInfos?: Record<string, { difficulty?: string }>,
+): CycleItem[] {
   const items: CycleItem[] = [];
   cycles.forEach((cycle, ci) => {
     const cycleItems: CycleItem[] = [];
+
+    // 🌱 성공 우선(§4-1): 첫 사이클은 "쉬운 같은-음소 유사단어"를 워밍업으로 먼저 제시하고
+    //    가장 어려운 오답단어를 그 뒤로 미룬다. 초반 실패 연속으로 인한 좌절·이탈 방지.
+    //    (2~3번째 사이클부터는 이미 몸이 풀린 상태이므로 기존 순서 유지)
+    const easyLead =
+      ci === 0 && wordInfos
+        ? cycle.similarWords.find((s) => wordInfos[s.word]?.difficulty === "easy")
+        : undefined;
+    if (easyLead) {
+      cycleItems.push({
+        text: easyLead.word,
+        kind: "word",
+        similarTo: easyLead.sourceWord,
+        isWarmup: true,
+        cycleIdx: ci,
+        cycleEnd: false,
+      });
+    }
+
     if (cycle.mainWord) {
       cycleItems.push({
         text: cycle.mainWord.word,
@@ -334,6 +358,7 @@ function buildCycleItems(cycles: PracticeCycle[]): CycleItem[] {
       });
     }
     cycle.similarWords.forEach((s) => {
+      if (easyLead && s.word === easyLead.word) return; // 워밍업으로 이미 앞세운 단어 중복 방지
       cycleItems.push({
         text: s.word,
         kind: "word",
@@ -455,8 +480,8 @@ export function PracticeClient({
 
   const cycleItems = useMemo<CycleItem[]>(() => {
     if (!isCycleMode || !cycles) return [];
-    return buildCycleItems(cycles);
-  }, [isCycleMode, cycles]);
+    return buildCycleItems(cycles, wordInfos);
+  }, [isCycleMode, cycles, wordInfos]);
 
   const [items, setItems] = useState<PracticeItem[]>(() => isCycleMode ? cycleItems : makeItems(startStage));
   const [stage3Loading, setStage3Loading] = useState(false);
@@ -958,7 +983,16 @@ export function PracticeClient({
 
             {/* 연습 카드 */}
             <div className="relative w-full bg-white/90 rounded-[32px] shadow-lg text-center" style={{ border: `2px solid ${cardBorderColor}22` }}>
-              {currentItem?.similarTo && (
+              {/* 🌱 워밍업 카드: 쉬운 소리부터 가볍게 시작 (성공경험 우선) */}
+              {currentItem?.isWarmup && (
+                <span
+                  className="inline-block text-xs font-bold px-3 py-1 rounded-full mt-4 mb-1"
+                  style={{ backgroundColor: "#F0FAF8", color: "#0D9488" }}
+                >
+                  🌱 워밍업 · 쉬운 소리부터
+                </span>
+              )}
+              {currentItem?.similarTo && !currentItem?.isWarmup && (
                 <span className="block text-[11px] font-semibold text-[#8B7E74] pt-4 pb-1">
                   🔗 <span className="text-[#FFB38A]">{currentItem.similarTo}</span>와 유사
                 </span>
