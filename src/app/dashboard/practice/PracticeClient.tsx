@@ -7,6 +7,7 @@ import { ConfettiEffect } from "@/components/child/ConfettiEffect";
 import { ListenPickGame } from "@/components/child/ListenPickGame";
 import { ShadowMatchGame } from "@/components/child/ShadowMatchGame";
 import { PuzzleGame } from "@/components/child/PuzzleGame";
+import { SoundDiscriminationGame, type DiscrimPair } from "@/components/child/SoundDiscriminationGame";
 import type { PickCard } from "@/lib/mini-game";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { stripEnglishParens } from "@/lib/strip-english";
@@ -117,7 +118,9 @@ function AuditoryBombardment({
   wordInfos: Record<string, { imageSlug?: string }>;
   onDone: () => void;
 }) {
+  const BOMBARDMENT_ROUNDS = 2; // 청각 폭격은 반복 노출이 핵심 (§5)
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [round, setRound] = useState(1);
   const [done, setDone] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -136,17 +139,21 @@ function AuditoryBombardment({
     cancelRef.current = controller;
     let anyWorked = false;
 
-    for (let i = 0; i < words.length; i++) {
-      if (controller.signal.aborted) break;
-      setActiveIdx(i);
-      try {
-        await play(words[i], { signal: controller.signal });
-        anyWorked = true;
-      } catch (err) {
-        if ((err as any)?.name === "AbortError") break;
+    // 전체 단어를 2회전 반복 재생 (아이는 따라 말하지 않고 듣기만)
+    outer: for (let r = 1; r <= BOMBARDMENT_ROUNDS; r++) {
+      setRound(r);
+      for (let i = 0; i < words.length; i++) {
+        if (controller.signal.aborted) break outer;
+        setActiveIdx(i);
+        try {
+          await play(words[i], { signal: controller.signal });
+          anyWorked = true;
+        } catch (err) {
+          if ((err as any)?.name === "AbortError") break outer;
+        }
+        if (controller.signal.aborted) break outer;
+        await new Promise((r) => setTimeout(r, 900));
       }
-      if (controller.signal.aborted) break;
-      await new Promise((r) => setTimeout(r, 1000));
     }
     if (!controller.signal.aborted) {
       setActiveIdx(null);
@@ -175,8 +182,11 @@ function AuditoryBombardment({
       <div className="flex items-center justify-center gap-3">
         <span className="text-4xl animate-bounce">👂</span>
         <div className="text-left">
-          <h2 className="text-xl font-black text-[#3D3530] leading-tight">먼저 들어볼게요!</h2>
-          <p className="text-xs text-[#8B7E74]">단어들을 귀 기울여 들어보세요</p>
+          <h2 className="text-xl font-black text-[#3D3530] leading-tight">먼저 귀로 담아요!</h2>
+          <p className="text-xs text-[#8B7E74]">
+            따라 말하지 말고 <b className="text-[#FFB38A]">듣기만</b> 해요
+            {isPlaying && ` · ${round}/${BOMBARDMENT_ROUNDS}회전`}
+          </p>
         </div>
       </div>
 
@@ -505,15 +515,14 @@ export function PracticeClient({
       ? "bombardment" : "practice"
   );
 
+  // 청각 폭격(§5): 목표 음소 단어를 넉넉히(최대 12개) 모아 반복 노출.
+  //   기존 6개·1회전은 기법 효과를 내기엔 노출량이 부족했음. 같은-음소 단어(오답+유사)를
+  //   중복 제거해 12개까지 확보 → 컴포넌트에서 2회전 재생.
   const bombardmentWords = useMemo(() => {
-    if (isCycleMode && cycles) {
-      return cycles.flatMap((c) => [c.mainWord?.word, ...c.similarWords.map((s) => s.word)])
-        .filter(Boolean).slice(0, 6) as string[];
-    }
-    return [
-      ...stage1Words.map((e) => e.word),
-      ...stage2Words.slice(0, Math.max(0, 6 - stage1Words.length)).map((w) => w.word),
-    ].slice(0, 6);
+    const raw = isCycleMode && cycles
+      ? (cycles.flatMap((c) => [c.mainWord?.word, ...c.similarWords.map((s) => s.word)]).filter(Boolean) as string[])
+      : [...stage1Words.map((e) => e.word), ...stage2Words.map((w) => w.word)];
+    return [...new Set(raw)].slice(0, 12);
   }, [isCycleMode, cycles, stage1Words, stage2Words]);
 
   const [prefetchedS3, setPrefetchedS3] = useState<string[] | null>(null);
@@ -521,11 +530,35 @@ export function PracticeClient({
   const [showSentenceReview, setShowSentenceReview] = useState(false);
   const [allSentences, setAllSentences] = useState<string[]>([]);
 
-  const MINI_GAMES = ["listen", "shadow", "puzzle"] as const;
   const [showInterstitial, setShowInterstitial] = useState(false);
-  const [gameType, setGameType] = useState<(typeof MINI_GAMES)[number]>("listen");
+  const [gameType, setGameType] = useState<"listen" | "shadow" | "puzzle" | "discrim">("listen");
   const interstitialCountRef = useRef(0);
   const nextIndexAfterGameRef = useRef<number | null>(null);
+
+  // 청지각 변별 게임(§4-3)용 최소대립 쌍: 오답단어(정발음 vs 오발음 + 그림)
+  const discrimPool = useMemo<DiscrimPair[]>(() => {
+    const seen = new Set<string>();
+    const out: DiscrimPair[] = [];
+    const collect = (word?: string | null, childPron?: string | null) => {
+      if (!word || !childPron || childPron === word || seen.has(word)) return;
+      seen.add(word);
+      out.push({ word, childPron, imageSlug: wordInfos[word]?.imageSlug });
+    };
+    if (isCycleMode && cycles) {
+      for (const c of cycles) collect(c.mainWord?.word, c.mainWord?.childPronunciation);
+    } else {
+      for (const e of stage1Words) collect(e.word, e.childPronunciation);
+    }
+    return out;
+  }, [isCycleMode, cycles, stage1Words, wordInfos]);
+
+  // 사용 가능한 미니게임 목록 — 변별 쌍이 있으면 discrim을 포함해 로테이션
+  const availableGames = useMemo(
+    () => (discrimPool.length > 0
+      ? (["discrim", "listen", "shadow", "puzzle"] as const)
+      : (["listen", "shadow", "puzzle"] as const)),
+    [discrimPool.length],
+  );
 
   const currentCycleIdx = isCycleMode
     ? (items[currentIndex] as CycleItem | undefined)?.cycleIdx ?? 0 : 0;
@@ -720,7 +753,7 @@ export function PracticeClient({
       if (ci?.cycleEnd && currentIndex + 1 < items.length) {
         if (gamePool.length >= 2) {
           const idx = interstitialCountRef.current++;
-          setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+          setGameType(availableGames[idx % availableGames.length]);
           nextIndexAfterGameRef.current = currentIndex + 1;
           setShowInterstitial(true);
         } else { setCurrentIndex(currentIndex + 1); }
@@ -729,7 +762,7 @@ export function PracticeClient({
       if (currentIndex + 1 >= items.length) {
         if (ci?.cycleEnd && gamePool.length >= 2) {
           const idx = interstitialCountRef.current++;
-          setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+          setGameType(availableGames[idx % availableGames.length]);
           nextIndexAfterGameRef.current = null;
           setShowInterstitial(true);
         } else { setAllDone(true); }
@@ -742,7 +775,7 @@ export function PracticeClient({
     if (stage === 3) { setShowSentenceReview(true); return; }
     if (gamePool.length >= 2) {
       const idx = interstitialCountRef.current++;
-      setGameType(MINI_GAMES[idx % MINI_GAMES.length]);
+      setGameType(availableGames[idx % availableGames.length]);
       setShowInterstitial(true);
     } else { proceedToNextStage(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -857,6 +890,7 @@ export function PracticeClient({
   }
 
   if (showInterstitial) {
+    if (gameType === "discrim") return <SoundDiscriminationGame pairs={discrimPool} onDone={proceedAfterGame} />;
     if (gameType === "shadow") return <ShadowMatchGame pool={gamePool} onDone={proceedAfterGame} />;
     if (gameType === "puzzle") return <PuzzleGame pool={gamePool} onDone={proceedAfterGame} />;
     return <ListenPickGame pool={gamePool} onDone={proceedAfterGame} />;
