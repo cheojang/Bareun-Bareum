@@ -37,10 +37,18 @@ function truncate(text: string, max = 40) {
   return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
+// 일반화 프로브(졸업 시험) 진행 상태 — scheduleId별
+interface ProbeState {
+  words: string[];
+  phoneme: string;
+  results: (boolean | null)[]; // 각 새 단어를 아이가 잘했는지
+}
+
 export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
   const [items, setItems] = useState<ReviewItem[]>(initialItems);
   const [done, setDone] = useState<Record<string, { quality: number; message: string }>>({});
   const [loading, setLoading] = useState<string | null>(null);
+  const [probes, setProbes] = useState<Record<string, ProbeState>>({});
 
   async function handleReview(id: string, quality: number) {
     setLoading(id);
@@ -51,6 +59,16 @@ export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
         body: JSON.stringify({ scheduleId: id, quality }),
       });
       const data = await res.json();
+
+      // 🎓 5회 성공 → 졸업 시험(일반화 프로브)으로 전환: 새 단어로도 되는지 확인
+      if (data.needsProbe && Array.isArray(data.probeWords) && data.probeWords.length > 0) {
+        setProbes((prev) => ({
+          ...prev,
+          [id]: { words: data.probeWords, phoneme: data.phoneme ?? "", results: data.probeWords.map(() => null) },
+        }));
+        return;
+      }
+
       setDone((prev) => ({ ...prev, [id]: { quality, message: data.message } }));
       if (data.isLearned) {
         setTimeout(() => {
@@ -59,6 +77,45 @@ export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
       }
     } catch {
       // 실패해도 UI는 정상 유지
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  function markProbeWord(id: string, idx: number, ok: boolean) {
+    setProbes((prev) => {
+      const p = prev[id];
+      if (!p) return prev;
+      const results = [...p.results];
+      results[idx] = ok;
+      return { ...prev, [id]: { ...p, results } };
+    });
+  }
+
+  async function submitProbe(id: string) {
+    const p = probes[id];
+    if (!p || p.results.some((r) => r === null)) return;
+    const good = p.results.filter((r) => r === true).length;
+    const pass = good * 2 >= p.words.length; // 과반 성공 = 통과
+    setLoading(id);
+    try {
+      const res = await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduleId: id, probe: pass ? "pass" : "fail" }),
+      });
+      const data = await res.json();
+      setProbes((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setDone((prev) => ({ ...prev, [id]: { quality: pass ? 5 : 1, message: data.message } }));
+      if (data.graduated) {
+        setTimeout(() => setItems((prev) => prev.filter((item) => item.id !== id)), 1500);
+      }
+    } catch {
+      // 실패해도 UI 유지
     } finally {
       setLoading(null);
     }
@@ -99,6 +156,8 @@ export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
             const steps = [item.trainingStep1, item.trainingStep2, item.trainingStep3, item.trainingStep4];
             const hasSteps = steps.some(Boolean);
 
+            const probe = probes[item.id];
+
             return (
               <BubbleCard key={item.id} padding="sm">
                 {result ? (
@@ -111,6 +170,61 @@ export function ReviewSection({ initialItems, childName }: ReviewSectionProps) {
                         {result.message}
                       </p>
                     </div>
+                  </div>
+                ) : probe ? (
+                  /* 🎓 졸업 시험 (일반화 프로브) — 처음 보는 같은-소리 단어로 전이 확인 */
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🎓</span>
+                      <p className="text-sm font-black text-[#3D3530]">졸업 시험</p>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#EDE9FE] text-[#7C3AED] rounded-full">
+                        {probe.phoneme} 소리
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#8B7E74] leading-relaxed">
+                      &lsquo;{item.targetWord}&rsquo;를 잘하게 됐어요! 이번엔 <b>처음 보는 단어</b>도 잘 말하는지 확인해요.
+                      아이에게 아래 단어를 하나씩 말하게 해주세요.
+                    </p>
+                    <div className="space-y-1.5">
+                      {probe.words.map((w, wi) => (
+                        <div key={w} className="flex items-center gap-2 bg-[#FAF8F5] rounded-xl px-3 py-2">
+                          <span className="text-base font-black text-[#3D3530] flex-1">{w}</span>
+                          <button
+                            onClick={() => markProbeWord(item.id, wi, true)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border-2 transition ${
+                              probe.results[wi] === true
+                                ? "bg-[#7EDFD0] border-[#5EC9B8] text-white"
+                                : "bg-white border-[#E8DDD5] text-[#8B7E74]"
+                            }`}
+                          >
+                            잘함
+                          </button>
+                          <button
+                            onClick={() => markProbeWord(item.id, wi, false)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border-2 transition ${
+                              probe.results[wi] === false
+                                ? "bg-[#F9A8D4] border-[#F472B6] text-white"
+                                : "bg-white border-[#E8DDD5] text-[#8B7E74]"
+                            }`}
+                          >
+                            어려움
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <BubbleButton
+                      variant="peach"
+                      size="sm"
+                      disabled={loading === item.id || probe.results.some((r) => r === null)}
+                      onClick={() => submitProbe(item.id)}
+                      className="w-full text-xs"
+                    >
+                      {loading === item.id
+                        ? "..."
+                        : probe.results.some((r) => r === null)
+                        ? "단어를 모두 평가해주세요"
+                        : "🎓 졸업 시험 결과 확인"}
+                    </BubbleButton>
                   </div>
                 ) : (
                   /* 평가 전 */
