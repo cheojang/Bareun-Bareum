@@ -97,6 +97,8 @@ function LoginContent() {
             <p className="text-xs font-semibold text-[#EF4444]">
               로그인 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.
             </p>
+            {/* 원인 추적용 오류 코드 — 문의 시 이 코드를 알려주면 빠른 진단 가능 */}
+            <p className="text-[10px] text-[#C4B5A8] mt-1">오류 코드: {authError}</p>
           </div>
         )}
 

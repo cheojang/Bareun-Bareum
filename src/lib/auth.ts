@@ -142,7 +142,9 @@ const credentialsProvider = Credentials({
 // 실패가 아닌 지연으로 흡수한다.
 function isTransientDbError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e);
-  return /timeout|timed out|ECONNRESET|ECONNREFUSED|Connection terminated|Closed|too many clients|starting up/i.test(msg);
+  // "Can't reach database server"(P1001)가 Supabase 콜드스타트의 대표 에러 —
+  // 이걸 놓치면 재시도가 발동하지 않아 첫 로그인이 그대로 실패한다.
+  return /timeout|timed out|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EAI_AGAIN|Can't reach database|P1001|P1002|P2024|connection pool|Connection terminated|Closed|too many clients|starting up/i.test(msg);
 }
 
 async function withDbRetry<T>(label: string, fn: () => Promise<T>, retries = 2): Promise<T> {
@@ -180,11 +182,19 @@ const accountLinkingAdapter = {
   //   (개발용 로그인 등으로 남아 있던 세션 쿠키가 있어도 안전하게 OAuth 로그인 가능)
   getUser: async (_id: string) => null,
   // 같은 이메일 유저가 이미 있으면 재사용(중복 생성 방지). id는 DB가 생성하도록 제거.
-  createUser: async ({ id: _id, ...data }: { id?: string; email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) =>
+  createUser: async ({ id: _id, ...data }: { id?: string; email?: string | null; name?: string | null; image?: string | null; emailVerified?: Date | null }) =>
     withDbRetry("createUser", async () => {
-      const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      // ⭐ 카카오는 이메일 제공 동의항목이 없으면 email이 비어서 온다 (User.email은 필수 컬럼).
+      //   이 상태로 findUnique/create에 넘기면 Prisma가 throw → 신규 카카오 로그인이 매번 실패.
+      //   자리표시 이메일을 만들어 가입시킨다 — 이후 로그인은 Account(provider ID)로 식별되므로
+      //   이메일 값 자체는 로그인 동작에 영향 없다.
+      const email =
+        data.email && data.email.trim().length > 0
+          ? data.email
+          : `no-email-${crypto.randomUUID()}@oauth.local`;
+      const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) return existing;
-      return prisma.user.create({ data });
+      return prisma.user.create({ data: { ...data, email } });
     }),
   // create 대신 upsert → 기존에 다른 userId로 박혀 있던 Account 행을 올바르게 덮어써
   // PK 충돌(=OAuthAccountNotLinked의 원인)를 자동 해소한다.
@@ -236,6 +246,16 @@ const accountLinkingAdapter = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: accountLinkingAdapter,
+  // 로그인 실패 원인을 Vercel 함수 로그에서 바로 볼 수 있게 상세 로깅
+  // (기본 로거는 에러 이름만 남겨 원인 추적이 불가능했음)
+  logger: {
+    error(error: Error) {
+      console.error("[auth:error]", error.name, error.message, (error as { cause?: { err?: Error } }).cause?.err?.message ?? "");
+    },
+    warn(code) {
+      console.warn("[auth:warn]", code);
+    },
+  },
   // 로그인 유지: JWT 세션을 90일간 보존(기본 30일에서 연장). updateAge로 활동 시
   // 만료를 슬라이딩 갱신 → 자주 쓰면 사실상 로그아웃 안 됨.
   session: {
