@@ -8,6 +8,11 @@ import {
   computePhonemeSimilarity,
   syllableLengthDiff,
 } from '@/lib/korean-input-validation';
+import {
+  getChildAgeMonths,
+  getDevelopmentalStatus,
+  getDevelopmentalDisplay,
+} from '@/lib/developmental-norms';
 
 // 발음 변형이 아니라 완전히 다른 단어로 판정하는 기준
 const MIN_PHONEME_SIMILARITY = 0.4;  // 공통 자모 40% 미만이면 다른 단어
@@ -15,15 +20,34 @@ const MAX_SYLLABLE_DIFF = 1;          // 음절 수 2 이상 차이나면 다른
 
 // ─── WeakPhoneme 자동 집계 ────────────────────────────────────────────────────
 
-function getWeaknessLevel(errorRate: number, totalRecords: number): string {
+function getWeaknessLevel(
+  errorRate: number,
+  totalRecords: number,
+  ageMonths: number | null,
+  phoneme: string,
+): string {
+  // 🌱 발달 규준 게이트: 아직 습득 시기가 안 된 소리는 오류율이 높아도
+  //    "집중교정필요"로 올리지 않는다 (발달상 정상 → 부모 불안 방지).
+  const status = getDevelopmentalStatus(phoneme, ageMonths);
+  if (status === "developing") return "관찰중";                 // 아예 시기 이전 → 상향 금지
+  const cap = status === "emerging" ? "꾸준한연습필요" : null;   // 배우는 중 → 집중교정까지는 X
+
   if (totalRecords < 10) return "관찰중";
-  if (errorRate >= 30) return "집중교정필요";
-  if (errorRate >= 20) return "꾸준한연습필요";
-  if (errorRate >= 10) return "관찰중";
-  return "정상범위";
+  let level: string;
+  if (errorRate >= 30) level = "집중교정필요";
+  else if (errorRate >= 20) level = "꾸준한연습필요";
+  else if (errorRate >= 10) level = "관찰중";
+  else level = "정상범위";
+
+  if (cap && level === "집중교정필요") return cap;
+  return level;
 }
 
-async function recalculateWeakPhonemes(childId: string, latestTargetJamo?: string) {
+async function recalculateWeakPhonemes(
+  childId: string,
+  ageMonths: number | null,
+  latestTargetJamo?: string,
+) {
   const records = await prisma.errorRecord.findMany({
     where: { childId },
     orderBy: { createdAt: "desc" },
@@ -56,7 +80,7 @@ async function recalculateWeakPhonemes(childId: string, latestTargetJamo?: strin
   // 모든 음소를 단일 트랜잭션으로 병렬 upsert — 직렬 await 보다 N배 빠름
   const upserts = Object.entries(phonemeCounts).map(([phoneme, errorCount]) => {
     const errorRate = (errorCount / totalRecords) * 100;
-    const weaknessLevel = getWeaknessLevel(errorRate, totalRecords);
+    const weaknessLevel = getWeaknessLevel(errorRate, totalRecords, ageMonths, phoneme);
     return prisma.weakPhoneme.upsert({
       where: { childId_phoneme: { childId, phoneme } },
       create: { childId, phoneme, totalAttempts: totalRecords, errorCount, errorRate, weaknessLevel },
@@ -106,7 +130,12 @@ export async function POST(request: NextRequest) {
     const localAnalysis = analyzeError(targetWord, childPronunciation);
     const localAnalysisTyped = localAnalysis as Record<string, unknown>;
 
+    // 목표 음소 추출 (발달 규준 게이트·약점 집계 공용)
+    const targetJamoRaw = localAnalysisTyped.targetJamo as string | undefined;
+    const targetPhoneme = targetJamoRaw && targetJamoRaw !== "(없음)" ? targetJamoRaw : null;
+
     // ── 게스트: 분석만 반환, DB 저장 안 함 ──────────────────────────────────
+    // (게스트는 아이 나이 정보가 없어 발달 상태는 unknown → 게이트 미적용)
     const isGuest = session.user.isGuest === true;
     if (isGuest) {
       return NextResponse.json({
@@ -115,6 +144,7 @@ export async function POST(request: NextRequest) {
         errorRecordId: null,
         errorCategory: (localAnalysisTyped.errorCategory as string) || "미판정",
         errorPattern: (localAnalysisTyped.errorPattern as string) || "미판정",
+        developmental: getDevelopmentalDisplay("unknown", targetPhoneme),
         localAnalysis: {
           detectedPattern: localAnalysis.errorType,
           confidence: (localAnalysisTyped.confidence as number) || 0,
@@ -129,6 +159,10 @@ export async function POST(request: NextRequest) {
     const child = await prisma.child.findUnique({ where: { id: childId } });
     if (!child) return NextResponse.json({ error: "해당 아이를 찾을 수 없습니다" }, { status: 404 });
     if (child.userId !== session.user.id) return NextResponse.json({ error: "접근 권한이 없습니다" }, { status: 403 });
+
+    // 🌱 발달 규준 게이트: 아이 나이(개월) × 목표 음소 습득 시기 비교
+    const ageMonths = getChildAgeMonths(child.birthDate);
+    const developmentalStatus = getDevelopmentalStatus(targetPhoneme, ageMonths);
 
     // ErrorRecord + LocalAnalysis 저장
     const errorRecord = await prisma.errorRecord.create({
@@ -156,13 +190,12 @@ export async function POST(request: NextRequest) {
     });
 
     // WeakPhoneme + ReviewSchedule (백그라운드, 응답 지연 없이)
-    const targetJamo = localAnalysisTyped.targetJamo as string | undefined;
-    const phoneme = targetJamo && targetJamo !== "(없음)" ? targetJamo : "미분류";
+    const phoneme = targetPhoneme ?? "미분류";
 
     // 응답 전송 후에도 백그라운드 작업 보장 — serverless 컨테이너 종료 방지
     after(async () => {
       const results = await Promise.allSettled([
-        recalculateWeakPhonemes(childId, targetJamo),
+        recalculateWeakPhonemes(childId, ageMonths, targetPhoneme ?? undefined),
         prisma.reviewSchedule.create({
           data: {
             childId,
@@ -186,6 +219,7 @@ export async function POST(request: NextRequest) {
       errorRecordId: errorRecord.id,
       errorCategory: errorRecord.errorCategory,
       errorPattern: errorRecord.errorPattern,
+      developmental: getDevelopmentalDisplay(developmentalStatus, targetPhoneme),
       localAnalysis: {
         detectedPattern: errorRecord.localAnalysis?.detectedPattern,
         confidence: errorRecord.localAnalysis?.confidence,

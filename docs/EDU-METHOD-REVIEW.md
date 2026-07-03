@@ -5,7 +5,21 @@
 
 ---
 
-## 🔴 1. 발달연령을 무시한 "교정 필요" 판정 (최우선)
+## ✅ 1. 발달연령을 무시한 "교정 필요" 판정 — 구현 완료 (2026-07-03)
+
+**구현 내용:**
+- `src/lib/developmental-norms.ts` 신설 — `getChildAgeMonths(birthDate)`,
+  `getDevelopmentalStatus(phoneme, ageMonths)`(developing/emerging/expected/unknown),
+  `getDevelopmentalDisplay()`(배지·안내 문구)
+- `error-analysis` 라우트: 아이 나이×목표 음소 습득 시기 비교 후
+  ① 응답에 `developmental` 필드 추가 ② 약점 집계(`recalculateWeakPhonemes`)에서
+  발달상 정상 음소는 "집중교정필요"로 승급 차단 (developing→관찰중, emerging→꾸준한연습필요 상한)
+- DB `weaknessLevel`이 단일 소스라, 리포트·데일리미션·최소대립쌍 자동선택 등
+  모든 읽기 화면이 게이트를 자동 승계 (기존 레코드는 다음 분석 시 자기치유)
+- `AnswerNoteClient`: 발달 안내 배너 추가 — "지금 못 하는 건 자연스러운 발달 과정"
+  맥락을 교정 콘텐츠보다 먼저 제시해 부모 불안 완화
+
+**원래 문제 (참고용 보존):**
 
 **문제:** 음소 습득 연령 데이터가 코드에 정의되어 있으나 어디서도 사용되지 않음.
 
