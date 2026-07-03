@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         type: "weakness",
         phoneme: top.phoneme,
         errorRate: Math.round(top.errorRate),
-        hint: `'${top.phoneme}' 소리가 약점이에요 (오류율 ${Math.round(top.errorRate)}%)`,
+        hint: `'${top.phoneme}' 소리가 최근 오답에 가장 자주 나와요 (오답 중 ${Math.round(top.errorRate)}%)`,
       });
     }
 

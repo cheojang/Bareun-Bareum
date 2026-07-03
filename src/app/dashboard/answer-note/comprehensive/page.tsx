@@ -55,28 +55,28 @@ const LEVEL_META: Record<string, {
 }> = {
   집중교정필요: {
     label: "집중 연습 필요",
-    sublabel: "오류율 30% 이상 — 전문 상담도 권장해요",
+    sublabel: "최근 오답 중 30% 이상 — 전문 상담도 권장해요",
     color: "pink",
     bgColor: "#FAFAF8",
     barColor: "#FCA5A5",
   },
   꾸준한연습필요: {
     label: "꾸준한 연습 필요",
-    sublabel: "오류율 20~30% — 매일 조금씩 연습하면 좋아져요",
+    sublabel: "최근 오답 중 20~30% — 매일 조금씩 연습하면 좋아져요",
     color: "yellow",
     bgColor: "#FAFAF8",
     barColor: "#FCD34D",
   },
   관찰중: {
     label: "발달 중",
-    sublabel: "오류율 10~20% — 정상 발달 범위 내에서 지켜봐요",
+    sublabel: "최근 오답 중 10~20% — 정상 발달 범위 내에서 지켜봐요",
     color: "mint",
     bgColor: "#FAFAF8",
     barColor: "#86EFAC",
   },
   정상범위: {
     label: "잘 하고 있어요",
-    sublabel: "오류율 10% 미만 — 또래 수준에서 잘 내는 소리예요",
+    sublabel: "최근 오답 중 10% 미만 — 또래 수준에서 잘 내는 소리예요",
     color: "lavender",
     bgColor: "#FAFAF8",
     barColor: "#7EDFD0",
@@ -332,8 +332,9 @@ export default async function ComprehensivePage({
         <BubbleCard>
           <p className="font-bold text-[#3D3530] mb-1">🗺️ 조음 발달 현황</p>
           <p className="text-xs text-[#8B7E74] mb-4 leading-relaxed">
-            각 소리를 얼마나 정확히 내고 있는지 나타냈어요.
-            언어재활사는 이 소리 목록을 보고 어디서부터 연습할지 판단해요.
+            부모님이 기록한 오답에서 각 소리가 얼마나 자주 나왔는지로 분류했어요.
+            (발음 실패율이 아니라 오답 중 비중이에요.)
+            언어재활사는 이 목록을 참고해 어디서부터 연습할지 판단해요.
           </p>
           <div className="space-y-3">
             {(["집중교정필요", "꾸준한연습필요", "관찰중", "정상범위"] as const).map((level) => {

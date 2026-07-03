@@ -268,12 +268,15 @@ export async function generateWeakPhonemeReport(
   const ai = getGenAI();
   if (!ai) return null;
 
+  // ⚠️ errorRate는 "전체 오답 중 이 음소가 차지하는 비율"이지 "발음 시도 대비 실패율"이
+  //    아니다. totalAttempts도 실제로는 총 오답 건수(성공 시도는 미기록). Gemini가
+  //    "오류율 X%"로 오해해 부모에게 과장된 표현을 되풀이하지 않도록 정확히 명시한다.
   const phonemeList = weakPhonemes
-    .map((p) => `${sanitizePromptInput(p.phoneme, 10)} (오류율 ${Math.round(p.errorRate)}%, ${p.totalAttempts}회 시도)`)
+    .map((p) => `${sanitizePromptInput(p.phoneme, 10)} (전체 오답 ${p.totalAttempts}건 중 이 소리가 ${Math.round(p.errorRate)}% 차지)`)
     .join('\n');
 
   const safeName = sanitizePromptInput(childName, 20);
-  const prompt = `${safeName}의 발음 교정 약점 분석:\n\n${phonemeList}\n\n이 약점들을 종합하여 부모에게 도움이 될 만한 조언을 3~4문장으로 해주세요.`;
+  const prompt = `${safeName}의 최근 오답 분포:\n\n${phonemeList}\n\n위 숫자는 '발음 실패율'이 아니라 '부모가 기록한 오답 중 각 소리가 차지하는 비율'입니다. 이 점을 감안해 과장 없이, 이 소리들을 종합한 도움 조언을 부모에게 3~4문장으로 해주세요. '오류율' 같은 표현은 쓰지 마세요.`;
 
   try {
     return await callWithFallback('Gemini Report', async (modelName) => {
