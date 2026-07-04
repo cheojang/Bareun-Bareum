@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { WordImage } from "@/components/ui/WordImage";
 import { SoriMascot } from "@/components/ui/SoriMascot";
 import { ConfettiEffect } from "@/components/child/ConfettiEffect";
@@ -56,6 +56,17 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
 
   const round = roundList[roundIdx];
 
+  // 유효한 변별쌍이 없으면 게임을 건너뜀.
+  // ⚠️ 렌더 도중 onDone()(부모 setState)을 호출하면 React가 "Cannot update a component
+  //    while rendering a different component" 오류를 던져 앱 전체가 크래시함 → effect에서 1회만 호출.
+  const skippedRef = useRef(false);
+  useEffect(() => {
+    if (roundList.length === 0 && !skippedRef.current) {
+      skippedRef.current = true;
+      onDone();
+    }
+  }, [roundList.length, onDone]);
+
   // 라운드 진입 시 두 소리를 차례로 들려줌 (정답 → 오답 순서 무관, 위치만 무작위)
   useEffect(() => {
     if (!round) return;
@@ -74,11 +85,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     return () => { cancelled = true; stop(); };
   }, [roundIdx, round, play, stop]);
 
-  if (!round) {
-    // 유효 쌍이 없으면 즉시 통과 (게임 스킵)
-    onDone();
-    return null;
-  }
+  if (!round) return null; // 스킵은 위 effect에서 처리 (렌더 중 setState 금지)
 
   function pick(side: "left" | "right") {
     if (solved || !round) return;
