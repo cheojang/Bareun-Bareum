@@ -46,7 +46,7 @@ function CompletionScreen({
 
   return (
     <div
-      className="flex-1 flex flex-col items-center pb-12 text-center px-6 -mb-28 md:-mb-10"
+      className="flex-1 flex flex-col items-center text-center px-6 pb-28 md:pb-10 -mb-28 md:-mb-10"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       <ConfettiEffect trigger />
@@ -854,7 +854,7 @@ export function PracticeClient({
 
   if (showSentenceReview) {
     return (
-      <div className="flex-1 flex flex-col items-center px-5 py-8 -mb-28 md:-mb-10"
+      <div className="flex-1 flex flex-col items-center px-5 pt-8 pb-28 md:pb-10 -mb-28 md:-mb-10"
         style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
         <div className="max-w-lg w-full mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6">
@@ -926,7 +926,7 @@ export function PracticeClient({
   const cardBorderColor = isCycleMode ? cycleMeta!.color : meta.color;
 
   return (
-    <div className="flex-1 flex flex-col -mb-28 md:-mb-10" style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
+    <div className="flex-1 flex flex-col -mb-28 md:-mb-10 pb-28 md:pb-10" style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
       {tongueModal}
       <ConfettiEffect trigger={confetti} />
 

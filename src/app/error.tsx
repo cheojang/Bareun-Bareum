@@ -28,17 +28,19 @@ export default function GlobalError({
               </p>
             </div>
 
-            {/* 디버그 정보 — 원인 추적용 임시 노출 (확인 후 제거 예정) */}
-            <div className="bg-white border-2 border-red-300 rounded-2xl p-4 space-y-2">
-              <p className="text-xs font-bold text-red-600">🔧 에러 정보 (이 화면을 스크린샷 해주세요):</p>
-              {error.digest && (
-                <p className="text-[10px] text-red-500 font-mono break-all">digest: {error.digest}</p>
-              )}
-              <pre className="text-[10px] text-red-600 overflow-auto bg-red-50 rounded p-2 max-h-52 whitespace-pre-wrap break-all">
-                {error.name}: {error.message}
-                {error.stack ? `\n\n${error.stack.split('\n').slice(0, 10).join('\n')}` : ''}
-              </pre>
-            </div>
+            {/* 디버그 정보 (개발 모드에서만) + 프로덕션은 digest만 노출 */}
+            {process.env.NODE_ENV === 'development' ? (
+              <div className="bg-white border-2 border-red-300 rounded-2xl p-4 space-y-2">
+                <p className="text-xs font-bold text-red-600">🔧 에러 메시지:</p>
+                <pre className="text-[10px] text-red-600 overflow-auto bg-red-50 rounded p-2">
+                  {error.message}
+                </pre>
+              </div>
+            ) : (
+              error.digest && (
+                <p className="text-[10px] text-[#C4B5A8] text-center font-mono">오류 코드: {error.digest}</p>
+              )
+            )}
 
             {/* 액션 버튼 */}
             <div className="space-y-3">
