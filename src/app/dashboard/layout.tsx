@@ -51,7 +51,7 @@ export default async function DashboardLayout({
 
   return (
     <div
-      className="min-h-dvh"
+      className="min-h-dvh flex flex-col"
       style={{ backgroundColor: "var(--color-bg-primary)" }}
     >
       <ServiceWorkerRegistrar />
@@ -82,7 +82,9 @@ export default async function DashboardLayout({
       </header>
 
       {/* ── 태블릿/데스크탑: 사이드바 + 콘텐츠 (md 이상) ──────────── */}
-      <div className="md:flex md:min-h-dvh">
+      {/* flex-1 + flex-col(모바일)/flex-row(md)로 높이를 자식까지 전파 →
+          페이지가 짧아도 콘텐츠 영역(및 그 배경)이 항상 뷰포트를 꽉 채움 */}
+      <div className="flex-1 flex flex-col md:flex-row">
 
         {/* 사이드바 (md 이상에서 표시) */}
         <aside
