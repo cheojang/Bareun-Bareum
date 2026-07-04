@@ -52,6 +52,9 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
   const [solved, setSolved] = useState(false);
   const [wrong, setWrong] = useState<"left" | "right" | null>(null);
   const [confetti, setConfetti] = useState(false);
+  // 선택 대기(armed): 소리를 먼저 자유롭게 들어보고, 확정 버튼으로 답을 정한다.
+  // (탭=즉시 판정이면 아이가 두 소리를 비교해 들을 수 없어 변별이 안 됨)
+  const [armed, setArmed] = useState<"left" | "right" | null>(null);
   const { play, stop } = useTTS();
 
   const round = roundList[roundIdx];
@@ -100,12 +103,14 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
           setRoundIdx((i) => i + 1);
           setSolved(false);
           setWrong(null);
+          setArmed(null);
         } else {
           onDone();
         }
       }, 1200);
     } else {
       setWrong(side);
+      setArmed(null);
       play(round.pair.word).catch(() => {});
       setTimeout(() => setWrong((w) => (w === side ? null : w)), 600);
     }
@@ -117,22 +122,27 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     const isCorrectSide = (side === "left") === leftIsCorrect;
     const revealed = solved && isCorrectSide;
     const isWrong = wrong === side;
-    // 버튼을 누르면 그 자리의 소리를 재생 (선택 전 미리듣기) — 정답 판정은 pick에서
+    const isArmed = armed === side && !solved;
+    // 탭 = 그 자리의 소리를 재생하고 '선택 대기'로 표시 (자유롭게 반복 청취·비교 가능).
+    // 실제 정답 판정은 아래 확정 버튼에서만 → 두 소리를 충분히 듣고 고를 수 있음.
     const soundWord = isCorrectSide ? round.pair.word : round.pair.childPron;
     return (
       <button
         type="button"
-        onClick={() => pick(side)}
-        onDoubleClick={() => play(soundWord).catch(() => {})}
-        className={`relative flex-1 bg-white/95 rounded-3xl px-4 py-6 flex flex-col items-center gap-2 shadow-md transition-all active:scale-95 ${isWrong ? "buddy-wobble" : ""}`}
+        onClick={() => { setArmed(side); play(soundWord).catch(() => {}); }}
+        className={`relative flex-1 bg-white/95 rounded-3xl px-4 py-6 flex flex-col items-center gap-2 shadow-md transition-all active:scale-95 ${isWrong ? "buddy-wobble" : ""} ${isArmed ? "scale-[1.03]" : ""}`}
         style={{
-          border: `3px solid ${revealed ? "#7EDFD0" : isWrong ? "#F9A8D4" : "#F0E8E0"}`,
+          border: `3px solid ${revealed ? "#7EDFD0" : isWrong ? "#F9A8D4" : isArmed ? "#FFB38A" : "#F0E8E0"}`,
+          boxShadow: isArmed ? "0 0 0 4px rgba(255,179,138,0.25)" : undefined,
           opacity: solved && !isCorrectSide ? 0.4 : 1,
         }}
       >
-        <span className="text-4xl">🔊</span>
+        <span className="text-4xl">{isArmed ? "🔈" : "🔊"}</span>
         <span className="text-sm font-black text-[#8B7E74]">
           {side === "left" ? "소리 1" : "소리 2"}
+        </span>
+        <span className="text-[10px] font-bold" style={{ color: isArmed ? "#E8863E" : "#C4B5A8" }}>
+          {isArmed ? "선택됨 · 다시 듣기 탭" : "탭해서 듣기"}
         </span>
         {revealed && (
           <>
@@ -146,7 +156,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center justify-center px-6 text-center"
+      className="flex-1 flex flex-col items-center justify-center px-6 text-center py-8 -mb-28 md:-mb-10 pb-28 md:pb-10"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       <ConfettiEffect trigger={confetti} />
@@ -182,11 +192,25 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
         )}
       </div>
 
-      {/* 두 소리 버튼 */}
+      {/* 두 소리 버튼 — 탭하면 재생(반복 청취), 확정은 아래 버튼에서 */}
       <div className="flex gap-4 w-full max-w-sm">
         <SoundButton side="left" />
         <SoundButton side="right" />
       </div>
+
+      {/* 확정 버튼 — 두 소리를 충분히 들어 비교한 뒤 답을 정함 */}
+      <button
+        type="button"
+        disabled={!armed || solved}
+        onClick={() => armed && pick(armed)}
+        className="mt-5 w-full max-w-sm px-6 py-4 rounded-3xl font-black text-base transition-all active:scale-95 disabled:cursor-not-allowed"
+        style={{
+          backgroundColor: armed && !solved ? "#FFB38A" : "#EDE6DE",
+          color: armed && !solved ? "white" : "#B4A79C",
+        }}
+      >
+        {armed ? `✓ ${armed === "left" ? "소리 1" : "소리 2"}(으)로 정할래요!` : "먼저 두 소리를 들어보세요"}
+      </button>
 
       {/* 다시 듣기 (두 소리 차례로) */}
       <button
@@ -194,7 +218,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
         onClick={async () => {
           try { await play(round.pair.word); await new Promise((r) => setTimeout(r, 500)); await play(round.pair.childPron); } catch { /* noop */ }
         }}
-        className="mt-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-sm border border-[#7EDFD0] text-[#0D9488] font-black transition-all active:scale-95"
+        className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-sm border border-[#7EDFD0] text-[#0D9488] font-black transition-all active:scale-95"
       >
         <span className="text-lg">🔊</span> 두 소리 다시 듣기
       </button>

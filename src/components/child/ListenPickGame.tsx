@@ -73,7 +73,7 @@ export function ListenPickGame({ pool, onDone, rounds = 2 }: Props) {
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center justify-center px-6 text-center"
+      className="flex-1 flex flex-col items-center justify-center px-6 text-center py-8 -mb-28 md:-mb-10 pb-28 md:pb-10"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       <ConfettiEffect trigger={confetti} />
