@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   // 홈 화면에서 실행 시 브라우저 크롬(상단 주소창/오렌지 바)을 숨기고 전체화면 앱처럼 뜨게 함 (iOS)
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // black-translucent → iOS 상태바의 불투명 박스를 없애고 앱 배경이 시계 뒤까지 차오르게 함
+    statusBarStyle: "black-translucent",
     title: "바른발음",
   },
 };
@@ -17,6 +18,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // viewportFit: cover → 노치/상태바 영역까지 콘텐츠 확장 + env(safe-area-inset) 사용 가능
+  viewportFit: "cover",
   // 상단 시스템 바를 앱 배경(크림색)과 동일하게 → 홈 화면 실행 시 튀는 주황색 띠 제거
   themeColor: "#FDFAF5",
 };

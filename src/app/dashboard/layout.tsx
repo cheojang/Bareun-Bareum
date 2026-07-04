@@ -62,6 +62,8 @@ export default async function DashboardLayout({
           background: "rgba(253,250,245,0.88)",
           backdropFilter: "blur(16px)",
           borderBottom: "1.5px solid #F0E8E0",
+          // 전체화면/translucent 상태바에서 크림 배경이 노치 영역까지 채워 시계와 겹치지 않게 함
+          paddingTop: "env(safe-area-inset-top)",
         }}
       >
         <div className="mx-auto max-w-lg flex items-center gap-3 px-5 py-3">
@@ -160,6 +162,8 @@ export default async function DashboardLayout({
             background: "rgba(255,255,255,0.94)",
             backdropFilter: "blur(18px)",
             borderTop: "1.5px solid #F0E8E0",
+            // 전체화면에서 하단 홈 인디케이터 영역만큼 여백 확보
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
           <BottomNavItems />
