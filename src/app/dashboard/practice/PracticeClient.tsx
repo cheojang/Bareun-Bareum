@@ -192,13 +192,13 @@ function AuditoryBombardment({
 
       {/* 단어 이미지 — 재생 중에만 표시 (빈 플레이스홀더 제거) */}
       {isPlaying && (
-        <div className="flex items-center justify-center w-[120px] h-[120px]">
+        <div className="flex items-center justify-center w-[160px] h-[160px]">
           {activeSlug ? (
             <WordImage
               key={activeWord}
               word={activeWord!}
               imageSlug={activeSlug}
-              size="lg"
+              size="xl"
               className="word-img-swap"
             />
           ) : (
