@@ -46,7 +46,7 @@ function CompletionScreen({
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center pb-12 text-center px-6"
+      className="flex-1 flex flex-col items-center pb-12 text-center px-6 -mb-28 md:-mb-10"
       style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}
     >
       <ConfettiEffect trigger />
@@ -175,7 +175,7 @@ function AuditoryBombardment({
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center justify-center px-6 text-center gap-4 py-10"
+      className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 py-10 -mb-28 md:-mb-10"
       style={{ background: "linear-gradient(135deg,#FFF5EE 0%,#F0FAF8 50%,#EDE9FE 100%)" }}
     >
       {/* 헤더: 이모지+텍스트 가로 배치로 세로 공간 절약 */}
@@ -827,7 +827,7 @@ export function PracticeClient({
 
   if (practiceRemaining === 0) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 -mb-28 md:-mb-10"
         style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
         <div className="text-7xl mb-5 animate-float">🔒</div>
         <h2 className="text-2xl font-black text-[#3D3530] mb-2">이번 달 연습을 모두 사용했어요</h2>
@@ -842,7 +842,7 @@ export function PracticeClient({
   const isEmpty = isCycleMode ? cycleItems.length === 0 : stage1Words.length === 0;
   if (isEmpty) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center text-center px-6"
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 -mb-28 md:-mb-10"
         style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
         <div className="text-7xl mb-5 animate-float">📝</div>
         <h2 className="text-2xl font-black text-[#3D3530] mb-2">연습 단어가 없어요</h2>
@@ -854,7 +854,7 @@ export function PracticeClient({
 
   if (showSentenceReview) {
     return (
-      <div className="min-h-dvh flex flex-col items-center px-5 py-8"
+      <div className="flex-1 flex flex-col items-center px-5 py-8 -mb-28 md:-mb-10"
         style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
         <div className="max-w-lg w-full mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6">
@@ -926,7 +926,7 @@ export function PracticeClient({
   const cardBorderColor = isCycleMode ? cycleMeta!.color : meta.color;
 
   return (
-    <div className="flex-1 flex flex-col" style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
+    <div className="flex-1 flex flex-col -mb-28 md:-mb-10" style={{ background: "linear-gradient(135deg, #FFF5EE 0%, #F0FAF8 50%, #EDE9FE 100%)" }}>
       {tongueModal}
       <ConfettiEffect trigger={confetti} />
 

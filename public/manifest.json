@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#FDFAF5",
-  "theme_color": "#FFB38A",
+  "theme_color": "#FDFAF5",
   "categories": ["education", "health"],
   "screenshots": [
     {

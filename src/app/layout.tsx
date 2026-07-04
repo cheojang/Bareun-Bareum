@@ -5,13 +5,20 @@ export const metadata: Metadata = {
   title: "바른발음 — 아이 발음 홈케어",
   description: "집에서 부모와 함께하는 아동 조음 교정 서비스. 놀이처럼 재미있게, 전문적으로.",
   manifest: "/manifest.json",
+  // 홈 화면에서 실행 시 브라우저 크롬(상단 주소창/오렌지 바)을 숨기고 전체화면 앱처럼 뜨게 함 (iOS)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "바른발음",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#FFB38A",
+  // 상단 시스템 바를 앱 배경(크림색)과 동일하게 → 홈 화면 실행 시 튀는 주황색 띠 제거
+  themeColor: "#FDFAF5",
 };
 
 export default function RootLayout({
