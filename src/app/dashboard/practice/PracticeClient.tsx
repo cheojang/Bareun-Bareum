@@ -623,9 +623,9 @@ export function PracticeClient({
     try {
       for (const s of sylls) {
         await playWord(s);
-        await new Promise((r) => setTimeout(r, 450));
+        await new Promise((r) => setTimeout(r, 250)); // 음절 사이 간격 (너무 느리지 않게)
       }
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 150));
       await playWord(word); // 마지막에 전체 단어로 이어 말하기
     } catch { /* TTS 실패 무시 */ }
     setSyllablePlaying(false);
