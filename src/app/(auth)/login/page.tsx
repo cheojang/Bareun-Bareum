@@ -206,78 +206,8 @@ function LoginContent() {
           </button>
         </div>
 
-        {/* 개발용 빠른 로그인 (NEXT_PUBLIC_ALLOW_DEV_LOGIN=1 일 때만 노출) */}
-        {process.env.NEXT_PUBLIC_ALLOW_DEV_LOGIN === "1" && (
-          <DevLoginButtons />
-        )}
       </BubbleCard>
     </main>
   );
 }
 
-function DevLoginButtons() {
-  const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState("");
-
-  async function devLogin(email: string, dest: string) {
-    setLoading(email);
-    setError("");
-    try {
-      const res = await signIn("dev", { email, redirect: false });
-      if (res?.error) {
-        setError(res.error);
-        setLoading(null);
-        return;
-      }
-      window.location.href = dest;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setLoading(null);
-    }
-  }
-
-  async function guestLogin() {
-    setLoading("guest");
-    setError("");
-    try {
-      const res = await signIn("guest", { redirect: false });
-      if (res?.error) {
-        setError(res.error);
-        setLoading(null);
-        return;
-      }
-      window.location.href = "/dashboard/answer-note";
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setLoading(null);
-    }
-  }
-
-  return (
-    <div className="mt-5 pt-4 border-t border-[#F0E8E0] space-y-2">
-      <p className="text-[10px] text-center text-[#C4B5A8] font-semibold">개발 모드 빠른 로그인</p>
-      <button
-        onClick={guestLogin}
-        disabled={!!loading}
-        className="w-full rounded-xl bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#8B7E74] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
-      >
-        {loading === "guest" ? "로그인 중..." : "👤 비회원 로그인"}
-      </button>
-      <button
-        onClick={() => devLogin("free@test.com", "/dashboard")}
-        disabled={!!loading}
-        className="w-full rounded-xl bg-[#F0E8E0] hover:bg-[#E8DDD5] text-[#8B7E74] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
-      >
-        {loading === "free@test.com" ? "로그인 중..." : "👪 무료회원 로그인"}
-      </button>
-      <button
-        onClick={() => devLogin("dev@test.com", "/dashboard")}
-        disabled={!!loading}
-        className="w-full rounded-xl bg-[#FFF0D9] hover:bg-[#FFE4B5] text-[#B8600A] font-bold py-2.5 text-sm transition-colors disabled:opacity-50"
-      >
-        {loading === "dev@test.com" ? "로그인 중..." : "⭐ 유료회원 로그인"}
-      </button>
-      {error && <p className="text-xs text-red-500 text-center mt-1">{error}</p>}
-    </div>
-  );
-}
