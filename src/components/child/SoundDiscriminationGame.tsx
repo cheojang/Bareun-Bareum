@@ -70,7 +70,14 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     }
   }, [roundList.length, onDone]);
 
-  // 라운드 진입 시 두 소리를 차례로 들려줌 (정답 → 오답 순서 무관, 위치만 무작위)
+  // 화면의 소리1/소리2 위치 순서대로 재생할 단어를 계산.
+  // ⚠️ 항상 word(정답)→childPron(오답) 순으로 재생하면 (1) 버튼 배치(소리1/소리2)와
+  //    순서가 어긋나고 (2) 정답이 늘 먼저 나와 답이 새어버림. → correctLeft 기준으로
+  //    소리1=왼쪽, 소리2=오른쪽 위치의 실제 소리를 그 순서대로 들려준다.
+  const sound1 = round?.correctLeft ? round?.pair.word : round?.pair.childPron;
+  const sound2 = round?.correctLeft ? round?.pair.childPron : round?.pair.word;
+
+  // 라운드 진입 시 두 소리를 소리1 → 소리2 순으로 들려줌
   useEffect(() => {
     if (!round) return;
     let cancelled = false;
@@ -78,15 +85,15 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
       await new Promise((r) => setTimeout(r, 350));
       if (cancelled) return;
       try {
-        await play(round.pair.word);
+        await play(sound1!);
         await new Promise((r) => setTimeout(r, 500));
         if (cancelled) return;
-        await play(round.pair.childPron);
+        await play(sound2!);
       } catch { /* TTS 실패 무시 */ }
     };
     run();
     return () => { cancelled = true; stop(); };
-  }, [roundIdx, round, play, stop]);
+  }, [roundIdx, round, sound1, sound2, play, stop]);
 
   if (!round) return null; // 스킵은 위 effect에서 처리 (렌더 중 setState 금지)
 
@@ -216,7 +223,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
       <button
         type="button"
         onClick={async () => {
-          try { await play(round.pair.word); await new Promise((r) => setTimeout(r, 500)); await play(round.pair.childPron); } catch { /* noop */ }
+          try { await play(sound1!); await new Promise((r) => setTimeout(r, 500)); await play(sound2!); } catch { /* noop */ }
         }}
         className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-sm border border-[#7EDFD0] text-[#0D9488] font-black transition-all active:scale-95"
       >
