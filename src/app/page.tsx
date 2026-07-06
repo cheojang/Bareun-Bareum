@@ -27,12 +27,12 @@ export default function LandingPage() {
             <SoriLogo size={36} />
             <div>
               <span className="text-lg font-black text-[#3D3530] leading-none block">바른발음</span>
-              <span className="text-[9px] text-[#C4B5A8] font-semibold tracking-wide">AI 발음 홈케어</span>
+              <span className="text-[9px] text-[#786E60] font-semibold tracking-wide">AI 발음 홈케어</span>
             </div>
           </div>
           <Link
             href="/login"
-            className="text-sm font-bold text-[#8B7E74] hover:text-[#FFB38A] transition-colors px-2 py-1"
+            className="text-sm font-bold text-[#6B6157] hover:text-[#B45309] transition-colors px-2 py-1"
           >
             로그인
           </Link>
@@ -48,14 +48,14 @@ export default function LandingPage() {
           <div className="animate-float mb-8">
             <SoriMascot size={130} variant="full" animated />
           </div>
-          <p className="text-sm font-bold text-[#FFB38A] mb-3 tracking-wider">
+          <p className="text-sm font-bold text-[#B45309] mb-3 tracking-wider">
             우리 아이 발음, 걱정되시나요?
           </p>
           <h1 className="text-3xl md:text-5xl font-black text-[#3D3530] leading-tight mb-5">
             발음 교정은<br />
-            <span className="text-[#FFB38A]">빠를수록</span> 효과적이에요
+            <span className="text-[#B45309]">빠를수록</span> 효과적이에요
           </h1>
-          <p className="text-base md:text-lg text-[#8B7E74] mb-10 max-w-md mx-auto leading-relaxed">
+          <p className="text-base md:text-lg text-[#6B6157] mb-10 max-w-md mx-auto leading-relaxed">
             잘못된 발음은 방치할수록 굳어져요.<br />
             지금 이 순간, 손안의 앱으로 바로 교정하세요.
           </p>
@@ -64,8 +64,8 @@ export default function LandingPage() {
               시작하기
             </BubbleButton>
           </Link>
-          <p className="text-xs text-[#C4B5A8] mt-3">가입 30초 · 카카오/구글 로그인</p>
-          <Link href="/login?guest=1" className="block mt-3 text-xs text-[#C4B5A8] hover:text-[#8B7E74] transition-colors">
+          <p className="text-xs text-[#786E60] mt-3">가입 30초 · 카카오/구글 로그인</p>
+          <Link href="/login?guest=1" className="block mt-3 text-xs text-[#786E60] hover:text-[#6B6157] transition-colors">
             가입 없이 체험하기 →
           </Link>
         </div>
@@ -74,7 +74,7 @@ export default function LandingPage() {
       {/* ── 공감 (Pain Points) ─────────────────────────────────────────── */}
       <section className="px-6 py-16 bg-[#FAFAF8]">
         <div className="max-w-2xl mx-auto">
-          <p className="text-center text-sm font-bold text-[#FFB38A] mb-2">부모님의 마음을 압니다</p>
+          <p className="text-center text-sm font-bold text-[#B45309] mb-2">부모님의 마음을 압니다</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] text-center mb-10">
             혹시 이런 고민 하고 계신가요?
           </h2>
@@ -104,7 +104,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
-              <p className="text-sm font-bold text-[#7EDFD0] mb-2">왜 즉시 교정이 중요할까요?</p>
+              <p className="text-sm font-bold text-[#0F766E] mb-2">왜 즉시 교정이 중요할까요?</p>
               <h2 className="text-2xl font-black text-[#3D3530] mb-6 leading-tight">
                 발음은 틀린 순간<br />바로잡아야 해요
               </h2>
@@ -138,7 +138,7 @@ export default function LandingPage() {
       {/* ── How It Works ───────────────────────────────────────────────── */}
       <section className="px-6 py-16 bg-[#FAFAF8]">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm font-bold text-[#7EDFD0] mb-2">사용법은 간단해요</p>
+          <p className="text-sm font-bold text-[#0F766E] mb-2">사용법은 간단해요</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mb-12">
             3단계로 끝나는 발음 교정
           </h2>
@@ -168,17 +168,17 @@ export default function LandingPage() {
       {/* ── 비용 비교 ──────────────────────────────────────────────────── */}
       <section className="px-6 py-16">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm font-bold text-[#FFB38A] mb-2">합리적인 비용</p>
+          <p className="text-sm font-bold text-[#B45309] mb-2">합리적인 비용</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mb-10">
-            센터 1회 비용으로<br /><span className="text-[#FFB38A]">1년간</span> 매일 연습
+            센터 1회 비용으로<br /><span className="text-[#B45309]">1년간</span> 매일 연습
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             {/* 센터 */}
             <BubbleCard className="text-center border-2 border-[#F0E8E0]">
-              <p className="text-sm text-[#8B7E74] mb-2">일반 언어치료센터</p>
+              <p className="text-sm text-[#6B6157] mb-2">일반 언어치료센터</p>
               <p className="text-3xl font-black text-[#3D3530]">60,000원</p>
-              <p className="text-xs text-[#C4B5A8] mt-1">1회 방문 평균 비용</p>
+              <p className="text-xs text-[#786E60] mt-1">1회 방문 평균 비용</p>
               <div className="h-[1px] bg-[#F0E8E0] my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="📅" text="주 1~2회 방문" muted />
@@ -191,13 +191,13 @@ export default function LandingPage() {
             {/* 바른발음 */}
             <BubbleCard color="peach" className="text-center border-2 border-[#FFB38A]/30 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-[#FFB38A] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                <span className="bg-[#FFB38A] text-[#5A3A1E] text-[10px] font-black px-3 py-1 rounded-full shadow-md">
                   추천
                 </span>
               </div>
-              <p className="text-sm text-[#8B7E74] mb-2">바른발음 앱</p>
-              <p className="text-3xl font-black text-[#FFB38A]">4,900원<span className="text-base">/월</span></p>
-              <p className="text-xs text-[#C4B5A8] mt-1">1개월 이용권 · 자동결제 없음</p>
+              <p className="text-sm text-[#6B6157] mb-2">바른발음 앱</p>
+              <p className="text-3xl font-black text-[#B45309]">4,900원<span className="text-base">/월</span></p>
+              <p className="text-xs text-[#786E60] mt-1">1개월 이용권 · 자동결제 없음</p>
               <div className="h-[1px] bg-[#FFB38A]/20 my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="✅" text="매일 무제한 연습" />
@@ -213,12 +213,12 @@ export default function LandingPage() {
       {/* ── 병행 효과 ──────────────────────────────────────────────────── */}
       <section className="px-6 py-16 bg-[#FAFAF8]">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm font-bold text-[#7EDFD0] mb-2">함께하면 더 좋아요</p>
+          <p className="text-sm font-bold text-[#0F766E] mb-2">함께하면 더 좋아요</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mb-4">
             전문 상담과 병행하면<br />
-            꾸준한 연습에 <span className="text-[#7EDFD0]">큰 도움</span>이 돼요
+            꾸준한 연습에 <span className="text-[#0F766E]">큰 도움</span>이 돼요
           </h2>
-          <p className="text-sm text-[#8B7E74] mb-10 max-w-md mx-auto leading-relaxed">
+          <p className="text-sm text-[#6B6157] mb-10 max-w-md mx-auto leading-relaxed">
             바른발음은 전문 치료를 대체하는 것이 아니라,<br />
             센터 상담 사이의 공백을 메워 효과를 높여줘요.
           </p>
@@ -228,25 +228,25 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-[#F5F3FF] flex items-center justify-center text-2xl flex-shrink-0">🏥</div>
               <div className="text-left">
                 <p className="font-bold text-[#3D3530] text-sm">센터 상담 (주 1~2회)</p>
-                <p className="text-[11px] text-[#8B7E74]">전문가 진단 · 치료 방향 설정</p>
+                <p className="text-[11px] text-[#6B6157]">전문가 진단 · 치료 방향 설정</p>
               </div>
             </div>
             <div className="flex justify-center my-2">
-              <span className="text-lg text-[#C4B5A8]">+</span>
+              <span className="text-lg text-[#786E60]">+</span>
             </div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-[#F0FAF8] flex items-center justify-center text-2xl flex-shrink-0">📱</div>
               <div className="text-left">
                 <p className="font-bold text-[#3D3530] text-sm">바른발음 홈케어 (매일)</p>
-                <p className="text-[11px] text-[#8B7E74]">배운 내용 복습 · 새 오류 즉시 교정</p>
+                <p className="text-[11px] text-[#6B6157]">배운 내용 복습 · 새 오류 즉시 교정</p>
               </div>
             </div>
             <div className="h-[1px] bg-[#F0E8E0] my-4" />
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#FFF5EE] flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="text-left">
-                <p className="font-bold text-[#FFB38A] text-sm">꾸준한 연습 습관</p>
-                <p className="text-[11px] text-[#8B7E74]">매일 연습으로 배운 내용을 잊지 않게 도와줘요</p>
+                <p className="font-bold text-[#B45309] text-sm">꾸준한 연습 습관</p>
+                <p className="text-[11px] text-[#6B6157]">매일 연습으로 배운 내용을 잊지 않게 도와줘요</p>
               </div>
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function LandingPage() {
       {/* ── 주요 기능 ──────────────────────────────────────────────────── */}
       <section className="px-6 py-16">
         <div className="max-w-2xl mx-auto">
-          <p className="text-center text-sm font-bold text-[#FFB38A] mb-2">주요 기능</p>
+          <p className="text-center text-sm font-bold text-[#B45309] mb-2">주요 기능</p>
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] text-center mb-10">
             발음 교정에 필요한<br />모든 것을 담았어요
           </h2>
@@ -281,7 +281,7 @@ export default function LandingPage() {
           <h2 className="text-2xl md:text-3xl font-black text-[#3D3530] mt-6 mb-4">
             오늘 시작하면<br />내일부터 달라져요
           </h2>
-          <p className="text-sm text-[#8B7E74] leading-relaxed">
+          <p className="text-sm text-[#6B6157] leading-relaxed">
             가입 즉시 무료로 사용할 수 있어요.<br />
             우리 아이 발음, 오늘 확인해보세요.
           </p>
@@ -290,15 +290,15 @@ export default function LandingPage() {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="text-center py-8 px-5 border-t border-[#F0E8E0] bg-white">
-        <p className="text-xs text-[#C4B5A8] mb-3 leading-relaxed">
+        <p className="text-xs text-[#786E60] mb-3 leading-relaxed">
           바른발음은 학습 보조 도구이며 의료기기가 아닙니다.
         </p>
-        <div className="flex justify-center gap-4 text-xs text-[#8B7E74]">
+        <div className="flex justify-center gap-4 text-xs text-[#6B6157]">
           <Link href="/terms" className="hover:underline">이용약관</Link>
           <Link href="/privacy" className="hover:underline">개인정보 처리방침</Link>
         </div>
-        <p className="text-xs text-[#C4B5A8] mt-3">© 2026 바른발음</p>
-        <p className="text-[10px] text-[#D8CFC5] mt-1.5">
+        <p className="text-xs text-[#786E60] mt-3">© 2026 바른발음</p>
+        <p className="text-[10px] text-[#786E60] mt-1.5">
           {APP_VERSION} · {BUILD_TIME} 배포
         </p>
       </footer>
@@ -324,12 +324,12 @@ function StepCard({ step, emoji, title, desc }: { step: number; emoji: string; t
         <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center">
           <span className="text-3xl">{emoji}</span>
         </div>
-        <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#FFB38A] text-white text-xs font-black flex items-center justify-center shadow-sm">
+        <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#FFB38A] text-[#5A3A1E] text-xs font-black flex items-center justify-center shadow-sm">
           {step}
         </span>
       </div>
       <h3 className="font-black text-[#3D3530] mb-2">{title}</h3>
-      <p className="text-sm text-[#8B7E74] leading-relaxed">{desc}</p>
+      <p className="text-sm text-[#6B6157] leading-relaxed">{desc}</p>
     </div>
   );
 }
@@ -340,7 +340,7 @@ function TimelineItem({ icon, title, desc }: { icon: string; title: string; desc
       <span className="text-xl flex-shrink-0 mt-0.5">{icon}</span>
       <div>
         <p className="font-bold text-[#3D3530] text-sm mb-0.5">{title}</p>
-        <p className="text-xs text-[#8B7E74] leading-relaxed">{desc}</p>
+        <p className="text-xs text-[#6B6157] leading-relaxed">{desc}</p>
       </div>
     </div>
   );
@@ -350,7 +350,7 @@ function CompareItem({ icon, text, muted }: { icon: string; text: string; muted?
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm flex-shrink-0">{icon}</span>
-      <p className={`text-xs leading-relaxed ${muted ? "text-[#8B7E74]" : "font-bold text-[#3D3530]"}`}>{text}</p>
+      <p className={`text-xs leading-relaxed ${muted ? "text-[#6B6157]" : "font-bold text-[#3D3530]"}`}>{text}</p>
     </div>
   );
 }
@@ -360,7 +360,7 @@ function FeatureCard({ emoji, title, desc }: { emoji: string; title: string; des
     <BubbleCard padding="sm" className="text-center">
       <span className="text-2xl block mb-2">{emoji}</span>
       <h3 className="font-bold text-[#3D3530] text-sm mb-1">{title}</h3>
-      <p className="text-[11px] text-[#8B7E74] leading-relaxed">{desc}</p>
+      <p className="text-[11px] text-[#6B6157] leading-relaxed">{desc}</p>
     </BubbleCard>
   );
 }
