@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5, // 핀치 줌 허용 (저시력 접근성 — Lighthouse a11y)
   // viewportFit: cover → 노치/상태바 영역까지 콘텐츠 확장 + env(safe-area-inset) 사용 가능
   viewportFit: "cover",
   // 상단 시스템 바를 앱 배경(크림색)과 동일하게 → 홈 화면 실행 시 튀는 주황색 띠 제거
