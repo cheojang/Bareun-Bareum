@@ -32,10 +32,14 @@ function LoginContent() {
   const [emailLoading, setEmailLoading] = useState(false);
 
   // DB 워밍업: Supabase가 유휴 상태면 OAuth 콜백의 첫 DB 호출이 타임아웃돼
-  // "카카오 첫 로그인만 실패" 증상이 났다. 로그인 화면에 들어온 순간 미리 깨워두면
-  // 사용자가 카카오 인증을 마치고 돌아올 때쯤 DB가 준비되어 있다. (실패해도 무시)
+  // "카카오 첫 로그인만 실패" 증상이 났다. 로그인 화면에 들어온 순간 미리 깨워두고,
+  // 사용자가 화면에 머무는 동안(카카오/구글 동의 화면 포함) 25초마다 핑을 유지해
+  // 콜백 시점에 DB가 다시 잠들어 있지 않게 한다. (실패해도 무시)
   useEffect(() => {
-    fetch("/api/health").catch(() => {});
+    const ping = () => fetch("/api/health").catch(() => {});
+    ping();
+    const id = setInterval(ping, 25_000);
+    return () => clearInterval(id);
   }, []);
 
   // OAuth(카카오/구글) 로그인

@@ -14,7 +14,9 @@ const prismaClientSingleton = () => {
   //    ✅ 근본 해결은 DATABASE_URL을 Supabase '트랜잭션 풀러(6543)'로 교체하는 것.
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
-    max: 1,                        // 인스턴스당 최대 연결 (요청당 쿼리는 순차 처리)
+    // 세션 모드(15 cap)에서는 1이 안전. 트랜잭션 풀러(6543)로 전환하면
+    // PG_POOL_MAX=5 로 올려 페이지의 병렬 쿼리(Promise.all)가 실제로 병렬 실행되게 할 것.
+    max: Number(process.env.PG_POOL_MAX ?? "1"),
     idleTimeoutMillis: 10_000,     // 유휴 연결 빠르게 반납 → 풀 회전율↑
     connectionTimeoutMillis: 10_000,
   });
