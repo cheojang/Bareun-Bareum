@@ -634,14 +634,12 @@ export function PracticeClient({
     const alive = () => syllableRunRef.current === run;
     setSyllablePlaying(true);
     try {
-      for (const s of sylls) {
-        if (!alive()) return;
-        await playWord(s);
-        if (!alive()) return;
-        await new Promise((r) => setTimeout(r, 250)); // 음절 사이 간격 (너무 느리지 않게)
-      }
+      // 음절을 쉼표로 이어 한 번에 합성 ("허, 수, 아, 비") — 음절마다 별도 요청하면
+      // 레이트리밋 초과분이 브라우저 내장 음성으로 폴백돼 글자마다 목소리(남/여)가
+      // 바뀌고 발음도 이상해지던 문제 해결. 한 요청 = 한 목소리 + 쉼표의 자연스러운 끊김.
+      await playWord(sylls.join(", "));
       if (!alive()) return;
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 250));
       if (!alive()) return;
       await playWord(word); // 마지막에 전체 단어로 이어 말하기
     } catch { /* TTS 실패 무시 */ }
