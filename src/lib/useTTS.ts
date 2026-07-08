@@ -11,6 +11,8 @@ import { useCallback, useEffect, useRef } from "react";
 export interface PlayOptions {
   speaker?: string;
   signal?: AbortSignal;
+  /** 재생 속도 배수 (0.25~1.5). 미지정 시 서버 기본 속도(0.7) 사용 — 특정 화면만 더 느리게/빠르게 할 때 지정 */
+  rate?: number;
 }
 
 export function useTTS() {
@@ -33,6 +35,7 @@ export function useTTS() {
     try {
       const params = new URLSearchParams({ word });
       if (options.speaker) params.set("speaker", options.speaker);
+      if (options.rate) params.set("rate", String(options.rate));
 
       const res = await fetch(`/api/tts?${params.toString()}`, { signal: options.signal });
       if (res.ok) {
