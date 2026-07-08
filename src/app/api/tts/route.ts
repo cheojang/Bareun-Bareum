@@ -59,8 +59,10 @@ export async function GET(request: NextRequest) {
   if (word.length > 200) {
     return NextResponse.json({ error: "200자 이내로 입력해주세요" }, { status: 400 });
   }
-  // 한글 문장만 허용 — 임의 문자열로 TTS 캐시 오염/외부 API 남용 방지
-  if (!/^[가-힣ㄱ-ㅎㅏ-ㅣ0-9\s.,!?~'"()·-]+$/.test(word)) {
+  // 한글 문장만 허용 — 임의 문자열로 TTS 캐시 오염/외부 API 남용 방지.
+  // 전각 문장부호(！？：…“” 등)를 허용하지 않으면 AI 생성 문장이 자주 400으로 거절돼
+  // 브라우저 내장 음성으로 폴백(목소리 뒤바뀜·정지 불가 잔류 재생의 원인)되므로 포함.
+  if (!/^[가-힣ㄱ-ㅎㅏ-ㅣ0-9\s.,!?~'"()·\-：；、。，！？…‥‘’“”%&+/]+$/.test(word)) {
     return NextResponse.json({ error: "한글 단어/문장만 변환할 수 있어요" }, { status: 400 });
   }
 

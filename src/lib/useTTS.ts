@@ -59,9 +59,9 @@ export function useTTS() {
       console.warn("[useTTS] /api/tts 실패, 브라우저 폴백 사용:", err);
     }
 
-    // 2. 폴백 — 브라우저 speechSynthesis
+    // 2. 폴백 — 브라우저 speechSynthesis (재생 직전·직후 모두 생존 검사)
     if (!alive()) return;
-    await playSpeechSynthesis(word, options.signal);
+    await playSpeechSynthesis(word, options.signal, alive);
   }, []);
 
   /** 재생 중지 — 재생 중인 오디오뿐 아니라 합성 대기 중인(아직 시작 전) 재생도 무효화 */
@@ -125,7 +125,11 @@ async function playAudioUrl(
   });
 }
 
-async function playSpeechSynthesis(text: string, signal?: AbortSignal): Promise<void> {
+async function playSpeechSynthesis(
+  text: string,
+  signal?: AbortSignal,
+  isAlive?: () => boolean,
+): Promise<void> {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
       resolve();
@@ -146,7 +150,12 @@ async function playSpeechSynthesis(text: string, signal?: AbortSignal): Promise<
     const safety = setTimeout(finish, 3000);
     u.addEventListener("end", () => clearTimeout(safety));
 
-    // Android Chrome: cancel() 직후 speak()하면 무음이 되는 엔진 버그 — 한 틱 띄움
-    setTimeout(() => window.speechSynthesis.speak(u), 60);
+    // Android Chrome: cancel() 직후 speak()하면 무음이 되는 엔진 버그 — 한 틱 띄움.
+    // ⚠️ 이 대기 중에 stop()(=cancel)이 먼저 실행되면 그 뒤에 speak()가 말하기 시작해
+    //    아무것도 못 멈추는 역전이 생김(문장이 다음 카드로 넘어오던 원인) → 재생 직전 생존 검사
+    setTimeout(() => {
+      if ((isAlive && !isAlive()) || signal?.aborted) { finish(); return; }
+      window.speechSynthesis.speak(u);
+    }, 60);
   });
 }
