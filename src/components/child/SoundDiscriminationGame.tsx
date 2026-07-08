@@ -16,6 +16,10 @@ import { useTTS } from "@/lib/useTTS";
  * - 오답: 흔들림 + 정답 소리 다시 → 재시도
  */
 
+// 청지각 변별은 두 소리를 정확히 구분해 들어야 하는 게임이라, 앱 기본 속도(0.7)보다도
+// 더 느리게(약 0.8배) 재생해 변별력을 높인다. 기본 TTS 캐시와는 분리된 경로로 캐싱됨.
+const DISCRIM_RATE = 0.56; // 0.7 × 0.8
+
 export interface DiscrimPair {
   word: string;        // 정발음(목표 단어)
   childPron: string;   // 오발음(아이가 실제로 말한 것)
@@ -85,10 +89,10 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
       await new Promise((r) => setTimeout(r, 350));
       if (cancelled) return;
       try {
-        await play(sound1!);
+        await play(sound1!, { rate: DISCRIM_RATE });
         await new Promise((r) => setTimeout(r, 500));
         if (cancelled) return;
-        await play(sound2!);
+        await play(sound2!, { rate: DISCRIM_RATE });
       } catch { /* TTS 실패 무시 */ }
     };
     run();
@@ -103,7 +107,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     if (isCorrect) {
       setSolved(true);
       setConfetti(true);
-      play(round.pair.word).catch(() => {});
+      play(round.pair.word, { rate: DISCRIM_RATE }).catch(() => {});
       setTimeout(() => {
         setConfetti(false);
         if (roundIdx + 1 < roundList.length) {
@@ -118,7 +122,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     } else {
       setWrong(side);
       setArmed(null);
-      play(round.pair.word).catch(() => {});
+      play(round.pair.word, { rate: DISCRIM_RATE }).catch(() => {});
       setTimeout(() => setWrong((w) => (w === side ? null : w)), 600);
     }
   }
@@ -136,7 +140,7 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     return (
       <button
         type="button"
-        onClick={() => { setArmed(side); play(soundWord).catch(() => {}); }}
+        onClick={() => { setArmed(side); play(soundWord, { rate: DISCRIM_RATE }).catch(() => {}); }}
         className={`relative flex-1 bg-white/95 rounded-3xl px-4 py-6 flex flex-col items-center gap-2 shadow-md transition-all active:scale-95 ${isWrong ? "buddy-wobble" : ""} ${isArmed ? "scale-[1.03]" : ""}`}
         style={{
           border: `3px solid ${revealed ? "#7EDFD0" : isWrong ? "#F9A8D4" : isArmed ? "#FFB38A" : "#F0E8E0"}`,
@@ -223,7 +227,11 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
       <button
         type="button"
         onClick={async () => {
-          try { await play(sound1!); await new Promise((r) => setTimeout(r, 500)); await play(sound2!); } catch { /* noop */ }
+          try {
+            await play(sound1!, { rate: DISCRIM_RATE });
+            await new Promise((r) => setTimeout(r, 500));
+            await play(sound2!, { rate: DISCRIM_RATE });
+          } catch { /* noop */ }
         }}
         className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-sm border border-[#7EDFD0] text-[#0D9488] font-black transition-all active:scale-95"
       >

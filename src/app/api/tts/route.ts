@@ -47,6 +47,12 @@ export async function GET(request: NextRequest) {
       ? (voiceParam as GoogleVoice)
       : DEFAULT_VOICE;
 
+  // 특정 화면(예: 청지각 변별 게임)만 기본 속도(0.7)보다 느리게/빠르게 재생하고 싶을 때 지정.
+  // 미지정 시 기존 기본 캐시 경로 그대로 사용 — 다른 화면의 기존 캐시에 영향 없음.
+  const rateParam = url.searchParams.get("rate");
+  const rate = rateParam ? Number(rateParam) : undefined;
+  const validRate = rate != null && Number.isFinite(rate) && rate >= 0.25 && rate <= 1.5 ? rate : undefined;
+
   if (!word) {
     return NextResponse.json({ error: "word 파라미터 필수" }, { status: 400 });
   }
@@ -71,13 +77,18 @@ export async function GET(request: NextRequest) {
     .replace(/\//g, "_")
     .replace(/\+/g, "-")
     .replace(/=+$/, "");
-  const path = `${voice}/${encodedWord}.mp3`;
+  // rate 지정 시에만 별도 경로 사용 (기존 기본 캐시와 분리 — 서로 오염되지 않음)
+  const path = validRate
+    ? `${voice}/rate-${validRate}/${encodedWord}.mp3`
+    : `${voice}/${encodedWord}.mp3`;
+
+  const folder = validRate ? `${voice}/rate-${validRate}` : voice;
 
   // 1. 캐시 존재 확인
   try {
     const { data: files } = await supabaseAdmin.storage
       .from(BUCKET)
-      .list(voice, { search: `${encodedWord}.mp3`, limit: 1 });
+      .list(folder, { search: `${encodedWord}.mp3`, limit: 1 });
 
     if (files && files.length > 0) {
       const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
@@ -90,7 +101,7 @@ export async function GET(request: NextRequest) {
   // 2. 캐시 미스 — Google TTS 호출
   let audioBuffer: Buffer;
   try {
-    audioBuffer = await synthesizeGoogleTTS(word, { voice });
+    audioBuffer = await synthesizeGoogleTTS(word, { voice, speakingRate: validRate });
   } catch (err: any) {
     console.error("[TTS] Google 호출 실패:", err);
     return NextResponse.json(
