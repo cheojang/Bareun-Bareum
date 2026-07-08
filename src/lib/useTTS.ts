@@ -83,9 +83,12 @@ async function playAudioUrl(
     audio.src = url;
     audio.currentTime = 0;
 
+    let safety: ReturnType<typeof setTimeout>;
     const cleanup = () => {
+      clearTimeout(safety);
       audio.onended = null;
       audio.onerror = null;
+      audio.onpause = null;
       if (signal) signal.removeEventListener("abort", onAbort);
     };
     const onAbort = () => {
@@ -96,11 +99,16 @@ async function playAudioUrl(
 
     audio.onended = () => { cleanup(); resolve(); };
     audio.onerror = () => { cleanup(); reject(new Error("audio play failed")); };
+    // 외부 stop()·다른 단어 재생으로 pause되면 즉시 종료 처리 —
+    // 안 그러면 아래 5초 안전 타임아웃까지 붙잡혀, 연속 재생 루프(음절 듣기 등)가
+    // 카드 전환 후 뒤늦게 이어져 소리가 중첩됨. (자연 종료 시엔 pause 이벤트 없이 ended만 발생)
+    // ⚠️ 이전 재생을 교체할 때 큐에 남은 stale pause 이벤트가 새 재생 직후 도착할 수 있어,
+    //    그 시점에 이미 다시 재생 중(paused=false)이면 무시한다.
+    audio.onpause = () => { if (audio.paused) { cleanup(); resolve(); } };
     if (signal) signal.addEventListener("abort", onAbort);
 
     // 안전 타임아웃 5초
-    const safety = setTimeout(() => { cleanup(); resolve(); }, 5000);
-    audio.addEventListener("ended", () => clearTimeout(safety), { once: true });
+    safety = setTimeout(() => { cleanup(); resolve(); }, 5000);
 
     audio.play().catch((err) => { cleanup(); reject(err); });
   });

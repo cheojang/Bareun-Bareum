@@ -603,7 +603,15 @@ export function PracticeClient({
     if (phase !== "practice") return;
     let cancelled = false;
     const t = setTimeout(() => { if (!cancelled) playWord(text).catch(() => {}); }, 250);
-    return () => { cancelled = true; clearTimeout(t); stopWord(); };
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      // 카드 전환: 재생 중 오디오 정지 + 진행 중인 음절 시퀀스("천천히 듣기") 무효화
+      // → 이전 카드 소리가 다음 카드로 넘어와 중첩되는 것 방지
+      syllableRunRef.current++;
+      setSyllablePlaying(false);
+      stopWord();
+    };
   }, [currentItem?.text, currentItem?.kind, stage3Loading, phase, playWord, stopWord]);
 
   const handleReplay = useCallback(() => {
@@ -613,22 +621,33 @@ export function PracticeClient({
 
   // 음절 단위 연습(§4-2): 소리→음절→단어 위계. 단어를 음절로 나눠 천천히 들려준 뒤 이어 말하기.
   const [syllablePlaying, setSyllablePlaying] = useState(false);
+  // 진행 중인 음절 시퀀스 무효화 토큰 — 카드 전환 시 증가시켜, 이전 카드의 루프가
+  // 다음 카드 위에서 계속 재생되며 소리가 중첩되는 것을 막는다.
+  const syllableRunRef = useRef(0);
   const playSyllables = useCallback(async (word: string) => {
     const sylls = Array.from(word).filter((ch) => {
       const c = ch.charCodeAt(0);
       return c >= 0xac00 && c <= 0xd7a3; // 완성형 한글 음절만
     });
     if (sylls.length <= 1) { playWord(word).catch(() => {}); return; }
+    const run = ++syllableRunRef.current;
+    const alive = () => syllableRunRef.current === run;
     setSyllablePlaying(true);
     try {
       for (const s of sylls) {
+        if (!alive()) return;
         await playWord(s);
+        if (!alive()) return;
         await new Promise((r) => setTimeout(r, 250)); // 음절 사이 간격 (너무 느리지 않게)
       }
+      if (!alive()) return;
       await new Promise((r) => setTimeout(r, 150));
+      if (!alive()) return;
       await playWord(word); // 마지막에 전체 단어로 이어 말하기
     } catch { /* TTS 실패 무시 */ }
-    setSyllablePlaying(false);
+    finally {
+      if (alive()) setSyllablePlaying(false);
+    }
   }, [playWord]);
 
   const { recState, startRec, stopRec, playRec, resetRec } = useRecorder();
