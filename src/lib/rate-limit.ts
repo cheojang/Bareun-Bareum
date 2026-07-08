@@ -75,10 +75,13 @@ export const geminiLimiter = new RateLimiter({
   refillPerSecond: 10 / 60, // 1분에 10건
 });
 
-/** TTS: 사용자당 분당 30건 — Google TTS 비용 방어 */
+/** TTS: 사용자당 분당 80건 — Google TTS 비용 방어.
+ * 연습 세션은 정상 사용만으로도 요청이 많음(청각폭격 12단어×2회전 + 카드 자동재생
+ * + 음절 듣기). 30건이면 세션 중반에 초과분이 브라우저 내장 음성으로 폴백돼
+ * 글자마다 목소리(남/여)가 바뀌던 문제가 있었음. 대부분 Storage 캐시 히트라 Google 비용과 무관. */
 export const ttsLimiter = new RateLimiter({
-  capacity: 30,
-  refillPerSecond: 30 / 60,
+  capacity: 80,
+  refillPerSecond: 80 / 60,
 });
 
 /** 이메일 인증코드 발송 (IP 기준): 분당 3건 */
