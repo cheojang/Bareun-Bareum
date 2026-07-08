@@ -447,7 +447,7 @@ export function ReviewBonusClient({
       <div>
         <h2 className="text-2xl font-black text-[#3D3530]">후기 인증 혜택 ✍️</h2>
         <p className="text-sm text-[#8B7E74] mt-1">
-          앱 후기를 작성하고 URL을 제출하면 최대 3개월 무료 이용 기간이 연장돼요 (최대 4회)
+          후기 인증으로 무료 이용 기간이 총 3번, 최대 3개월 연장돼요 (첫 1개월은 인증 2번 필요)
         </p>
       </div>
 
@@ -457,14 +457,17 @@ export function ReviewBonusClient({
         style={{ backgroundColor: "#FFF5EE", border: "1.5px solid #F0E8E0" }}
       >
         <div className="flex items-center justify-between">
-          <span className="font-bold text-[#3D3530]">사용 현황</span>
-          <span className="text-sm font-semibold text-[#FFB38A]">{bonusCount} / 4회</span>
+          <span className="font-bold text-[#3D3530]">연장 현황</span>
+          <span className="text-sm font-semibold text-[#FFB38A]">
+            {/* 인증 1회=0, 2회=1, 3회=2, 4회=3개월 */}
+            {Math.max(0, bonusCount - 1)} / 3개월
+          </span>
         </div>
         <div className="w-full bg-[#F0E8E0] rounded-full h-3 overflow-hidden">
           <div
             className="h-3 rounded-full transition-all duration-500"
             style={{
-              width: `${(bonusCount / 4) * 100}%`,
+              width: `${(Math.max(0, bonusCount - 1) / 3) * 100}%`,
               backgroundColor: bonusCount >= 4 ? "#A8D8CF" : "#FFB38A",
             }}
           />
@@ -472,7 +475,11 @@ export function ReviewBonusClient({
         <p className="text-xs text-[#8B7E74]">
           {bonusCount >= 4
             ? "최대 혜택(3개월)을 모두 사용하셨어요"
-            : `${4 - bonusCount}회 더 신청할 수 있어요`}
+            : bonusCount === 0
+              ? "인증 2번이면 첫 1개월이 연장돼요 (인증 0회)"
+              : bonusCount === 1
+                ? "한 번 더 인증하면 1개월 연장돼요 (인증 1회)"
+                : `한 번 더 인증하면 1개월 더 연장돼요 (인증 ${bonusCount}회)`}
         </p>
 
         {daysLeft > 0 && (

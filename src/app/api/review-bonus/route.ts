@@ -155,8 +155,9 @@ async function handleBulkPost(
   userId: string,
   rawItems: unknown[],
 ): Promise<NextResponse> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const TOTAL_MONTHS: Record<number, number> = { 0: 0, 1: 1, 2: 1, 3: 2, 4: 3 };
+  // 누적 인증 횟수 → 총 연장 개월. 연장 기회는 총 3번(최대 3개월)이며
+  // 첫 1개월만 인증 2번 필요: 1회=0, 2회=1, 3회=2, 4회=3개월
+  const TOTAL_MONTHS: Record<number, number> = { 0: 0, 1: 0, 2: 1, 3: 2, 4: 3 };
 
   // 유효 항목 추출
   const validated: {
@@ -442,10 +443,11 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (result.status === "approved") {
-      // 누적 횟수별 이번 회차 연장 개월 수: 1회→+1, 2회→+0, 3회→+1, 4회→+1
+      // 누적 횟수별 이번 회차 연장 개월 수 — 첫 1개월은 인증 2번 필요:
+      // 1회→+0, 2회→+1, 3회→+1, 4회→+1 (총 3번의 연장, 최대 3개월)
       const currentCount = user?.reviewBonusCount ?? 0;
       const newCount = currentCount + 1;
-      const MONTHLY_EXTENSION: Record<number, number> = { 1: 1, 2: 0, 3: 1, 4: 1 };
+      const MONTHLY_EXTENSION: Record<number, number> = { 1: 0, 2: 1, 3: 1, 4: 1 };
       const extensionMonths = MONTHLY_EXTENSION[newCount] ?? 0;
 
       let newTrialEndsAt: Date | null = null;
@@ -483,8 +485,8 @@ export async function POST(request: NextRequest) {
         }),
       ]);
 
-      // 누적 횟수별 총 연장 개월: 1→1개월, 2→1개월(변화없음), 3→2개월, 4→3개월
-      const TOTAL_MONTHS: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 3 };
+      // 누적 횟수별 총 연장 개월: 1→0개월(첫 달은 2번 인증 필요), 2→1개월, 3→2개월, 4→3개월
+      const TOTAL_MONTHS: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3 };
       const totalMonths = TOTAL_MONTHS[newCount] ?? 0;
 
       if (extensionMonths > 0) {
@@ -496,7 +498,7 @@ export async function POST(request: NextRequest) {
       } else {
         return NextResponse.json({
           status: "approved",
-          message: "후기가 기록되었어요! 한 번 더 작성하면 총 2개월 연장돼요 📝",
+          message: "후기가 기록되었어요! 한 번 더 인증하면 1개월 연장돼요 📝",
         });
       }
     } else {
