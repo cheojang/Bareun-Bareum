@@ -59,7 +59,20 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
   // 선택 대기(armed): 소리를 먼저 자유롭게 들어보고, 확정 버튼으로 답을 정한다.
   // (탭=즉시 판정이면 아이가 두 소리를 비교해 들을 수 없어 변별이 안 됨)
   const [armed, setArmed] = useState<"left" | "right" | null>(null);
+  // 지금 소리가 나오고 있는 버튼 — 아이가 "어느 버튼의 소리인지" 눈으로 알 수 있게 테두리 표시
+  const [playingSide, setPlayingSide] = useState<"left" | "right" | null>(null);
+  const playTokenRef = useRef(0);
   const { play, stop } = useTTS();
+
+  // 해당 버튼을 하이라이트하며 재생 — 끝나면(또는 다른 재생으로 대체되면) 해제
+  const playWithHighlight = async (side: "left" | "right", word: string) => {
+    const token = ++playTokenRef.current;
+    setPlayingSide(side);
+    try {
+      await play(word, { rate: DISCRIM_RATE });
+    } catch { /* TTS 실패 무시 */ }
+    if (playTokenRef.current === token) setPlayingSide(null);
+  };
 
   const round = roundList[roundIdx];
 
@@ -81,23 +94,27 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
   const sound1 = round?.correctLeft ? round?.pair.word : round?.pair.childPron;
   const sound2 = round?.correctLeft ? round?.pair.childPron : round?.pair.word;
 
-  // 라운드 진입 시 두 소리를 소리1 → 소리2 순으로 들려줌
+  // 라운드 진입 시 두 소리를 소리1 → 소리2 순으로 들려줌 (재생 중인 버튼 하이라이트)
   useEffect(() => {
     if (!round) return;
     let cancelled = false;
     const run = async () => {
       await new Promise((r) => setTimeout(r, 350));
       if (cancelled) return;
-      try {
-        await play(sound1!, { rate: DISCRIM_RATE });
-        await new Promise((r) => setTimeout(r, 500));
-        if (cancelled) return;
-        await play(sound2!, { rate: DISCRIM_RATE });
-      } catch { /* TTS 실패 무시 */ }
+      await playWithHighlight("left", sound1!);
+      await new Promise((r) => setTimeout(r, 250)); // 두 소리 사이 간격
+      if (cancelled) return;
+      await playWithHighlight("right", sound2!);
     };
     run();
-    return () => { cancelled = true; stop(); };
-  }, [roundIdx, round, sound1, sound2, play, stop]);
+    return () => {
+      cancelled = true;
+      playTokenRef.current++;
+      setPlayingSide(null);
+      stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundIdx, round, sound1, sound2, stop]);
 
   if (!round) return null; // 스킵은 위 effect에서 처리 (렌더 중 setState 금지)
 
@@ -134,26 +151,32 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
     const revealed = solved && isCorrectSide;
     const isWrong = wrong === side;
     const isArmed = armed === side && !solved;
+    const isPlaying = playingSide === side;
     // 탭 = 그 자리의 소리를 재생하고 '선택 대기'로 표시 (자유롭게 반복 청취·비교 가능).
     // 실제 정답 판정은 아래 확정 버튼에서만 → 두 소리를 충분히 듣고 고를 수 있음.
     const soundWord = isCorrectSide ? round.pair.word : round.pair.childPron;
     return (
       <button
         type="button"
-        onClick={() => { setArmed(side); play(soundWord, { rate: DISCRIM_RATE }).catch(() => {}); }}
-        className={`relative flex-1 bg-white/95 rounded-3xl px-4 py-6 flex flex-col items-center gap-2 shadow-md transition-all active:scale-95 ${isWrong ? "buddy-wobble" : ""} ${isArmed ? "scale-[1.03]" : ""}`}
+        onClick={() => { setArmed(side); playWithHighlight(side, soundWord); }}
+        className={`relative flex-1 bg-white/95 rounded-3xl px-4 py-6 flex flex-col items-center gap-2 shadow-md transition-all active:scale-95 ${isWrong ? "buddy-wobble" : ""} ${isArmed || isPlaying ? "scale-[1.03]" : ""}`}
         style={{
-          border: `3px solid ${revealed ? "#7EDFD0" : isWrong ? "#F9A8D4" : isArmed ? "#FFB38A" : "#F0E8E0"}`,
-          boxShadow: isArmed ? "0 0 0 4px rgba(255,179,138,0.25)" : undefined,
+          // 재생 중 하이라이트(하늘색)가 최우선 — 어느 버튼의 소리인지 즉시 보이게
+          border: `3px solid ${isPlaying ? "#60A5FA" : revealed ? "#7EDFD0" : isWrong ? "#F9A8D4" : isArmed ? "#FFB38A" : "#F0E8E0"}`,
+          boxShadow: isPlaying
+            ? "0 0 0 5px rgba(96,165,250,0.3)"
+            : isArmed
+              ? "0 0 0 4px rgba(255,179,138,0.25)"
+              : undefined,
           opacity: solved && !isCorrectSide ? 0.4 : 1,
         }}
       >
-        <span className="text-4xl">{isArmed ? "🔈" : "🔊"}</span>
-        <span className="text-sm font-black text-[#8B7E74]">
+        <span className={`text-4xl ${isPlaying ? "animate-pulse" : ""}`}>{isPlaying ? "🔊" : isArmed ? "🔈" : "🔊"}</span>
+        <span className="text-sm font-black" style={{ color: isPlaying ? "#2563EB" : "#8B7E74" }}>
           {side === "left" ? "소리 1" : "소리 2"}
         </span>
-        <span className="text-[10px] font-bold" style={{ color: isArmed ? "#E8863E" : "#C4B5A8" }}>
-          {isArmed ? "선택됨 · 다시 듣기 탭" : "탭해서 듣기"}
+        <span className="text-[10px] font-bold" style={{ color: isPlaying ? "#2563EB" : isArmed ? "#E8863E" : "#C4B5A8" }}>
+          {isPlaying ? "재생 중..." : isArmed ? "선택됨 · 다시 듣기 탭" : "탭해서 듣기"}
         </span>
         {revealed && (
           <>
@@ -227,11 +250,9 @@ export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
       <button
         type="button"
         onClick={async () => {
-          try {
-            await play(sound1!, { rate: DISCRIM_RATE });
-            await new Promise((r) => setTimeout(r, 500));
-            await play(sound2!, { rate: DISCRIM_RATE });
-          } catch { /* noop */ }
+          await playWithHighlight("left", sound1!);
+          await new Promise((r) => setTimeout(r, 250));
+          await playWithHighlight("right", sound2!);
         }}
         className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-sm border border-[#7EDFD0] text-[#0D9488] font-black transition-all active:scale-95"
       >
