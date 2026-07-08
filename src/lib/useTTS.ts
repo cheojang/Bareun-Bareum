@@ -17,9 +17,14 @@ export interface PlayOptions {
 
 export function useTTS() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 재생 요청 세대 — stop()·새 play()가 증가시킨다. TTS 합성(fetch)이 1~3초 걸리는
+  // 문장의 경우, 그 사이 stop()이 불려도 멈출 오디오가 아직 없어서 뒤늦게 도착한
+  // 오디오가 다음 카드 위에서 재생을 시작하던 문제를 세대 검사로 차단.
+  const seqRef = useRef(0);
 
   useEffect(() => {
     return () => {
+      seqRef.current++;
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -27,9 +32,11 @@ export function useTTS() {
     };
   }, []);
 
-  /** 단어 재생. 재생이 끝나면 resolve. */
+  /** 단어 재생. 재생이 끝나면 resolve. stop()·새 play() 이후 도착한 오디오는 시작하지 않음. */
   const play = useCallback(async (word: string, options: PlayOptions = {}) => {
     if (!word) return;
+    const seq = ++seqRef.current;
+    const alive = () => seqRef.current === seq;
 
     // 1. /api/tts 시도
     try {
@@ -38,8 +45,10 @@ export function useTTS() {
       if (options.rate) params.set("rate", String(options.rate));
 
       const res = await fetch(`/api/tts?${params.toString()}`, { signal: options.signal });
+      if (!alive()) return; // 합성 대기 중 stop()/다른 재생으로 대체됨 — 시작하지 않음
       if (res.ok) {
         const data = (await res.json()) as { url?: string; error?: string };
+        if (!alive()) return;
         if (data.url) {
           await playAudioUrl(data.url, audioRef, options.signal);
           return;
@@ -51,11 +60,13 @@ export function useTTS() {
     }
 
     // 2. 폴백 — 브라우저 speechSynthesis
+    if (!alive()) return;
     await playSpeechSynthesis(word, options.signal);
   }, []);
 
-  /** 재생 중지 */
+  /** 재생 중지 — 재생 중인 오디오뿐 아니라 합성 대기 중인(아직 시작 전) 재생도 무효화 */
   const stop = useCallback(() => {
+    seqRef.current++;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
