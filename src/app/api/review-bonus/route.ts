@@ -382,8 +382,10 @@ export async function POST(request: NextRequest) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           select: { trialEndsAt: true, reviewBonusCount: true } as any,
         }),
+        // 스크린샷만 제출하면 urlHash=null — unique where에 null을 넘기면 Prisma가
+        // 던져서 "마이그레이션 필요" 503으로 오인되므로, URL 제출일 때만 중복 조회
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (prisma as any).reviewBonus.findUnique({ where: { urlHash } }),
+        urlHash ? (prisma as any).reviewBonus.findUnique({ where: { urlHash } }) : Promise.resolve(null),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (prisma as any).reviewBonus.findFirst({
           where: { userId, status: "approved" },
