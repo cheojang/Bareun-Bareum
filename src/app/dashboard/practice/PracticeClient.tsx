@@ -541,8 +541,11 @@ export function PracticeClient({
     const out: DiscrimPair[] = [];
     const collect = (word?: string | null, childPron?: string | null) => {
       if (!word || !childPron || childPron === word || seen.has(word)) return;
+      // 그림 없는 단어는 제외 — 글을 모르는 아이는 그림 없이 "맞는 소리"를 고를 수 없음
+      const imageSlug = wordInfos[word]?.imageSlug;
+      if (!imageSlug) return;
       seen.add(word);
-      out.push({ word, childPron, imageSlug: wordInfos[word]?.imageSlug });
+      out.push({ word, childPron, imageSlug });
     };
     if (isCycleMode && cycles) {
       for (const c of cycles) collect(c.mainWord?.word, c.mainWord?.childPronunciation);

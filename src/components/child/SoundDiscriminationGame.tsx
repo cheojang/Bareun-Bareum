@@ -40,8 +40,8 @@ interface Round {
 
 export function SoundDiscriminationGame({ pairs, onDone, rounds = 2 }: Props) {
   const roundList = useMemo<Round[]>(() => {
-    // 정발음≠오발음 이고 그림이 있는 쌍만 사용
-    const valid = pairs.filter((p) => p.childPron && p.childPron !== p.word);
+    // 정발음≠오발음 이고 그림이 있는 쌍만 사용 (그림 없으면 아이가 정답 기준을 알 수 없음)
+    const valid = pairs.filter((p) => p.childPron && p.childPron !== p.word && p.imageSlug);
     const picked: Round[] = [];
     for (let i = 0; i < Math.min(rounds, valid.length || 1); i++) {
       const pair = valid[i % Math.max(valid.length, 1)];
