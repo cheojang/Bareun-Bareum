@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 
 interface ReviewBonus {
   id: string;
-  url: string;
+  url: string | null;
+  screenshotUrl?: string | null;
   channel: string;
-  status: "approved" | "rejected";
+  status: "pending" | "approved" | "rejected";
   charCount?: number | null;
   rejectReason?: string | null;
+  rejectSeenAt?: string | null;
   createdAt: string;
   approvedAt?: string | null;
 }
@@ -25,6 +27,7 @@ interface BulkEntry {
 interface Props {
   initialSubmissions: ReviewBonus[];
   initialBonusCount: number;
+  initialPendingCount: number;
   initialCanSubmit: boolean;
   trialEndsAt: string | null;
   migrationNeeded: boolean;
@@ -138,7 +141,7 @@ function BulkEntryCard({
     reader.onload = (ev) => {
       onUpdate(entry.id, "screenshot", ev.target?.result as string);
       onUpdate(entry.id, "screenshotName", file.name);
-      onUpdate(entry.id, "url", "");
+      // URL은 선택 입력 — 캡처본과 함께 제출 가능하므로 지우지 않음
     };
     reader.readAsDataURL(file);
   }
@@ -169,28 +172,7 @@ function BulkEntryCard({
       />
 
       <div className="space-y-2">
-        <input
-          type="text"
-          inputMode="url"
-          value={entry.url}
-          onChange={(e) => {
-            onUpdate(entry.id, "url", e.target.value);
-            if (e.target.value) {
-              onUpdate(entry.id, "screenshot", null);
-              onUpdate(entry.id, "screenshotName", "");
-            }
-          }}
-          placeholder="https://blog.naver.com/..."
-          disabled={disabled || !!entry.screenshot}
-          className="w-full px-4 py-2.5 rounded-xl border-2 border-[#F0E8E0] bg-white text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
-        />
-
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-[#F0E8E0]" />
-          <span className="text-xs text-[#C4B5A8] font-semibold">또는</span>
-          <div className="flex-1 h-px bg-[#F0E8E0]" />
-        </div>
-
+        {/* 캡처본 — 필수 */}
         {entry.screenshot ? (
           <div className="relative rounded-xl overflow-hidden border-2 border-[#A8D8CF]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -213,21 +195,32 @@ function BulkEntryCard({
           </div>
         ) : (
           <label
-            className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#F0E8E0] bg-white cursor-pointer hover:border-[#FFB38A] transition-colors text-xs font-semibold text-[#8B7E74] ${
-              entry.url.trim() || disabled ? "opacity-40 pointer-events-none" : ""
+            className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#FFB38A] bg-white cursor-pointer hover:bg-[#FFF5EE] transition-colors text-xs font-semibold text-[#8B7E74] ${
+              disabled ? "opacity-40 pointer-events-none" : ""
             }`}
           >
             <span>📷</span>
-            <span>캡처본 이미지 선택</span>
+            <span>캡처본 이미지 선택 <span className="text-[#FFB38A]">(필수)</span></span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={handleImageSelect}
-              disabled={disabled || !!entry.url.trim()}
+              disabled={disabled}
             />
           </label>
         )}
+
+        {/* URL — 선택 */}
+        <input
+          type="text"
+          inputMode="url"
+          value={entry.url}
+          onChange={(e) => onUpdate(entry.id, "url", e.target.value)}
+          placeholder="(선택) 자세한 확인을 위해 URL을 입력해주세요"
+          disabled={disabled}
+          className="w-full px-4 py-2.5 rounded-xl border-2 border-[#F0E8E0] bg-white text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+        />
       </div>
     </div>
   );
@@ -237,17 +230,37 @@ function BulkEntryCard({
 export function ReviewBonusClient({
   initialSubmissions,
   initialBonusCount,
+  initialPendingCount,
   initialCanSubmit,
   trialEndsAt,
   migrationNeeded,
 }: Props) {
   const [submissions, setSubmissions] = useState<ReviewBonus[]>(initialSubmissions);
   const [bonusCount, setBonusCount] = useState(initialBonusCount);
+  const [pendingCount, setPendingCount] = useState(initialPendingCount);
   const [canSubmit, setCanSubmit] = useState(initialCanSubmit);
   const [currentTrialEndsAt, setCurrentTrialEndsAt] = useState(trialEndsAt);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // 거절 안내 팝업 — 아직 확인하지 않은 거절 건이 있으면 1회 노출
+  const [rejectPopup, setRejectPopup] = useState<ReviewBonus[] | null>(null);
+
+  // 초기 진입 시 미확인 거절 건 팝업 노출 (SSR 데이터 기준 — 확인하면 PATCH로 기록)
+  useEffect(() => {
+    const unseen = initialSubmissions.filter(
+      (s) => s.status === "rejected" && !s.rejectSeenAt && s.rejectReason,
+    );
+    if (unseen.length > 0) setRejectPopup(unseen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function dismissRejectPopup() {
+    setRejectPopup(null);
+    try {
+      await fetch("/api/review-bonus", { method: "PATCH" });
+    } catch { /* 다음 방문 때 다시 보여도 무방 */ }
+  }
 
   // 개별 제출 상태
   const [url, setUrl] = useState("");
@@ -260,7 +273,8 @@ export function ReviewBonusClient({
   const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([makeBulkEntry(1)]);
 
   const daysLeft = trialDaysLeft(currentTrialEndsAt);
-  const remainingSlots = Math.max(0, 4 - bonusCount);
+  // 심사중 건도 슬롯을 차지 (승인+심사중 합쳐 최대 4회)
+  const remainingSlots = Math.max(0, 4 - bonusCount - pendingCount);
 
   // ── 개별 이미지 선택 ─────────────────────────────────────────────────────
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -274,7 +288,7 @@ export function ReviewBonusClient({
     reader.onload = (ev) => {
       setScreenshot(ev.target?.result as string);
       setScreenshotName(file.name);
-      setUrl("");
+      // URL은 선택 입력 — 캡처본과 함께 제출 가능하므로 지우지 않음
     };
     reader.readAsDataURL(file);
   }
@@ -286,8 +300,8 @@ export function ReviewBonusClient({
       setMessage({ type: "error", text: "채널을 선택해주세요" });
       return;
     }
-    if (!url.trim() && !screenshot) {
-      setMessage({ type: "error", text: "후기 URL 또는 캡처본 이미지 중 하나를 제출해주세요" });
+    if (!screenshot) {
+      setMessage({ type: "error", text: "후기 캡처본 이미지를 첨부해주세요 (필수)" });
       return;
     }
 
@@ -324,11 +338,8 @@ export function ReviewBonusClient({
       const data = await res.json();
 
       if (res.ok) {
-        setMessage({ type: "success", text: data.message ?? "승인되었어요!" });
+        setMessage({ type: "success", text: data.message ?? "제출 완료! 심사 후 자동으로 연장돼요 🕐" });
         setUrl(""); setChannel(""); setScreenshot(null); setScreenshotName("");
-        if (data.newTrialEndsAt) setCurrentTrialEndsAt(data.newTrialEndsAt);
-      } else if (res.status === 422) {
-        setMessage({ type: "error", text: data.rejectReason ?? data.message ?? "후기 내용이 기준을 충족하지 못했어요" });
       } else {
         setMessage({ type: "error", text: data.error ?? "오류가 발생했어요" });
       }
@@ -337,6 +348,7 @@ export function ReviewBonusClient({
       if (updated) {
         setSubmissions(updated.submissions ?? []);
         setBonusCount(updated.bonusCount ?? 0);
+        setPendingCount(updated.pendingCount ?? 0);
         setCanSubmit(updated.canSubmit ?? false);
       }
     } catch {
@@ -364,9 +376,9 @@ export function ReviewBonusClient({
   async function handleBulkSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const invalid = bulkEntries.find((e) => !e.channel || (!e.url.trim() && !e.screenshot));
+    const invalid = bulkEntries.find((e) => !e.channel || !e.screenshot);
     if (invalid) {
-      setMessage({ type: "error", text: "모든 후기에 채널과 URL 또는 캡처본을 입력해주세요" });
+      setMessage({ type: "error", text: "모든 후기에 채널을 선택하고 캡처본 이미지를 첨부해주세요 (캡처본 필수)" });
       return;
     }
 
@@ -403,11 +415,8 @@ export function ReviewBonusClient({
       const data = await res.json();
 
       if (res.ok) {
-        setMessage({ type: "success", text: data.message ?? "제출 완료!" });
+        setMessage({ type: "success", text: data.message ?? "제출 완료! 심사 후 자동으로 연장돼요 🕐" });
         setBulkEntries([makeBulkEntry(1)]);
-        if (data.newTrialEndsAt) setCurrentTrialEndsAt(data.newTrialEndsAt);
-      } else if (res.status === 422) {
-        setMessage({ type: "error", text: data.message ?? "후기가 기준을 충족하지 못했어요" });
       } else {
         setMessage({ type: "error", text: data.error ?? "오류가 발생했어요" });
       }
@@ -416,6 +425,7 @@ export function ReviewBonusClient({
       if (updated) {
         setSubmissions(updated.submissions ?? []);
         setBonusCount(updated.bonusCount ?? 0);
+        setPendingCount(updated.pendingCount ?? 0);
         setCanSubmit(updated.canSubmit ?? false);
       }
     } catch {
@@ -482,6 +492,15 @@ export function ReviewBonusClient({
                 : `한 번 더 인증하면 1개월 더 연장돼요 (인증 ${bonusCount}회)`}
         </p>
 
+        {pendingCount > 0 && (
+          <div className="bg-[#FEF3C7] rounded-xl px-4 py-2.5 flex items-center gap-2">
+            <span>🕐</span>
+            <p className="text-xs font-semibold text-[#B45309]">
+              심사중인 후기 {pendingCount}건 — 약 2일 내에 자동 승인돼요
+            </p>
+          </div>
+        )}
+
         {daysLeft > 0 && (
           <div className="bg-white rounded-xl px-4 py-3 flex items-center gap-2">
             <span className="text-lg">🗓️</span>
@@ -506,11 +525,11 @@ export function ReviewBonusClient({
         <p className="text-sm font-bold text-[#3D3530]">📋 이용 규정</p>
         <ul className="text-xs text-[#8B7E74] space-y-1 list-disc list-inside">
           <li>블로그, SNS(인스타그램 등), 커뮤니티, 구글 플레이스토어에 후기 작성</li>
-          <li>후기 내용은 200자 이상이어야 해요</li>
-          <li>개별 제출 시 승인 후 30일이 지나야 다음 신청이 가능해요</li>
+          <li>후기 내용은 100자 이상이어야 해요</li>
+          <li>후기 캡처본 이미지는 필수, URL은 선택(자세한 확인용)이에요</li>
           <li>2번 홍보 시 1개월 · 3번 시 2개월 · 4번 시 3개월(최대) 연장</li>
-          <li>여러 후기를 한꺼번에 제출하면 30일 제한 없이 즉시 혜택을 받아요</li>
-          <li>구글 플레이스토어 후기는 자동 승인돼요</li>
+          <li>제출 후 심사는 약 2일 정도 걸리고, 승인되면 자동으로 연장돼요</li>
+          <li>여러 후기를 한꺼번에 제출할 수도 있어요</li>
         </ul>
       </div>
 
@@ -531,7 +550,7 @@ export function ReviewBonusClient({
             </div>
           )}
 
-          {/* 모드 탭 (개별 제출 가능할 때만) */}
+          {/* 모드 탭 */}
           {canSubmit && (
             <div className="flex gap-2">
               <button
@@ -559,20 +578,6 @@ export function ReviewBonusClient({
             </div>
           )}
 
-          {/* 30일 대기 중 → 일괄만 가능 */}
-          {!canSubmit && (
-            <div
-              className="rounded-2xl p-4 text-center"
-              style={{ backgroundColor: "#FFF5EE", border: "1.5px solid #F0E8E0" }}
-            >
-              <p className="text-2xl mb-1">⏳</p>
-              <p className="font-bold text-[#3D3530] text-sm">개별 제출은 30일 후 가능해요</p>
-              <p className="text-xs text-[#8B7E74] mt-0.5">
-                여러 후기를 한꺼번에 제출하면 지금 바로 신청할 수 있어요!
-              </p>
-            </div>
-          )}
-
           {/* 개별 제출 폼 */}
           {!bulkMode && canSubmit && (
             <form onSubmit={handleSubmit}>
@@ -580,7 +585,7 @@ export function ReviewBonusClient({
                 className="rounded-2xl p-5 space-y-4"
                 style={{ backgroundColor: "#FFFFFF", border: "1.5px solid #F0E8E0" }}
               >
-                <p className="font-bold text-[#3D3530]">후기 URL 제출</p>
+                <p className="font-bold text-[#3D3530]">후기 인증 제출</p>
 
                 <div>
                   <label className="text-xs font-semibold text-[#8B7E74] mb-1.5 block">채널 선택</label>
@@ -588,30 +593,10 @@ export function ReviewBonusClient({
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-[#8B7E74]">
-                    후기 URL 또는 캡처본 <span className="text-[#FFB38A]">(둘 중 하나)</span>
-                  </p>
-
                   <div>
-                    <input
-                      type="text"
-                      inputMode="url"
-                      value={url}
-                      onChange={(e) => { setUrl(e.target.value); if (e.target.value) setScreenshot(null); }}
-                      placeholder="https://blog.naver.com/..."
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] bg-[#FFF9F5] text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
-                      disabled={loading || !!screenshot}
-                    />
-                    <p className="text-xs text-[#B0A89E] mt-1">후기를 작성한 페이지 주소를 붙여넣어주세요</p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-[#F0E8E0]" />
-                    <span className="text-xs text-[#C4B5A8] font-semibold">또는</span>
-                    <div className="flex-1 h-px bg-[#F0E8E0]" />
-                  </div>
-
-                  <div>
+                    <p className="text-xs font-semibold text-[#8B7E74] mb-1.5">
+                      후기 캡처본 <span className="text-[#FFB38A]">(필수)</span>
+                    </p>
                     {screenshot ? (
                       <div className="relative rounded-xl overflow-hidden border-2 border-[#A8D8CF]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -625,9 +610,7 @@ export function ReviewBonusClient({
                         </button>
                       </div>
                     ) : (
-                      <label
-                        className={`flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed border-[#F0E8E0] bg-[#FAFAF8] cursor-pointer hover:border-[#FFB38A] transition-colors ${url.trim() ? "opacity-40 pointer-events-none" : ""}`}
-                      >
+                      <label className="flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed border-[#FFB38A] bg-[#FFF9F5] cursor-pointer hover:bg-[#FFF5EE] transition-colors">
                         <span className="text-2xl">📷</span>
                         <span className="text-xs font-semibold text-[#8B7E74]">캡처본 이미지 선택</span>
                         <span className="text-[11px] text-[#C4B5A8]">JPEG / PNG / WebP · 최대 5MB</span>
@@ -636,10 +619,23 @@ export function ReviewBonusClient({
                           accept="image/jpeg,image/png,image/webp"
                           className="hidden"
                           onChange={handleImageSelect}
-                          disabled={loading || !!url.trim()}
+                          disabled={loading}
                         />
                       </label>
                     )}
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder="(선택) 자세한 확인을 위해 URL을 입력해주세요"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-[#F0E8E0] bg-white text-[#3D3530] text-sm focus:outline-none focus:border-[#FFB38A] transition-colors disabled:opacity-50"
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-[#B0A89E] mt-1">URL을 함께 제출하면 심사가 더 빨라져요</p>
                   </div>
                 </div>
 
@@ -647,16 +643,19 @@ export function ReviewBonusClient({
                   type="submit"
                   variant="peach"
                   className="w-full"
-                  disabled={loading || (!url.trim() && !screenshot) || !channel}
+                  disabled={loading || !screenshot || !channel}
                 >
-                  {uploadingImage ? "이미지 업로드 중..." : loading ? "확인 중..." : "후기 제출하기"}
+                  {uploadingImage ? "이미지 업로드 중..." : loading ? "제출 중..." : "후기 제출하기"}
                 </BubbleButton>
+                <p className="text-[11px] text-center text-[#C4B5A8]">
+                  제출 후 심사는 약 2일 정도 걸려요. 승인되면 자동으로 연장돼요 🕐
+                </p>
               </div>
             </form>
           )}
 
           {/* 일괄 제출 폼 */}
-          {(bulkMode || !canSubmit) && (
+          {bulkMode && canSubmit && (
             <form onSubmit={handleBulkSubmit} className="space-y-3">
               {bulkEntries.map((entry, idx) => (
                 <BulkEntryCard
@@ -726,17 +725,21 @@ export function ReviewBonusClient({
                       className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         sub.status === "approved"
                           ? "bg-[#F0FAF8] text-[#2D8E7E]"
-                          : "bg-[#FFF0F0] text-[#D05050]"
+                          : sub.status === "pending"
+                            ? "bg-[#FEF3C7] text-[#B45309]"
+                            : "bg-[#FFF0F0] text-[#D05050]"
                       }`}
                     >
-                      {sub.status === "approved" ? "승인됨" : "거절됨"}
+                      {sub.status === "approved" ? "승인됨" : sub.status === "pending" ? "심사중" : "거절됨"}
                     </span>
                     <span className="text-xs text-[#B0A89E]">
                       {CHANNEL_LABELS[sub.channel] ?? sub.channel}
                     </span>
                   </div>
-                  <p className="text-xs text-[#8B7E74] truncate">{sub.url}</p>
-                  {sub.rejectReason && (
+                  <p className="text-xs text-[#8B7E74] truncate">
+                    {sub.url ?? (sub.screenshotUrl ? "📷 캡처본 제출" : "")}
+                  </p>
+                  {sub.status === "rejected" && sub.rejectReason && (
                     <p className="text-xs text-[#D05050] mt-0.5">{sub.rejectReason}</p>
                   )}
                 </div>
@@ -745,6 +748,33 @@ export function ReviewBonusClient({
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 거절 안내 팝업 — 미확인 거절 건이 있을 때 1회 노출 */}
+      {rejectPopup && rejectPopup.length > 0 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 bg-black/40">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+            <div className="text-center">
+              <p className="text-4xl mb-2">🙏</p>
+              <p className="font-black text-[#3D3530] text-lg">후기 심사 안내</p>
+            </div>
+            <p className="text-sm text-[#8B7E74] leading-relaxed">
+              {rejectPopup[0].rejectReason}
+            </p>
+            {rejectPopup.length > 1 && (
+              <p className="text-xs text-[#C4B5A8] text-center">
+                (총 {rejectPopup.length}건의 후기가 같은 사유로 승인되지 못했어요)
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={dismissRejectPopup}
+              className="w-full py-3 rounded-2xl font-black text-white bg-[#FFB38A] transition-all active:scale-95"
+            >
+              확인했어요
+            </button>
           </div>
         </div>
       )}

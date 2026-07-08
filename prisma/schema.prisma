@@ -472,13 +472,14 @@ model ReviewBonus {
   id            String    @id @default(cuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  url           String?   // URL 또는 스크린샷 중 하나
+  url           String?   // 후기 URL (선택 — 자세한 확인용)
   urlHash       String?   @unique
-  screenshotUrl String?   // Supabase Storage 스크린샷 URL
+  screenshotUrl String?   // Supabase Storage 스크린샷 URL (필수)
   channel       String    // "blog" | "sns" | "community" | "playstore"
-  status        String    @default("approved") // "approved" | "rejected"
+  status        String    @default("pending") // "pending"(심사중) | "approved" | "rejected"
   charCount     Int?
   rejectReason  String?
+  rejectSeenAt  DateTime? // 사용자가 거절 안내 팝업을 확인한 시각
   createdAt     DateTime  @default(now())
   approvedAt    DateTime?
 
