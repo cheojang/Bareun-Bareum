@@ -1,6 +1,7 @@
 ---
 name: kid-ux-reviewer
 description: 아동 대면 화면(연습·게임 등)의 변경을 "글 모르는 4세 + 폰 쥔 부모" 페르소나로 리뷰. 아동 화면 PR 리뷰나 신규 아동 기능 점검 시 사용.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 
