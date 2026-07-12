@@ -1,6 +1,7 @@
 ---
 name: deploy-sentinel
 description: main 머지 후 프로덕션 배포를 폴링하고 스모크 테스트·에러 로그까지 검증해 결과를 보고. "배포 확인해줘" 또는 머지 직후 사용.
+model: haiku
 tools: Bash, Read, Grep, WebFetch
 ---
 
