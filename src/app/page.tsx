@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 import { BubbleCard } from "@/components/ui/BubbleCard";
 import { SoriMascot, SoriLogo } from "@/components/ui/SoriMascot";
+import { LandingPrice } from "@/components/billing/LandingPrice";
 
 // 앱 버전 — 배포 전 수동으로 갱신
 const APP_VERSION = "v1.3.0";
@@ -159,7 +160,7 @@ export default function LandingPage() {
               step={3}
               emoji="🎮"
               title="놀이처럼 연습"
-              desc="아이가 즐겁게 따라하는 게임형 반복 연습으로 올바른 발음을 익혀요."
+              desc="게임형 반복 연습으로 발음 자체는 물론, 같은 소리가 들어간 다른 단어까지 자연스럽게 함께 익혀요."
             />
           </div>
         </div>
@@ -196,8 +197,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-sm text-[#6B6157] mb-2">바른발음 앱</p>
-              <p className="text-3xl font-black text-[#B45309]">4,900원<span className="text-base">/월</span></p>
-              <p className="text-xs text-[#786E60] mt-1">1개월 이용권 · 자동결제 없음</p>
+              <LandingPrice />
               <div className="h-[1px] bg-[#FFB38A]/20 my-4" />
               <div className="space-y-2 text-left">
                 <CompareItem icon="✅" text="매일 무제한 연습" />

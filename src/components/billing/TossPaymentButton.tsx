@@ -37,7 +37,20 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
   }, []);
 
   // TWA(플레이스토어 앱) 환경: 외부 브라우저로 유도
+  // ⚠️ 구글 플레이 심사 중 리스크 스위치: 인앱결제 우회로 보일 수 있는 이 버튼을
+  //    NEXT_PUBLIC_TWA_PAYMENT_ENABLED="true" 가 아니면 완전히 숨긴다(기본값=숨김,
+  //    안전한 상태가 기본). TWA는 앱 재빌드 없이 웹 배포만으로 내용이 바뀌므로,
+  //    심사 제출 시엔 끄고, 승인 후 이 값만 켜서 재배포하면 앱 재심사 없이 노출된다.
   if (isTWA) {
+    const twaPaymentEnabled = process.env.NEXT_PUBLIC_TWA_PAYMENT_ENABLED === "true";
+    if (!twaPaymentEnabled) {
+      return (
+        <div className="text-center py-4 px-2">
+          <p className="text-sm font-semibold text-[#8B7E74]">구독 기능을 준비하고 있어요</p>
+          <p className="text-xs text-[#B0A89E] mt-1">곧 이용하실 수 있어요. 조금만 기다려주세요!</p>
+        </div>
+      );
+    }
     return (
       <div className="space-y-2">
         <BubbleButton
