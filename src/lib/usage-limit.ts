@@ -65,12 +65,16 @@ function subHasActivePremium(sub: {
   currentPeriodEnd?: Date | null;
 } | null): boolean {
   if (!sub || sub.plan !== "premium") return false;
-  // 현재 결제는 단건(1개월) 방식 — 자동 갱신이 없으므로 active여도 만료일이 지나면
-  // 프리미엄이 아니다. (만료일 없는 active는 개발/수동 부여 계정 → 무기한 유지)
+  // 정기결제(빌링) 방식 — 만료일 도래 시 /api/cron/billing-charge가 자동 청구한다.
+  // active: 정상 결제 유지 중. (만료일 없는 active는 개발/수동 부여 계정 → 무기한 유지)
   if (sub.status === "active") {
     if (!sub.currentPeriodEnd) return true;
     return sub.currentPeriodEnd.getTime() > Date.now();
   }
+  // past_due: 정기결제 실패 후 재시도 그레이스(최대 3일) — 그 사이엔 프리미엄 유지.
+  // 그레이스 안에 재결제 성공하면 active로 복귀, 초과하면 크론이 free로 강등한다.
+  if (sub.status === "past_due") return true;
+  // cancelled: 사용자가 직접 해지 — 다음 결제는 없지만 이미 낸 기간까지는 유지.
   if (
     sub.status === "cancelled" &&
     sub.currentPeriodEnd &&

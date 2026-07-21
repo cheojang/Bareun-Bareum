@@ -28,7 +28,7 @@ export function LandingPrice() {
   return (
     <>
       <p className="text-3xl font-black text-[#B45309]">4,900원<span className="text-base">/월</span></p>
-      <p className="text-xs text-[#786E60] mt-1">1개월 이용권 · 자동결제 없음</p>
+      <p className="text-xs text-[#786E60] mt-1">매달 자동 결제 · 언제든 해지 가능</p>
     </>
   );
 }

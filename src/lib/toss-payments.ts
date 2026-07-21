@@ -12,12 +12,6 @@ function getBasicAuthHeader(): string {
   return `Basic ${encoded}`;
 }
 
-export interface TossConfirmRequest {
-  paymentKey: string;
-  orderId: string;
-  amount: number;
-}
-
 export interface TossPaymentResponse {
   paymentKey: string;
   orderId: string;
@@ -25,28 +19,6 @@ export interface TossPaymentResponse {
   totalAmount: number;
   method: string;
   approvedAt: string;
-}
-
-export async function confirmPayment(
-  req: TossConfirmRequest
-): Promise<TossPaymentResponse> {
-  const res = await fetch(`${TOSS_API_BASE}/payments/confirm`, {
-    method: "POST",
-    headers: {
-      Authorization: getBasicAuthHeader(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(req),
-    cache: "no-store", // 🚨 Next.js 캐싱 방지 (결제 중복 방지)
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    // 🚨 에러 코드 포함 (상위에서 에러 타입 구분 가능)
-    throw new Error(`[${err.code}] ${err.message ?? "TossPayments confirmation failed"}`);
-  }
-
-  return res.json();
 }
 
 export async function issueBillingKey(

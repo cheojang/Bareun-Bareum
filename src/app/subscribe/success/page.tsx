@@ -2,71 +2,74 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { confirmPayment } from "@/lib/toss-payments";
-import { PREMIUM_MONTHLY_PRICE, isAlreadyProcessedError } from "@/lib/billing";
+import { issueBillingKey, chargeSubscription } from "@/lib/toss-payments";
+import { PREMIUM_MONTHLY_PRICE } from "@/lib/billing";
 import Link from "next/link";
 import { BubbleButton } from "@/components/ui/BubbleButton";
 
 interface Props {
-  searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string }>;
+  searchParams: Promise<{ customerKey?: string; authKey?: string }>;
 }
 
 async function SuccessContent({ searchParams }: Props) {
-  const { paymentKey, orderId, amount } = await searchParams;
+  const { customerKey, authKey } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
   let errorMsg: string | null = null;
 
-  if (paymentKey && orderId && amount) {
+  if (customerKey && authKey) {
     try {
-      if (!orderId.startsWith(`${session.user.id}_`)) {
-        errorMsg = "결제 정보가 올바르지 않아요";
+      // customerKey는 TossPaymentButton에서 `cus_${userId}`로 발급 — 본인 것인지 검증
+      if (customerKey !== `cus_${session.user.id}`) {
+        errorMsg = "카드 등록 정보가 올바르지 않아요";
       } else {
-        const amountNum = parseInt(amount);
-        if (amountNum !== PREMIUM_MONTHLY_PRICE) {
-          errorMsg = "결제 금액이 올바르지 않아요";
+        // 1) 카드 등록 인증(authKey) → 정기결제용 빌링키 발급
+        const { billingKey } = await issueBillingKey(customerKey, authKey);
+
+        // 2) 등록 즉시 첫 달 결제 (정기결제는 "카드 등록 = 지금 바로 1회차 결제")
+        const periodEnd = new Date();
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        const orderId = `${session.user.id}_billing_${Date.now()}`;
+
+        const payment = await chargeSubscription(
+          billingKey,
+          customerKey,
+          PREMIUM_MONTHLY_PRICE,
+          orderId,
+          "바른발음 프리미엄 정기결제",
+        );
+
+        if (payment.totalAmount !== PREMIUM_MONTHLY_PRICE) {
+          errorMsg = "결제 금액 검증에 실패했어요";
         } else {
-          const payment = await confirmPayment({
-            paymentKey,
-            orderId,
-            amount: PREMIUM_MONTHLY_PRICE,
+          await prisma.subscription.upsert({
+            where: { userId: session.user.id },
+            create: {
+              userId: session.user.id,
+              plan: "premium",
+              status: "active",
+              tossCustomerKey: customerKey,
+              tossBillingKey: billingKey,
+              currentPeriodEnd: periodEnd,
+              billingFailCount: 0,
+            },
+            update: {
+              plan: "premium",
+              status: "active",
+              tossCustomerKey: customerKey,
+              tossBillingKey: billingKey,
+              currentPeriodEnd: periodEnd,
+              billingFailCount: 0,
+            },
           });
-
-          if (payment.totalAmount !== PREMIUM_MONTHLY_PRICE) {
-            errorMsg = "결제 금액 검증에 실패했어요";
-          } else {
-            const periodEnd = new Date();
-            periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-            await prisma.subscription.upsert({
-              where: { userId: session.user.id },
-              create: {
-                userId: session.user.id,
-                plan: "premium",
-                status: "active",
-                currentPeriodEnd: periodEnd,
-              },
-              update: {
-                plan: "premium",
-                status: "active",
-                currentPeriodEnd: periodEnd,
-              },
-            });
-          }
         }
       }
     } catch (e) {
-      if (isAlreadyProcessedError(e)) {
-        // 성공 페이지 새로고침/뒤로가기로 같은 결제를 재승인하려 한 경우 —
-        // 첫 승인이 이미 성공했다는 뜻이므로 성공 화면을 그대로 보여준다.
-        console.info("[subscribe/success] 이미 승인된 결제 재요청 — 성공 처리:", orderId);
-      } else {
-        console.error("[subscribe/success] confirm error:", e);
-        errorMsg = "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요.";
-      }
+      console.error("[subscribe/success] billing confirm error:", e);
+      errorMsg = "결제 처리 중 오류가 발생했어요. 고객센터에 문의해주세요.";
     }
-  } else if (!paymentKey) {
+  } else {
     // 파라미터 없이 직접 접근
     redirect("/subscribe");
   }
@@ -95,7 +98,7 @@ async function SuccessContent({ searchParams }: Props) {
       <div className="text-8xl mb-6 animate-bounce-in">🎉</div>
       <h2 className="text-3xl font-black text-[#3D3530] mb-3">구독 완료!</h2>
       <p className="text-[#8B7E74] mb-8 max-w-xs leading-relaxed">
-        바른발음 프리미엄을 시작했어요. 아이와 함께 신나게 연습해보세요!
+        바른발음 프리미엄을 시작했어요. 매달 자동으로 결제되며, 설정에서 언제든 해지할 수 있어요.
       </p>
       <Link href="/dashboard">
         <BubbleButton variant="peach" size="lg">연습 시작하기 🚀</BubbleButton>

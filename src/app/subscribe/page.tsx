@@ -4,7 +4,7 @@ import { BubbleCard } from "@/components/ui/BubbleCard";
 import { PastelBadge } from "@/components/ui/PastelBadge";
 import { TossPaymentButton } from "@/components/billing/TossPaymentButton";
 import { BubbleButton } from "@/components/ui/BubbleButton";
-import { PREMIUM_MONTHLY_PRICE, PREMIUM_MONTHLY_PRICE_LABEL } from "@/lib/billing";
+import { PREMIUM_MONTHLY_PRICE_LABEL } from "@/lib/billing";
 import Link from "next/link";
 
 interface Props {
@@ -32,8 +32,8 @@ export default async function SubscribePage({ searchParams }: Props) {
     ]);
   }
 
-  // 단건(1개월) 결제 — active여도 만료일이 지나면 프리미엄이 아니므로 재결제를 열어준다.
-  // (만료일 없는 active는 개발/수동 부여 계정 → 활성 유지)
+  // 정기결제(빌링) — 만료일 전에 크론이 자동 청구하므로 보통 active면 계속 프리미엄이다.
+  // 결제 실패로 만료일이 지나면(그레이스 초과) 재가입을 열어준다. (만료일 없는 active는 개발/수동 부여 계정)
   const isPremiumActive =
     subscription?.plan === "premium" &&
     subscription?.status === "active" &&
@@ -142,7 +142,7 @@ export default async function SubscribePage({ searchParams }: Props) {
             <div>
               <p className="font-black text-[#3D3530] text-lg">프리미엄 플랜</p>
               <p className="text-3xl font-black text-[#FFB38A]">월 {PREMIUM_MONTHLY_PRICE_LABEL}</p>
-              <p className="text-xs text-[#C4B5A8] mt-0.5">1개월 이용권 · 자동결제 아님</p>
+              <p className="text-xs text-[#C4B5A8] mt-0.5">매달 자동 결제 · 언제든 해지 가능</p>
             </div>
             <PastelBadge color="peach">⭐ 추천</PastelBadge>
           </div>
@@ -159,28 +159,34 @@ export default async function SubscribePage({ searchParams }: Props) {
               </BubbleButton>
             </Link>
           ) : (
-            <TossPaymentButton
-              userId={userId}
-              amount={PREMIUM_MONTHLY_PRICE}
-              orderName="바른발음 프리미엄 1개월 이용권"
-            />
+            <>
+              <TossPaymentButton userId={userId} />
+              {/* 정기결제 사전 고지 (전자상거래법·다크패턴 규제) — 결제 버튼 바로 아래,
+                  가입 전에 반드시 보이는 위치에 배치 */}
+              <p className="text-[11px] text-center text-[#B0A89E] mt-2 leading-relaxed">
+                카드 등록 시 오늘 {PREMIUM_MONTHLY_PRICE_LABEL}이 결제되고, 이후 매달 같은 날 자동 결제돼요.
+                <br />해지는 설정 화면에서 언제든 한 번에 가능해요.
+              </p>
+            </>
           )}
         </BubbleCard>
       </div>
 
       {/* 환불·청약철회 고지 (전자상거래법) */}
       <div className="rounded-2xl px-5 py-4 mb-4" style={{ backgroundColor: "#FAFAF8", border: "1px solid #F0E8E0" }}>
-        <p className="text-xs font-bold text-[#8B7E74] mb-2">환불 및 청약철회 안내</p>
+        <p className="text-xs font-bold text-[#8B7E74] mb-2">환불 및 정기결제 안내</p>
         <ul className="text-[11px] text-[#A89B8E] leading-relaxed space-y-1">
+          <li>· 매달 자동 결제되는 정기구독이며, 등록한 카드로 동일한 날짜에 청구됩니다.</li>
           <li>· 결제일로부터 7일 이내, 프리미엄 기능(AI 무제한 분석)을 사용하지 않은 경우 전액 환불됩니다.</li>
           <li>· 프리미엄 기능을 사용한 경우, 이용일수에 해당하는 금액을 제외하고 환불됩니다.</li>
-          <li>· 이용권은 1개월 단위 결제이며 자동으로 갱신·재결제되지 않습니다.</li>
+          <li>· 해지는 설정 → 구독 관리에서 즉시 가능하며, 이미 결제한 기간까지는 계속 이용할 수 있어요.</li>
+          <li>· 해지 후에는 다음 결제가 청구되지 않습니다.</li>
           <li>· 환불 문의: 설정 → 문의하기 또는 이메일로 접수해 주세요.</li>
         </ul>
       </div>
 
       <p className="text-xs text-[#C4B5A8] text-center leading-relaxed">
-        이용권은 결제 즉시 시작되며, 만료일까지 모든 프리미엄 기능을 이용할 수 있습니다.
+        구독은 결제 즉시 시작되며, 해지 전까지 매달 자동으로 연장됩니다.
       </p>
     </main>
   );

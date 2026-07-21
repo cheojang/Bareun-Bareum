@@ -7,18 +7,16 @@ import { BubbleButton } from "@/components/ui/BubbleButton";
 declare global {
   interface Window {
     TossPayments: (clientKey: string) => {
-      requestPayment: (method: string, options: Record<string, unknown>) => Promise<void>;
+      requestBillingAuth: (method: string, options: Record<string, unknown>) => Promise<void>;
     };
   }
 }
 
 interface Props {
   userId: string;
-  amount: number;
-  orderName: string;
 }
 
-export function TossPaymentButton({ userId, amount, orderName }: Props) {
+export function TossPaymentButton({ userId }: Props) {
   const scriptLoaded = useRef(false);
   const [loading, setLoading] = useState(false);
   const [isTWA, setIsTWA] = useState(false);
@@ -71,7 +69,10 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
     );
   }
 
-  async function handlePayment() {
+  // 정기결제(빌링): 카드를 한 번 등록하면 매달 자동으로 결제된다.
+  // customerKey는 사용자당 고정값 — 이 값으로 등록된 카드(billingKey)를 나중에 서버가
+  // 매달 자동 청구할 때 다시 사용한다 (issueBillingKey → chargeSubscription).
+  async function handleRegisterCard() {
     if (!userId || userId.startsWith("guest:")) {
       router.push("/login?callbackUrl=/subscribe");
       return;
@@ -96,21 +97,18 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
     setLoading(true);
     try {
       const toss = window.TossPayments(tossClientKey);
-      const orderId = `${userId}_${Date.now()}`;
+      const customerKey = `cus_${userId}`;
 
-      await toss.requestPayment("카드", {
-        amount,
-        orderId,
-        orderName,
-        customerName: "바른발음 사용자",
+      await toss.requestBillingAuth("카드", {
+        customerKey,
         successUrl: `${window.location.origin}/subscribe/success`,
         failUrl: `${window.location.origin}/subscribe?failed=1`,
       });
     } catch (e: unknown) {
       const err = e as { code?: string };
-      if (err?.code === "PAY_PROCESS_CANCELED") return;
+      if (err?.code === "USER_CANCEL") return;
       console.error("[TossPaymentButton]", e);
-      alert("결제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      alert("카드 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -121,10 +119,10 @@ export function TossPaymentButton({ userId, amount, orderName }: Props) {
       variant="peach"
       size="lg"
       className="w-full"
-      onClick={handlePayment}
+      onClick={handleRegisterCard}
       disabled={loading}
     >
-      {loading ? "결제 창 여는 중..." : "🎉 프리미엄 가입하기"}
+      {loading ? "카드 등록 창 여는 중..." : "🎉 카드 등록하고 시작하기"}
     </BubbleButton>
   );
 }

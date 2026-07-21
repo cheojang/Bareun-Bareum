@@ -4,13 +4,3 @@ export const PREMIUM_MONTHLY_PRICE = 4900;
 
 /** 화면 표시용 — "4,900원" */
 export const PREMIUM_MONTHLY_PRICE_LABEL = `${PREMIUM_MONTHLY_PRICE.toLocaleString("ko-KR")}원`;
-
-/**
- * Toss 결제 승인 에러 중 "이미 승인된 결제" — 성공 페이지 새로고침/뒤로가기로
- * 같은 paymentKey를 다시 승인하려 할 때 발생한다. 첫 승인이 이미 성공했다는 뜻이므로
- * 사용자에게는 성공으로 처리해야 한다.
- */
-export function isAlreadyProcessedError(e: unknown): boolean {
-  const msg = e instanceof Error ? e.message : String(e);
-  return msg.includes("ALREADY_PROCESSED_PAYMENT");
-}

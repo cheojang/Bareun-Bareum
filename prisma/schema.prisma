@@ -116,8 +116,9 @@ model Subscription {
   plan             String    @default("free")
   tossCustomerKey  String?   @unique
   tossBillingKey   String?
-  status           String    @default("inactive")
+  status           String    @default("inactive") // inactive|active|past_due|cancelled
   currentPeriodEnd DateTime?
+  billingFailCount Int       @default(0) // 정기결제 연속 실패 횟수 — 3회(3일) 그레이스 후 자동 해지
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
