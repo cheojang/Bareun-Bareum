@@ -49,7 +49,7 @@ export default function DashboardError({
             🔄 다시 시도해보기
           </BubbleButton>
           <BubbleButton
-            variant="lavender"
+            variant="white"
             size="lg"
             onClick={() => window.location.href = '/'}
             className="w-full text-base"

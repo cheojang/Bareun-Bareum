@@ -68,7 +68,7 @@ export default function AnswerNoteError({
             🔄 다시 시도
           </BubbleButton>
           <BubbleButton
-            variant="lavender"
+            variant="white"
             size="md"
             // ✨ Pro Fix 1: 부드러운 SPA 라우팅으로 성능 보존
             onClick={() => router.push('/dashboard')}

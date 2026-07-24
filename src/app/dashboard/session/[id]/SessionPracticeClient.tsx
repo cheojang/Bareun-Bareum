@@ -504,7 +504,7 @@ export function SessionPracticeClient({
           <BubbleButton
             onClick={analyze}
             disabled={loading || !heardWord.trim()}
-            variant="mint"
+            variant="peach"
             size="md"
             className="w-full"
           >

@@ -236,7 +236,7 @@ export function ReviewClient({ childId, childName, childImage, mascotLevel, sequ
           </div>
         ) : (
           <Link href="/dashboard">
-            <BubbleButton variant="mint" size="xl">홈으로 가기 🏠</BubbleButton>
+            <BubbleButton variant="peach" size="xl">홈으로 가기 🏠</BubbleButton>
           </Link>
         )}
       </div>

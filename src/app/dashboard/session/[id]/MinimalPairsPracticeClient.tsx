@@ -218,7 +218,7 @@ export function MinimalPairsPracticeClient({ pairs, imageSlugs, childName }: Pro
           </BubbleCard>
 
           {showTarget && (
-            <BubbleButton variant="mint" size="lg" onClick={handleReveal} className="w-full">
+            <BubbleButton variant="peach" size="lg" onClick={handleReveal} className="w-full">
               말했어요 → 아이 반응 보기
             </BubbleButton>
           )}
@@ -313,7 +313,7 @@ export function MinimalPairsPracticeClient({ pairs, imageSlugs, childName }: Pro
             </div>
           )}
 
-          <BubbleButton variant="mint" size="lg" onClick={nextPair} className="w-full">
+          <BubbleButton variant="peach" size="lg" onClick={nextPair} className="w-full">
             {pairIndex + 1 >= pairs.length ? "훈련 완료! 🎉" : "다음 대립쌍 →"}
           </BubbleButton>
         </BubbleCard>

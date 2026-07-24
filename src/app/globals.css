@@ -32,6 +32,14 @@
   --shadow-card: 0 2px 12px rgba(180, 120, 80, 0.08);
   --shadow-inset: inset 0 2px 8px rgba(180, 120, 80, 0.06);
 
+  /* Glow shadows — 버튼이 자기 색으로 은은하게 빛나는 효과 (색상별 tinted shadow) */
+  --shadow-glow-peach: 0 14px 28px rgba(255, 179, 138, 0.38);
+  --shadow-glow-peach-hover: 0 18px 34px rgba(255, 179, 138, 0.48);
+  --shadow-glow-mint: 0 14px 28px rgba(126, 223, 208, 0.38);
+  --shadow-glow-mint-hover: 0 18px 34px rgba(126, 223, 208, 0.48);
+  --shadow-glow-lavender: 0 14px 28px rgba(196, 181, 253, 0.38);
+  --shadow-glow-lavender-hover: 0 18px 34px rgba(196, 181, 253, 0.48);
+
   /* Border radius — marshmallow style */
   --radius-sm: 12px;
   --radius-md: 20px;
@@ -76,16 +84,15 @@ body {
 
 /* ===== Bubble design utilities ===== */
 .bubble-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  background: #fff;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-bubble);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
 }
 
 .bubble-btn {
   border-radius: var(--radius-full);
-  box-shadow: var(--shadow-bubble);
+  box-shadow: var(--btn-shadow, var(--shadow-bubble));
   transition: all 0.15s ease;
   cursor: pointer;
   font-weight: 700;
@@ -94,13 +101,13 @@ body {
 }
 
 .bubble-btn:hover {
-  box-shadow: var(--shadow-bubble-hover);
+  box-shadow: var(--btn-shadow-hover, var(--shadow-bubble-hover));
   transform: translateY(-1px);
 }
 
 .bubble-btn:active {
   transform: scale(0.96) translateY(0);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--btn-shadow, var(--shadow-card));
 }
 
 /* ===== Child play mode ===== */

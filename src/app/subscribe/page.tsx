@@ -85,7 +85,7 @@ export default async function SubscribePage({ searchParams }: Props) {
             </p>
           )}
           <Link href="/dashboard/settings" className="mt-4 block">
-            <BubbleButton variant="mint" className="w-full">설정에서 구독 관리하기 →</BubbleButton>
+            <BubbleButton variant="peach" className="w-full">설정에서 구독 관리하기 →</BubbleButton>
           </Link>
         </BubbleCard>
       )}
@@ -154,7 +154,7 @@ export default async function SubscribePage({ searchParams }: Props) {
 
           {isPremiumActive ? (
             <Link href="/dashboard/settings">
-              <BubbleButton variant="mint" size="lg" className="w-full">
+              <BubbleButton variant="peach" size="lg" className="w-full">
                 ✨ 프리미엄 이용 중
               </BubbleButton>
             </Link>

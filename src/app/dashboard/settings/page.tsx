@@ -159,7 +159,7 @@ export default async function SettingsPage() {
             </p>
           </div>
           <Link href="/dashboard/review-bonus" className="flex-shrink-0">
-            <BubbleButton variant="mint" size="sm">참여하기 →</BubbleButton>
+            <BubbleButton variant="peach" size="sm">참여하기 →</BubbleButton>
           </Link>
         </div>
       </BubbleCard>

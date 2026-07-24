@@ -6,7 +6,7 @@ interface BubbleCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const colorStyles = {
-  white: "bg-white/85",
+  white: "bg-white",
   peach: "bg-[#FFF5EE]",
   mint: "bg-[#F0FAF8]",
   lavender: "bg-[#F5F3FF]",

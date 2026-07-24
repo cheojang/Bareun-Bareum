@@ -52,7 +52,7 @@ export function TossPaymentButton({ userId }: Props) {
     return (
       <div className="space-y-2">
         <BubbleButton
-          variant="mint"
+          variant="peach"
           size="lg"
           className="w-full"
           onClick={() => {
