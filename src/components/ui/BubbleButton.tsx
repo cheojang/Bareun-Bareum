@@ -23,11 +23,12 @@ const glowShadow: Partial<Record<keyof typeof variantStyles, { base: string; hov
   lavender: { base: "var(--shadow-glow-lavender)", hover: "var(--shadow-glow-lavender-hover)" },
 };
 
+// 아이마음 톤: 통통한 비율 → 날렵하고 정돈된 비율 (세로 두께↓, 라벨 크기 정리, 자간 -0.01em)
 const sizeStyles = {
-  sm: "px-4 py-2 text-sm",
-  md: "px-6 py-3 text-base",
-  lg: "px-8 py-4 text-lg",
-  xl: "px-10 py-5 text-xl",
+  sm: "px-4 py-1.5 text-[13px]",
+  md: "px-5 py-2.5 text-[15px]",
+  lg: "px-6 py-3 text-[16px]",
+  xl: "px-7 py-3.5 text-[18px]",
 };
 
 export const BubbleButton = forwardRef<HTMLButtonElement, BubbleButtonProps>(
@@ -44,7 +45,7 @@ export const BubbleButton = forwardRef<HTMLButtonElement, BubbleButtonProps>(
           ...style,
         }}
         className={`
-          bubble-btn font-bold rounded-full whitespace-nowrap
+          bubble-btn font-bold rounded-full whitespace-nowrap tracking-[-0.01em]
           ${variantStyles[variant]}
           ${sizeStyles[size]}
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}

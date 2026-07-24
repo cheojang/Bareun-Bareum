@@ -13,10 +13,11 @@ const colorStyles = {
   yellow: "bg-[#FFFBEB]",
 };
 
+// 아이마음 톤: 카드 내부 여백을 살짝 정돈 (md 24→20, lg 32→24)
 const paddingStyles = {
   sm: "p-4",
-  md: "p-6",
-  lg: "p-8",
+  md: "p-5",
+  lg: "p-6",
 };
 
 export function BubbleCard({

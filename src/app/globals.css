@@ -40,11 +40,11 @@
   --shadow-glow-lavender: 0 14px 28px rgba(196, 181, 253, 0.38);
   --shadow-glow-lavender-hover: 0 18px 34px rgba(196, 181, 253, 0.48);
 
-  /* Border radius — marshmallow style */
+  /* Border radius — marshmallow style (아이마음 톤에 맞춰 살짝 정돈: 28→24, 36→28) */
   --radius-sm: 12px;
-  --radius-md: 20px;
-  --radius-lg: 28px;
-  --radius-xl: 36px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
   /* Spacing */
@@ -66,6 +66,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* 아이마음 톤: 전체 타이포를 살짝 촘촘하게 (rem 기준 15px → 앱 전반이 균일하게 컴팩트해짐) */
+  font-size: 15px;
 }
 
 body {
@@ -73,13 +75,20 @@ body {
   color: var(--color-text-primary);
   font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.6;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   word-break: keep-all;
   overflow-wrap: break-word;
+}
+
+/* 아이마음 톤: 굵은 제목은 자간을 좁히고 줄간격을 조여 또렷하게 (브랜드 색·서체는 유지) */
+.font-black,
+.font-extrabold {
+  letter-spacing: -0.02em;
+  line-height: 1.28;
 }
 
 /* ===== Bubble design utilities ===== */
